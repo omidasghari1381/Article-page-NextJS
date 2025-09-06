@@ -43,3 +43,28 @@ function page() {
 }
 
 export default page;
+
+
+
+
+              <div className="p-8 sm:p-12 lg:p-16 flex flex-col h-full">
+                <div className="flex-1 grid place-items-center">
+                  <Image
+                    src="/svg/sign-in.svg"
+                    alt="sign-in"
+                    height={543.69775390625}
+                    width={543.69775390625}
+                  />
+                </div>
+
+                <div className="mt-6 text-center">
+                  <h2 className="text-3xl font-bold text-[#1C2120]">
+                    مسیر جهانی به سمت حرفه‌ای شدن
+                  </h2>
+                  <p className="text-[#666968] font-normal text-lg mt-2">
+                    با زیرساختی سریع، ایمن، و تحلیل‌هایی مبتنی بر داده‌های
+                    لحظه‌ای.
+                  </p>
+                  {/* <div className="mx-auto mt-4 w-40 h-[3px] bg-gray-200 rounded-full" /> */}
+                </div>
+              </div>
