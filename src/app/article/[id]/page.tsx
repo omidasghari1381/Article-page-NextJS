@@ -1,4 +1,5 @@
 "use client";
+import RepliesAccordion from "@/components/reply";
 import SummaryDropdown from "@/components/summery";
 import Image from "next/image";
 import { useMemo } from "react";
@@ -6,7 +7,7 @@ import { useMemo } from "react";
 export default function ArticleDetailPage() {
   const latestPosts = useMemo(
     () =>
-      Array.from({ length: 6 }, (_, i) => ({
+      Array.from({ length: 4 }, (_, i) => ({
         id: i + 1,
         title: "عنوان نمونه برای جدیدترین مقالات",
         date: "5 دقیقه پیش",
@@ -22,8 +23,8 @@ export default function ArticleDetailPage() {
         id: i + 1,
         author: "کاربر نمونه",
         avatar: "/placeholder-avatar.png",
-        time: "3 ساعت پیش",
-        text: "متن تستی برای کامنت کاربر. اینجا صرفاً جهت نمایش استایل‌ها استفاده شده است.",
+        time: "دوشنبه 17 بهمن 1401 ساعت 12:40",
+        text: "چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق",
       })),
     []
   );
@@ -41,14 +42,14 @@ export default function ArticleDetailPage() {
   );
 
   return (
-    <main className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-6">
+    <main className="  px-3 lg:px-8 py-6">
       <HeaderBar />
       <div className="hidden lg:grid lg:grid-cols-12 gap-6 mt-6">
         <section className="lg:col-span-9 space-y-8">
           <div>
             <HeroCard />
             <ArticleBody />
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-4 my-6">
               <Thumbnaill />
               <InlineNextCard />
             </div>
@@ -57,11 +58,12 @@ export default function ArticleDetailPage() {
         <aside className="lg:col-span-3 space-y-6">
           <SidebarLatest posts={latestPosts} />
         </aside>{" "}
-        <div>
-          <CommentsBlock comments={comments} />
-          <RelatedArticles posts={relatedPosts} />
-        </div>
+      </div>{" "}
+      <div>
+        <CommentsBlock comments={comments} />
+        <RelatedArticles posts={relatedPosts} />
       </div>
+      <Divider />
     </main>
   );
 }
@@ -89,10 +91,17 @@ function HeaderBar() {
     </div>
   );
 }
+function Divider() {
+  return (
+    <div className="w-full h-0.5 bg-gray-200 relative my-20">
+      <div className="absolute right-0 top-0 h-0.5 bg-emerald-400 w-1/3"></div>
+    </div>
+  );
+}
 
 function SidebarLatest({ posts }: { posts: any[] }) {
   return (
-    <div className="rounded-2xl overflow-hidden">
+    <div className="rounded-2xl overflow-hidden w-[362px]">
       <div className="flex items-center gap-3 px-4 py-4">
         <Image
           src="/svg/Rectangle.svg"
@@ -189,7 +198,7 @@ function HeroCard() {
           <Thumbnail />
         </div>
       </div>
-      <div className="p-5 sm:p-8">
+      <div className="my-6">
         <p className="mt-3 text-[#4A5054] text-lg leading-7">
           با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های لحظه‌ای،
           ما به تو کمک می‌کنیم تا فرصت‌ها را زودتر ببینی، دقیق‌تر تحلیل کنی و
@@ -238,7 +247,7 @@ function Thumbnail() {
 function ArticleBody() {
   return (
     <div className=" bg-white  space-y-6 leading-8 text-lg text-slate-700">
-      <p>
+      <p className="my-6">
         اجرای بی‌نقص استراتژی معاملاتی به مدیریت ریسک وابسته است. اینجا صرفاً
         متن نمونه قرار گرفته است تا ترکیب فاصله‌گذاری و تایپوگرافی را نشان دهد.
         لطفاً با محتوای واقعی خود جایگزین کنید.
@@ -265,7 +274,7 @@ function ArticleBody() {
           className="block my-5 mr-auto rotate-180"
         />
       </div>
-      <p>
+      <p className="mt-10">
         با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های لحظه‌ای،
         ما به تو کمک می‌کنیم تا فرصت‌ها را زودتر ببینی، دقیق‌تر تحلیل کنی و
         هوشمندانه‌تر معامله کنی.با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی
@@ -283,7 +292,7 @@ function ArticleBody() {
 
 function InlineNextCard() {
   return (
-    <div className="flex-1 min-w-0 rounded-2xl border border-[#E4E4E4] shadow-sm px-5">
+    <div className="flex-1 min-w-0 rounded-2xl border border-[#E4E4E4] shadow-sm px-5 ">
       <div className="flex items-center text-[#3B3F3F] my-5">
         <Image
           src="/image/author.png"
@@ -326,7 +335,7 @@ function InlineNextCard() {
 
 function Thumbnaill() {
   return (
-    <div className="relative h-[164px] w-[555px] shrink-0">
+    <div className="relative h-[163.46401977539062px] w-[291.1400451660156px] shrink-0">
       <Image
         src="/image/a.png"
         alt="cover"
@@ -334,7 +343,6 @@ function Thumbnaill() {
         className="object-cover rounded-xl"
       />
 
-      {/* برچسب پایین راست (RTL) */}
       <Image
         src="/svg/Rectangle3.svg"
         alt="badge"
@@ -351,20 +359,51 @@ function Thumbnaill() {
 
 function CommentsBlock({ comments }: { comments: any[] }) {
   return (
-    <div>
-      <section className="rounded-3xl bg-white border border-slate-200 shadow-sm p-5 sm:p-8">
-        <div className="flex items-center justify-between">
-          <h3 className="font-extrabold text-slate-900">نظرات کاربران</h3>
-          <button className="text-sm px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50">
-            افزودن نظر
-          </button>
+    <div className="rounded-sm bg-white border border-slate-200 p-5 sm:p-8 ">
+      <section>
+        <div className="flex items-center gap-3">
+          <Image
+            src="/svg/Rectangle2.svg"
+            alt="thumb"
+            width={5.731499671936035}
+            height={31.113859176635742}
+          />
+          <Image
+            src="/svg/comment.svg"
+            alt="thumb"
+            width={20.363636016845703}
+            height={20.363636016845703}
+          />
+          <h3 className="font-extrabold text-lg text-slate-900">
+            نظرات کاربران
+          </h3>
         </div>
+        <AddComment />
       </section>{" "}
       <div className="mt-6 space-y-5">
         {comments.map((c) => (
           <CommentItem key={c.id} {...c} />
         ))}
       </div>
+    </div>
+  );
+}
+
+function AddComment() {
+  return (
+    <div className="border bg-[#F5F5F5] h-[69.81818389892578px] w-full order-[#DADADA] my-9 px-4 flex justify-between items-center rounded-lg">
+      <span className="text-sm font-medium text-[#171717]">
+        برای ثبت نظر خود وارد شوید.
+      </span>
+      <button className="bg-[#19CCA7] flex items-center justify-center w-[137px] h-[51px] rounded-md gap-1 text-sm">
+        ورود و ثبت نام
+        <Image
+          src="/svg/userWrite.svg"
+          alt="thumb"
+          width={20.363636016845703}
+          height={20.363636016845703}
+        />
+      </button>
     </div>
   );
 }
@@ -381,42 +420,93 @@ function CommentItem({
   text: string;
 }) {
   return (
-    <article className="rounded-2xl border border-slate-200 p-4 shadow-xs bg-white">
-      <div className="flex items-start gap-3">
-        <div className="relative w-10 h-10 rounded-full overflow-hidden ring-1 ring-slate-200 bg-slate-100">
-          <Image
-            src={avatar || "/placeholder-avatar.png"}
-            alt={author}
-            fill
-            className="object-cover"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-bold text-slate-900">{author}</span>
-            <span className="text-slate-400">•</span>
-            <span className="text-slate-500">{time}</span>
+    <article className="rounded-2xl border border-slate-200 p-4 shadow-xs bg-[#FBFBFB]">
+      <div className=" gap-3">
+        <div className="flex justify-between items-center ">
+          <div className="flex gap-3">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden ring-1 ring-slate-200 bg-slate-100">
+              <Image
+                src={"/image/guy2.png"}
+                alt={author}
+                width={45.57575607299805}
+                height={45.57575607299805}
+                className="object-cover"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="font-semibold text-base text-slate-900">
+                {author}
+              </span>
+              <span className="text-slate-400">,</span>
+              <Image
+                src={"/svg/CalendarM.svg"}
+                alt={author}
+                width={20.36363410949707}
+                height={20.36363410949707}
+                className="object-cover rounded-sm"
+              />
+              <span className="text-[#1C2121] text-sm font-medium">{time}</span>
+            </div>
           </div>
-          <p className="mt-1 text-[15px] leading-7 text-slate-700">{text}</p>
-          <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-            <button className="px-2 py-1 rounded-lg hover:bg-slate-50">
-              پاسخ
+          <div className=" flex justify-between items-center gap-3">
+            <button className="w-[42.666526794433594px] h-[42.666526794433594px] rounded-md flex justify-center items-center">
+              {" "}
+              <Image
+                src={"/svg/dislike.svg"}
+                alt="dislike"
+                width={18.131977081298896}
+                height={17.066246032714908}
+                className="object-cover rounded-sm"
+              />
             </button>
-            <button className="px-2 py-1 rounded-lg hover:bg-slate-50">
-              گزارش
+            <button className="w-[42.666526794433594px] h-[42.666526794433594px] rounded-md bg-[#E8FAF6] flex justify-center items-center">
+              {" "}
+              <Image
+                src={"/svg/like.svg"}
+                alt="like"
+                width={18.131977081298896}
+                height={17.066246032714908}
+                className="object-cover rounded-sm"
+              />
+            </button>
+            <button className="h-[42.666526794433594px] w-[84.26638793945312px] rounded-md flex justify-center items-center bg-[#E8FAF6]">
+              <span className="text-[#19CCA7] text-base">پاسخ</span>
+              <Image
+                src={"/svg/reply.svg"}
+                alt="dislike"
+                width={18.131977081298896}
+                height={17.066246032714908}
+                className="object-cover rounded-sm"
+              />
             </button>
           </div>
         </div>
+        <p className="mt-1 text-[18px] font-semibold leading-7  text-[#3B3F3F]">
+          {text}
+        </p>
+        <div className="mt-3 flex items-center gap-2 text-xs text-slate-500"></div>
       </div>
+      <RepliesAccordion className="mt-1" />{" "}
     </article>
   );
 }
 
 function RelatedArticles({ posts }: { posts: any[] }) {
   return (
-    <section className="rounded-3xl bg-white border border-slate-200 shadow-sm p-5 sm:p-8">
-      <h3 className="font-extrabold text-slate-900">مقالات مشابه</h3>
-      <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <section className="mt-14">
+      <div className="flex items-center mb-6 gap-4 ">
+        <Image
+          src="/svg/Rectangle2.svg"
+          alt="thumb"
+          width={5.731499671936035}
+          height={31.113859176635742}
+        />
+        <h3 className="font-bold text-2xl text-[#2E3232] whitespace-nowrap mt-2">
+          مقالات مشابه
+        </h3>
+      </div>
+
+      <div className="">
         {posts.map((p) => (
           <RelatedCard key={p.id} {...p} />
         ))}
@@ -435,8 +525,8 @@ function RelatedCard({
   readTime: string;
 }) {
   return (
-    <article className="group rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-      <div className="relative aspect-[16/9] bg-slate-50">
+    <article className="group ">
+      {/* <div className="relative aspect-[16/9] bg-slate-50">
         <Image
           src="/placeholder-1280x720.jpg"
           alt="related"
@@ -446,8 +536,8 @@ function RelatedCard({
         <button className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs shadow">
           آموزش
         </button>
-      </div>
-      <div className="p-4">
+      </div> */}
+      {/* <div className="p-4">
         <h4 className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-2">
           {title}
         </h4>
@@ -456,6 +546,10 @@ function RelatedCard({
           <span className="w-1 h-1 rounded-full bg-slate-300" />
           <span>{readTime}</span>
         </div>
+      </div> */}
+      <div className="flex items-start gap-4 my-6">
+        <Thumbnaill />
+        <InlineNextCard />
       </div>
     </article>
   );
