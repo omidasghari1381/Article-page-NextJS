@@ -3,12 +3,7 @@ import React from "react";
 export default function HeroSection() {
   return (
     <section className=" text-white w-full relative ">
-      {/* هدر بالایی */}
       <div className="bg-black h-[479px] mx-auto px-4 sm:px-6 lg:px-8  grid grid-cols-1 md:grid-cols-2 gap-8 items-center overflow-hidden">
-        {/* تصویر سمت چپ */}
-        
-
-        {/* متن سمت راست */}
         <div className="flex flex-col items-start space-y-6">
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <span>سروش نوروزی</span>
@@ -28,17 +23,7 @@ export default function HeroSection() {
             مطالعه مقاله →
           </button>
         </div>
-        <div>
-          <img
-            src="/Image/hero1.jpg"
-            alt="Trading App"
-            className="rounded-lg shadow-lg h-[479px] w-[853.13px]"
-          />
-        </div>
       </div>
-
-      {/* بخش کارت‌ها */}
-      
       <div className=" bg-linear-[360deg,white_70%,black_100%]  mx-auto px-20 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6  -translate-y-20 h-[303px] w-[1280px]">
         {[1, 2, 3, 4].map((item) => (
           <div
@@ -62,8 +47,6 @@ export default function HeroSection() {
           </div>
         ))}
       </div>
-
-      
     </section>
   );
 }
