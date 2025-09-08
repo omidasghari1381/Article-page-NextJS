@@ -1,6 +1,7 @@
 "use client";
-import RepliesAccordion from "@/components/reply";
-import SummaryDropdown from "@/components/summery";
+import Breadcrumb from "@/components/Breadcrumb";
+import RepliesAccordion from "@/components/Reply";
+import SummaryDropdown from "@/components/Summery";
 import Image from "next/image";
 import { useMemo } from "react";
 
@@ -43,8 +44,19 @@ export default function ArticleDetailPage() {
 
   return (
     <main className="  px-3 lg:px-8 py-6">
-      <HeaderBar />
-      <div className="hidden lg:grid lg:grid-cols-12 gap-6 mt-6">
+      {/* <HeaderBar /> */}
+      <Breadcrumb
+        items={[
+          { label: "مای پراپ", href: "/" },
+          { label: "مقالات", href: "/" },
+          { label: "آموزش فارکس", href: "/" },
+          {
+            label:
+              "چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق",
+          },
+        ]}
+      />
+      <div className="hidden lg:grid lg:grid-cols-13 gap-2 mt-6">
         <section className="lg:col-span-9 space-y-8">
           <div>
             <HeroCard />
@@ -55,7 +67,7 @@ export default function ArticleDetailPage() {
             </div>
           </div>
         </section>
-        <aside className="lg:col-span-3 space-y-6">
+        <aside className="lg:col-span-3 space-y-9 ">
           <SidebarLatest posts={latestPosts} />
         </aside>{" "}
       </div>{" "}
@@ -91,6 +103,7 @@ function HeaderBar() {
     </div>
   );
 }
+
 function Divider() {
   return (
     <div className="w-full h-0.5 bg-gray-200 relative my-20">
@@ -101,19 +114,21 @@ function Divider() {
 
 function SidebarLatest({ posts }: { posts: any[] }) {
   return (
-    <div className="rounded-2xl overflow-hidden w-[362px]">
-      <div className="flex items-center gap-3 px-4 py-4">
+    <div className="">
+      <div className="flex items-center gap-3 px-4 py-8 ">
         <Image
           src="/svg/Rectangle.svg"
           alt="thumb"
-          width={6.686567306518555}
-          height={36.29850769042969}
+          width={6.69}
+          height={36.3}
         />
-        <h3 className="text-xl font-semibold  text-[#1C2121]">
+        <h3 className="text-xl font-semibold text-[#1C2121]">
           محبوب ترین مقالات
         </h3>
       </div>
-      <div className="p-4 space-y-4">
+
+      {/* عمودی، فاصله‌ی یکنواخت */}
+      <div className="px-4 pb-4 space-y-8">
         {posts.map((p) => (
           <SidebarCard key={p.id} {...p} />
         ))}
@@ -134,37 +149,42 @@ function SidebarCard({
   tag?: string;
 }) {
   return (
-    <article className="group grid grid-cols-10 gap-3">
-      <div className="col-span-4 relative overflow-hidden rounded-sm h-[236px] w-[362px]">
-        <Image
-          src="/image/hero1.jpg"
-          alt="thumb"
-          width={361.66650390625}
-          height={236.80545043945312}
-          className="object-cover border-4"
-        />
-        <Image
-          src="/image/Rectanglepoint.png"
-          alt="Rectangle"
-          width={108}
-          height={34.656715393066406}
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#121515] to-[#121515]/0" />
-        {tag && (
-          <span className="absolute top-2 left-2 rounded-full bg-black/60 text-white text-[10px] px-2 py-0.5 shadow">
-            {tag}
-          </span>
-        )}
-      </div>
-      <div className="col-span-6 flex flex-col">
-        <h4 className="text-sm font-semibold text-slate-900 line-clamp-2 group-hover:text-emerald-600 transition-colors">
-          {title}
-        </h4>
-        <div className="mt-auto text-[12px] text-slate-500 flex items-center gap-2">
-          <span>{date}</span>
-          <span className="w-1 h-1 rounded-full bg-slate-300" />
-          <span>{readTime}</span>
+    <article className="group">
+      <div className="w-[361.66650390625px] h-[236.80545043945312px]">
+        {" "}
+        <div className="relative w-[361.66650390625px] h-[236.80545043945312px] rounded-md overflow-hidden">
+          <Image
+            src="/image/hero1.jpg"
+            alt="thumb"
+            fill
+            className="object-cover"
+          />
+
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+
+          <div className="absolute top-3 right-3" dir="rtl">
+            <div className="relative inline-block">
+              <Image
+                src="/svg/arrowLeftBlack.svg"
+                alt="badge"
+                width={108}
+                height={34.66}
+                className="block"
+                priority
+              />
+              <span
+                className="absolute inset-0 flex items-center justify-center
+                   text-white text-xs font-semibold leading-none px-2"
+              >
+                آموزش فارکس
+              </span>
+            </div>
+          </div>
+          <div className="absolute bottom-3 right-4 text-white">
+            <h5 className="sm:text-base font-medium leading-7">
+              چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
+            </h5>
+          </div>
         </div>
       </div>
     </article>
@@ -306,7 +326,7 @@ function InlineNextCard() {
       </div>
       <div className="min-w-0">
         <h4 className="font-bold text-slate-900 text-base truncate my-4">
-          چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق{" "}
+          چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
         </h4>
         <div className="flex gap-4">
           <div className="mt-1 text-xs rounded-sm font-medium text-black  bg-[#E4E4E43B] w-[97.59028625488281px] h-[32.23965072631836px] flex items-center gap-2 my-4 px-2">
@@ -335,14 +355,13 @@ function InlineNextCard() {
 
 function Thumbnaill() {
   return (
-    <div className="relative h-[163.46401977539062px] w-[291.1400451660156px] shrink-0">
+    <div className="relative h-[163.5px] w-[291.14px] shrink-0">
       <Image
         src="/image/a.png"
         alt="cover"
         fill
         className="object-cover rounded-xl"
       />
-
       <Image
         src="/svg/Rectangle3.svg"
         alt="badge"
@@ -350,7 +369,7 @@ function Thumbnaill() {
         height={30}
         className="absolute bottom-2 right-2 pointer-events-none"
       />
-      <span className="absolute bottom-4 right-6 z-10 text-base font-semibold">
+      <span className="absolute bottom-3.5 right-5 z-10 text-xs font-semibold">
         آموزش فارکس
       </span>
     </div>
@@ -505,10 +524,12 @@ function RelatedArticles({ posts }: { posts: any[] }) {
           مقالات مشابه
         </h3>
       </div>
-
-      <div className="">
+      <div className="space-y-6">
         {posts.map((p) => (
-          <RelatedCard key={p.id} {...p} />
+          <div key={p.id} className="flex items-start gap-4">
+            <Thumbnaill />
+            <InlineNextCard />
+          </div>
         ))}
       </div>
     </section>

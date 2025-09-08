@@ -1,44 +1,61 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcrypt";
-import { getDS } from "@/lib/datasource";
-import { User } from "@/entities/User";
-import { error } from "console";
+import bcrypt from "bcryptjs";
+import { User } from "@/server/modules/users/entities/user.entity";
+import { AppDataSource } from "@/server/db/typeorm.datasource";
 
 export const runtime = "nodejs";
 
 const schema = z.object({
-  email: z.string().email(),
+  firstName: z.string().min(2),
+  lastName: z.string().min(2),
+  phone: z.string().min(10),
   password: z.string().min(6),
-  firstname: z.string().min(30),
-  surname: z.string().min(60),
-  phone: z.string().min(11),
 });
+
+function normalizeIranPhone(input: string): string {
+  const v = String(input).trim();
+  if (/^\+98\d{10}$/.test(v)) return v;
+  if (/^0098\d{10}$/.test(v)) return "+" + v.slice(2);
+  if (/^0?9\d{9}$/.test(v)) return "+98" + v.replace(/^0/, "");
+  throw new Error("شماره موبایل نامعتبر است. فرمت درست مثل +98912xxxxxxx");
+}
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { email, password, firstname, surname, phone } =
-      schema.parse(body);
+    const raw = await req.json();
 
-    const ds = await getDS();
-    const repo = ds.getRepository(User);
+    const mapped = {
+      firstName: raw.firstName ?? raw.firstname ?? raw.fname,
+      lastName: raw.lastName ?? raw.surname ?? raw.lname,
+      phone: raw.phone,
+      password: raw.password,
+    };
 
-    const exists = await repo.exists({ where: { email } });
+    const { firstName, lastName, phone, password } = schema.parse(mapped);
+    const normPhone = normalizeIranPhone(phone);
+
+    // DataSource
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+    const repo = AppDataSource.getRepository(User);
+
+    const exists = await repo.exists({ where: { phone: normPhone } });
     if (exists) {
       return NextResponse.json(
-        { message: "ایمیل قبلاً ثبت شده است." },
+        { message: "این شماره قبلاً ثبت شده است." },
         { status: 409 }
       );
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
     const user = repo.create({
-      email,
+      firstName,
+      lastName,
+      phone: normPhone,
       passwordHash,
-      firstname,
-      surname,
-      phone,
     });
     await repo.save(user);
 
@@ -47,9 +64,8 @@ export async function POST(req: Request) {
         ok: true,
         user: {
           id: user.id,
-          email: user.email,
-          firstname: user.firstname,
-          surname: user.surname,
+          firstName: user.firstName,
+          lastName: user.lastName,
           phone: user.phone,
         },
       },
@@ -57,7 +73,7 @@ export async function POST(req: Request) {
     );
   } catch (err: any) {
     return NextResponse.json(
-      { message: err?.message || "خطای سرور" },
+      { message: err?.message ?? "خطای سرور" },
       { status: 400 }
     );
   }

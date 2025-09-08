@@ -18,7 +18,6 @@ export default function HeroSection() {
               راهکارهای مؤثر برای معامله‌گران موفق
             </span>
           </h1>
-
           <button className="bg-[#19CCA7] hover:bg-[#15b697] text-white px-6 py-3 rounded-lg font-medium transition">
             مطالعه مقاله →
           </button>

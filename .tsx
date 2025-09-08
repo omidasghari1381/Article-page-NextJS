@@ -1,5 +1,5 @@
 "use client";
-import SummaryDropdown from "@/components/summery";
+import SummaryDropdown from "@/components/Summery";
 import Image from "next/image";
 import { useMemo } from "react";
 

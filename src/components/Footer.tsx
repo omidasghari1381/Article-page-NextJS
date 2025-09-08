@@ -39,7 +39,7 @@ export default function Footer() {
         <Licenses />
       </div>
       <Divider />
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-8">
         <ContactCenterCopy />
         <ContactInfoCopy />
         <SocialsBlock />
@@ -225,19 +225,19 @@ function Licenses() {
 function ContactCenterCopy() {
   return (
     <div className=" flex text-black-footer justify-between items-center">
-      <ul className="my-2">
-        <li className="mb-4 flex">
+      <ul className="">
+        <li className=" flex">
           <div className="flex justify-between items-center">
             <a className="font-bold text-sm ">مرکز تماس مشتریان</a>
           </div>
         </li>
-        <li className="mb-1 flex ">
-          <a className="font-bold text-sm mt-3 mb-2.5">
+        <li className=" flex pt-2.5">
+          <a className="font-bold text-sm ">
             {" "}
             به صورت شبانه روزی پشتیبان شما هستیم
           </a>
         </li>
-        <li className="mb-1 flex left-0">
+        <li className=" flex left-0 pt-2.5">
           <a className="font-semibold text-xs mt-3 mb-2.5">
             {" "}
             رضایت مشتری برای ما در اولویت است
