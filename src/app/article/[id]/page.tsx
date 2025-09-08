@@ -576,70 +576,10 @@ function RelatedCard({
   );
 }
 
-function FooterMeta() {
-  return (
-    <section className="space-y-6">
-      <ShareStrip />
-      <RiskWarning />
-      <JurisdictionDisclaimer />
-    </section>
-  );
-}
 
-function ShareStrip() {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-slate-600">
-          این مطلب را در شبکه‌های اجتماعی به اشتراک بگذارید
-        </div>
-        <div className="flex items-center gap-2">
-          {["instagram", "telegram", "x", "whatsapp"].map((k) => (
-            <button
-              key={k}
-              className="w-9 h-9 rounded-xl border border-slate-200 hover:bg-slate-50"
-              aria-label={k}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
-function RiskWarning() {
-  return (
-    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
-      <h4 className="font-bold text-amber-900">Risk Warning</h4>
-      <p className="mt-2 text-amber-900/80 text-sm leading-7">
-        معاملات ابزارهای مالی با ریسک بالایی همراه است و ممکن است منجر به از دست
-        رفتن تمام سرمایه شما شود. این یک متن نمایشی است. قبل از هرگونه
-        سرمایه‌گذاری با مشاور مالی خود مشورت کنید.
-      </p>
-    </div>
-  );
-}
 
-function JurisdictionDisclaimer() {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h4 className="font-bold text-slate-900">Jurisdiction Disclaimer</h4>
-      <p className="mt-2 text-slate-600 text-sm leading-7">
-        خدمات ممکن است در برخی کشورها در دسترس نباشد. این متن صرفاً نمونه است و
-        باید با محتوای حقوقی واقعی جایگزین شود.
-      </p>
-      <details className="mt-2 text-sm text-slate-600">
-        <summary className="cursor-pointer select-none">
-          مشاهده جزئیات بیشتر
-        </summary>
-        <div className="mt-2 text-slate-600 leading-7">
-          توضیحات تکمیلی درباره محدودیت‌های ارائه خدمات و قوانین محلی.
-        </div>
-      </details>
-    </div>
-  );
-}
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-lg font-extrabold text-slate-900">{children}</h3>;
-}
+
+
+

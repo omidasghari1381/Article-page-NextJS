@@ -1,7 +1,6 @@
 import { AbstractEntity } from "@/server/core/abstracts/entity.base";
 import { Entity, Column, Index, OneToMany } from "typeorm";
 import { Article } from "../../articles/entities/article.entity";
-import { ArticleComment } from "../../articles/entities/comment.entity";
 
 @Entity("users")
 export class User extends AbstractEntity {
@@ -21,6 +20,6 @@ export class User extends AbstractEntity {
 
   @OneToMany(() => Article, (article) => article.user)
   article!: Article;
-  @OneToMany(() => ArticleComment, (comment) => comment.user)
-  articleComment!: ArticleComment;
+
+
 }

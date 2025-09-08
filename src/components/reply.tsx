@@ -10,9 +10,9 @@ type Reply = {
 };
 
 type RepliesAccordionProps = {
-  count?: number; // تعداد کل پاسخ‌ها (برای تیتر)
-  replies?: Reply[]; // لیست پاسخ‌ها
-  defaultOpen?: boolean; // باز/بسته بودن اولیه
+  count?: number;
+  replies?: Reply[];
+  defaultOpen?: boolean;
   className?: string;
 };
 
@@ -95,13 +95,6 @@ export default function RepliesAccordion({
             </li>
           ))}
         </ul>
-
-        {/* نوار پایین (اختیاری) */}
-        <div className="px-4 pb-4 pt-0">
-          <button className="w-full text-sm text-emerald-700 hover:text-emerald-800 px-3 py-2 rounded-xl border border-emerald-100 hover:bg-emerald-50">
-            افزودن پاسخ جدید
-          </button>
-        </div>
       </div>
     </div>
   );
