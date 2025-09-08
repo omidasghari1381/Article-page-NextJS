@@ -18,7 +18,7 @@ export default function Page() {
     firstName: "",
     lastName: "",
     phone: "",
-    dial: "+98",
+    dial: "",
     password: "",
     remember: false,
   });
@@ -29,7 +29,7 @@ export default function Page() {
       form.firstName.trim() &&
       form.lastName.trim() &&
       form.phone.trim() &&
-      form.password.length >= 6 &&
+      form.password.length >= 8 &&
       !loading,
     [form, loading]
   );
@@ -37,10 +37,11 @@ export default function Page() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (!form.firstName.trim()) errs.firstName = "نام الزامی است.";
-    if (!form.lastName.trim()) errs.lastName = "نام خانوادگی الزامی است.";
-    if (!form.phone.trim()) errs.phone = "شماره موبایل الزامی است.";
-    if (form.password.length < 6) errs.password = "حداقل ۶ کاراکتر.";
+    if (!form.firstName.trim()) errs.firstName = "firstname is essential";
+    if (!form.lastName.trim()) errs.lastName = "surname is essential";
+    if (!form.phone.trim()) errs.phone = "phone number is essential";
+    if (form.password.length < 8)
+      errs.password = "your password must contain 8 letter";
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
@@ -60,13 +61,13 @@ export default function Page() {
       const data = await res.json();
 
       if (!res.ok || !data?.ok) {
-        setErrors({ general: data?.message ?? "ثبت‌نام ناموفق بود." });
+        setErrors({ general: data?.message ?? "register failed" });
         return;
       }
 
-      alert("ثبت‌نام با موفقیت انجام شد ✅");
+      alert("register successful");
     } catch (err) {
-      setErrors({ general: "خطای شبکه. دوباره تلاش کنید." });
+      setErrors({ general: "Server error .Try again later" });
     } finally {
       setLoading(false);
     }
@@ -164,12 +165,15 @@ export default function Page() {
                   </div>
                 </div>
 
+                {/* موبایل */}
                 <div className="space-y-2">
                   <label className="text-base text-[#1C2120] font-medium">
                     شماره موبایل
                   </label>
+                  {/* PhoneInput فعلی فقط phone را برمی‌گرداند؛ اگر dial را هم خواستی، prop بده یا تغییرش بده */}
                   <PhoneInput
                     className="mt-2.5"
+                    // @ts-ignore - PhoneInput شما onChange فقط شماره را می‌دهد
                     onChange={(val: string) =>
                       setForm((f) => ({ ...f, phone: val }))
                     }
@@ -179,6 +183,7 @@ export default function Page() {
                   )}
                 </div>
 
+                {/* رمز عبور */}
                 <div className="space-y-2">
                   <label className="text-base text-[#1C2120] font-medium">
                     رمز عبور
@@ -210,6 +215,7 @@ export default function Page() {
                   )}
                 </div>
 
+                {/* مرا به خاطر بسپار */}
                 <label className="flex items-center gap-2 text-base text-[#1C2120]">
                   <input
                     type="checkbox"
@@ -222,6 +228,7 @@ export default function Page() {
                   مرا به خاطر بسپار
                 </label>
 
+                {/* دکمه ثبت‌نام */}
                 <button
                   type="submit"
                   disabled={!canSubmit}
@@ -242,6 +249,7 @@ export default function Page() {
                   </span>
                 </button>
 
+                {/* خط جداکننده */}
                 <div className="relative text-center">
                   <div className="h-px bg-[#DEDFDE]" />
                   <span className="absolute inset-0 -top-3 mx-auto bg-white px-3 text-sm font-normal text-gray-400 w-fit">
@@ -249,6 +257,7 @@ export default function Page() {
                   </span>
                 </div>
 
+                {/* گوگل (اکنون ماک) */}
                 <button
                   type="button"
                   onClick={() => alert("ورود با گوگل - بعداً اتصال واقعی")}
@@ -265,12 +274,14 @@ export default function Page() {
                   </span>
                 </button>
 
+                {/* خطای کلی */}
                 {errors.general && (
                   <div className="text-sm text-red-600 text-center">
                     {errors.general}
                   </div>
                 )}
 
+                {/* لینک ورود */}
                 <p className="text-sm text-gray-600 text-center">
                   حساب کاربری دارید؟
                   <a
