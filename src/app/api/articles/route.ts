@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // اطمینان بده export شده
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getDataSource } from "@/server/db/typeorm.datasource";
 
 import { Article } from "@/server/modules/articles/entities/article.entity";
@@ -13,6 +13,7 @@ const CreateArticleSchema = z.object({
   authorId: z.string().uuid().optional(),
   subject: z.string().min(1),
   mainText: z.string().min(1),
+  secondryText: z.string().min(1),
   thumbnail: z
     .string()
     .max(2000)
@@ -22,6 +23,7 @@ const CreateArticleSchema = z.object({
   category: z.nativeEnum(articleCategoryEnum),
   showStatus: z.boolean().optional().default(false),
   readingPeriod: z.string().min(1).max(256),
+  summery: z.array(z.string().min(1)),
 });
 
 const ListQuerySchema = z.object({
@@ -70,9 +72,11 @@ export async function POST(req: NextRequest) {
 
     const article = articleRepo.create({
       title: parsed.data.title,
-      subject: parsed.data.subject, // ✅ جدید
+      subject: parsed.data.subject,
       author,
       mainText: parsed.data.mainText,
+      summery: parsed.data.summery,
+      secondryText: parsed.data.secondryText,
       thumbnail: parsed.data.thumbnail || null,
       Introduction: parsed.data.Introduction || null,
       category: parsed.data.category,
@@ -118,13 +122,11 @@ export async function GET(req: NextRequest) {
 
     const articleRepo = ds.getRepository(Article);
 
-    // ساخت where داینامیک
     const where: any = {};
     if (category) where.category = category;
     if (typeof showStatus !== "undefined")
       where.showStatus = showStatus === "1";
 
-    // QueryBuilder برای سرچِ q در title/Introduction
     const qb = articleRepo
       .createQueryBuilder("a")
       .leftJoinAndSelect("a.author", "author")
@@ -151,6 +153,7 @@ export async function GET(req: NextRequest) {
         readingPeriod: it.readingPeriod,
         showStatus: it.showStatus,
         viewCount: it.viewCount,
+        summery: it.summery,
         thumbnail: it.thumbnail,
         author: {
           id: (it.author as any)?.id,

@@ -23,7 +23,7 @@ export async function GET(
     return NextResponse.json({
       id: item.id,
       title: item.title,
-      subject: item.subject, // ✅ جدید
+      subject: item.subject, 
       category: item.category,
       readingPeriod: item.readingPeriod,
       showStatus: item.showStatus,
@@ -31,6 +31,7 @@ export async function GET(
       thumbnail: item.thumbnail,
       Introduction: item.Introduction,
       mainText: item.mainText,
+      secondryText: item.secondryText,
       author: item.author
         ? {
             id: (item.author as any).id,

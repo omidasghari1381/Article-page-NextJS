@@ -1,7 +1,5 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { User } from "@/server/modules/users/entities/user.entity";
-import { Article } from "@/server/modules/articles/entities/article.entity";
 import { ENTITIES } from "./entities";
 
 let ds: DataSource | null = null;
@@ -17,7 +15,7 @@ export async function getDataSource(): Promise<DataSource> {
     username: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    entities: [...ENTITIES], // مهم: فقط از یک مرجع
+    entities: [...ENTITIES], 
     synchronize: true, 
     logging: false,
   });

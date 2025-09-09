@@ -5,18 +5,20 @@ import { useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
 import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
 
-// ❌ دیگه به CATEGORY_OPTIONS نیازی نیست
 type ArticleCreatePayload = {
   title: string;
-  subject: string; // ✅ جدید
+  subject: string;
   authorId?: string;
   category: articleCategoryEnum;
   Introduction: string | null;
   mainText: string;
+  secondryText: string;
   thumbnail: string | null;
   showStatus: boolean;
   readingPeriod: string;
+  summery: string[]; 
 };
+
 export default function Page() {
   return (
     <main className="pb-24">
@@ -27,9 +29,7 @@ export default function Page() {
           { label: "افزودن مقاله", href: "/articles/new" },
         ]}
       />
-
       <BannerWithBox />
-
       <div className="mt-24">
         <ArticleForm />
       </div>
@@ -47,8 +47,6 @@ function BannerWithBox() {
           className="w-full h-full object-cover"
         />
       </div>
-
-      {/* باکس وسط صفحه روی بنر */}
       <div className="flex justify-center items-center border absolute rounded-lg left-1/2 -bottom-12 transform -translate-x-1/2 w-[92%] md:w-[80%] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap justify-between items-center gap-10 w-full">
           <IconItem src="/svg/tarnsaction.svg" label="مقالات من" />
@@ -76,25 +74,45 @@ function IconItem({ src, label }: { src: string; label: string }) {
 function ArticleForm() {
   const [form, setForm] = useState<{
     title: string;
-    subject: string; // ✅ جدید
+    subject: string;
     authorId: string;
     category: "" | articleCategoryEnum;
     Introduction: string;
     mainText: string;
+    secondryText: string;
     thumbnail: string;
     readingPeriod: string;
     showStatus: boolean;
   }>({
     title: "",
-    subject: "", // ✅ جدید
+    subject: "",
     authorId: "",
     category: "",
     Introduction: "",
     mainText: "",
+    secondryText: "",
     thumbnail: "",
     readingPeriod: "",
     showStatus: false,
   });
+
+  const [summeryList, setSummeryList] = useState<string[]>([]);
+  const [summeryInput, setSummeryInput] = useState<string>("");
+
+  const addSummery = () => {
+    const v = summeryInput.trim();
+    if (!v) return;
+    setSummeryList((prev) => [...prev, v]);
+    setSummeryInput("");
+  };
+
+  const removeSummery = (idx: number) => {
+    setSummeryList((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const editSummery = (idx: number, val: string) => {
+    setSummeryList((prev) => prev.map((s, i) => (i === idx ? val : s)));
+  };
 
   const [previewThumb, setPreviewThumb] = useState<string>("");
 
@@ -110,7 +128,6 @@ function ArticleForm() {
       if (typeof e === "boolean") {
         setForm((f) => ({ ...f, [field]: e }));
       } else {
-        // برای category به enum کست کن
         if (field === "category") {
           setForm((f) => ({
             ...f,
@@ -131,26 +148,33 @@ function ArticleForm() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // حداقل اعتبارسنجی ساده
     const errs: Record<string, string> = {};
     if (!form.title.trim()) errs.title = "عنوان الزامی است.";
-    if (!form.subject.trim()) errs.subject = "موضوع مقاله الزامی است."; // ✅ جدید
+    if (!form.subject.trim()) errs.subject = "موضوع مقاله الزامی است.";
     if (!form.category) errs.category = "دسته‌بندی را انتخاب کنید.";
     if (!form.readingPeriod.trim())
       errs.readingPeriod = "مدت زمان مطالعه الزامی است.";
     if (!form.mainText.trim()) errs.mainText = "متن اصلی مقاله الزامی است.";
+    if (!form.secondryText.trim())
+      errs.secondryText = "متن ثانویه مقاله الزامی است.";
 
-    // ساخت payload مطابق Entity (category بر اساس enum فارسی)
+    if (Object.keys(errs).length) {
+      alert(Object.values(errs).join("\n"));
+      return;
+    }
+
     const payload: ArticleCreatePayload = {
       title: form.title,
-      subject: form.subject, // ✅ جدید
+      subject: form.subject,
       authorId: form.authorId || undefined,
       category: form.category as articleCategoryEnum,
       Introduction: form.Introduction || null,
       mainText: form.mainText,
+      secondryText: form.secondryText,
       thumbnail: form.thumbnail || null,
       showStatus: form.showStatus,
       readingPeriod: form.readingPeriod,
+      summery: summeryList,
     };
 
     try {
@@ -166,7 +190,6 @@ function ArticleForm() {
       }
 
       alert("مقاله با موفقیت ثبت شد ✅");
-      // router.push("/articles")
     } catch (err: any) {
       alert(err?.message || "خطایی رخ داد");
     }
@@ -180,15 +203,14 @@ function ArticleForm() {
         dir="rtl"
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* ستون راست (عنوان، دسته، زمان مطالعه، وضعیت نمایش) */}
           <div className="md:col-span-4 space-y-6">
             <div>
-              <label className="block text-sm text-gray-600 mb-2">
+              <label className="block text-sm text-black mb-2">
                 عنوان مقاله
               </label>
               <input
                 type="text"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-gray-200  text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder="مثلاً: چگونه در فارکس ضرر نکنیم"
                 value={form.title}
                 onChange={handleChange("title")}
@@ -198,7 +220,7 @@ function ArticleForm() {
             <div>
               <label className="block text-sm text-black mb-2">دسته‌بندی</label>
               <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 value={form.category}
                 onChange={handleChange("category")}
               >
@@ -216,12 +238,12 @@ function ArticleForm() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600 mb-2">
+              <label className="block text-sm text-black mb-2">
                 مدت زمان مطالعه
               </label>
               <input
                 type="text"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder="مثلاً: ۷ دقیقه"
                 value={form.readingPeriod}
                 onChange={handleChange("readingPeriod")}
@@ -245,14 +267,13 @@ function ArticleForm() {
               </button>
             </div>
 
-            {/* (اختیاری) انتخاب نویسنده - موقت */}
             <div>
-              <label className="block text-sm text-gray-600 mb-2">
+              <label className="block text-sm text-black mb-2">
                 شناسه نویسنده (اختیاری)
               </label>
               <input
                 type="text"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder="authorId (در بک‌اند از session پر می‌شود)"
                 value={form.authorId}
                 onChange={handleChange("authorId")}
@@ -263,16 +284,15 @@ function ArticleForm() {
             </div>
           </div>
 
-          {/* ستون چپ (تصویر بندانگشتی + مقدمه + متن اصلی) */}
           <div className="md:col-span-8 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-7">
-                <label className="block text-sm text-gray-600 mb-2">
+                <label className="block text-sm text-black mb-2">
                   لینک تصویر بندانگشتی
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  className="w-full rounded-lg border  text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                   placeholder="https://..."
                   value={form.thumbnail}
                   onChange={handleThumbnailInput}
@@ -286,7 +306,6 @@ function ArticleForm() {
               <div className="lg:col-span-5">
                 <div className="rounded-xl border border-gray-200 overflow-hidden h-[160px] flex items-center justify-center bg-gray-50">
                   {previewThumb ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={previewThumb}
                       alt="thumbnail preview"
@@ -300,13 +319,14 @@ function ArticleForm() {
                 </div>
               </div>
             </div>
+
             <div>
-              <label className="block text-sm text-gray-600 mb-2">
+              <label className="block text-sm text-black mb-2">
                 موضوع مقاله
               </label>
               <input
                 type="text"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder="مثلاً: مدیریت سرمایه در فارکس"
                 value={form.subject}
                 onChange={handleChange("subject")}
@@ -315,15 +335,14 @@ function ArticleForm() {
                 این فیلد به‌صورت اجباری ذخیره می‌شود.
               </p>
             </div>
+
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-sm text-gray-600 mb-2">
-                  مقدمه
-                </label>
+                <label className="block text-sm text-black mb-2">مقدمه</label>
                 <CharCounter value={form.Introduction} max={600} />
               </div>
               <textarea
-                className="w-full min-h-[120px] rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full min-h-[120px]  text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder="چند خط مقدمه برای شروع مقاله..."
                 value={form.Introduction}
                 onChange={handleChange("Introduction")}
@@ -332,42 +351,118 @@ function ArticleForm() {
             </div>
 
             <div>
+              <label className="block text-sm text-black mb-2">
+                خلاصه‌ها (آنچه در مقاله می‌خوانید)
+              </label>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  className="flex-1 rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  placeholder="مثلاً: مدیریت ریسک چیست؟"
+                  value={summeryInput}
+                  onChange={(e) => setSummeryInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addSummery();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={addSummery}
+                  className="px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
+                >
+                  افزودن
+                </button>
+              </div>
+
+              {summeryList.length > 0 && (
+                <ul className="mt-3 space-y-2">
+                  {summeryList.map((s, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2"
+                    >
+                      <input
+                        className="flex-1 bg-transparent text-black focus:outline-none"
+                        value={s}
+                        onChange={(e) => editSummery(idx, e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeSummery(idx)}
+                        className="px-2 py-1 rounded-md border hover:bg-gray-50"
+                        aria-label="remove"
+                      >
+                        حذف
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {summeryList.length === 0 && (
+                <p className="text-xs text-gray-400 mt-2">
+                  چند مورد خلاصه اضافه کنید تا در صفحه مقاله نمایش دهیم.
+                </p>
+              )}
+            </div>
+
+            <div>
               <div className="flex items-center justify-between">
-                <label className="block text-sm text-gray-600 mb-2">
+                <label className="block text-sm text-black mb-2">
                   متن اصلی
                 </label>
                 <CharCounter value={form.mainText} max={20000} />
               </div>
               <textarea
-                className="w-full min-h-[300px] rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 leading-7"
+                className="w-full min-h-[300px]  text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 leading-7"
                 placeholder="متن کامل مقاله را اینجا وارد کنید..."
                 value={form.mainText}
                 onChange={handleChange("mainText")}
                 maxLength={20000}
               />
-              <p className="text-xs text-gray-400 mt-1">
-                در نسخه‌های بعدی می‌توانیم ادیتور غنی (مانند TipTap/Quill) اضافه
-                کنیم.
-              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm text-black mb-2">
+                  متن ثانویه
+                </label>
+                <CharCounter value={form.secondryText} max={20000} />
+              </div>
+              <textarea
+                className="w-full min-h-[300px]  text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 leading-7"
+                placeholder="متن ثانویه مقاله را اینجا وارد کنید..."
+                value={form.secondryText}
+                onChange={handleChange("secondryText")}
+                maxLength={20000}
+              />
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
-                onClick={() =>
+                onClick={() => {
                   setForm({
                     title: "",
                     authorId: "",
                     category: "",
                     Introduction: "",
                     mainText: "",
+                    secondryText: "",
                     thumbnail: "",
                     readingPeriod: "",
                     showStatus: false,
                     subject: "",
-                  })
-                }
+                  });
+                  setSummeryList([]);
+                  setSummeryInput("");
+                  setPreviewThumb("");
+                }}
               >
                 پاک‌سازی
               </button>

@@ -11,15 +11,17 @@ import { timeAgoFa } from "@/app/utils/date";
 type ArticleDetail = {
   id: string;
   title: string;
-  category: string; // مقدار فارسی از enum
+  subject: string;
+  category: string;
   readingPeriod: string;
   showStatus: boolean;
-  viewCount: number; // ← number (نه number | 0)
+  viewCount: number;
   thumbnail: string | null;
   Introduction: string | null;
-  mainText: string; // HTML یا متن ساده
+  mainText: string;
+  secondryText: string;
   author: { id: string; firstName: string; lastName: string } | null;
-  createdAt: string; // "YYYY-MM-DD HH:MM:SS(.xxxxxx)"
+  createdAt: string;
 };
 
 type LiteArticle = {
@@ -33,6 +35,7 @@ type LiteArticle = {
 
 type HeroCardProps = {
   title: string;
+  subject: string;
   introduction?: string | null;
   thumbnail?: string | null;
   createdAt: string;
@@ -62,7 +65,6 @@ export default function ArticleDetailPage() {
       try {
         setLoading(true);
 
-        // فچ دیتیل مقاله
         const { data: a } = await axios.get<ArticleDetail>(
           `/api/articles/${encodeURIComponent(id)}`,
           { cancelToken: source.token }
@@ -70,7 +72,6 @@ export default function ArticleDetailPage() {
         console.log("📄 Article detail:", a);
         if (!cancel) setArticle(a);
 
-        // فچ آخرین مقالات
         const { data: l } = await axios.get<{ items: LiteArticle[] }>(
           `/api/articles`,
           { params: { perPage: 4, showStatus: 1 }, cancelToken: source.token }
@@ -78,7 +79,6 @@ export default function ArticleDetailPage() {
         console.log("📰 Latest articles:", l);
         if (!cancel) setLatest(l.items || []);
 
-        // فچ مقالات مشابه
         if (a?.category) {
           const { data: r } = await axios.get<{ items: LiteArticle[] }>(
             `/api/articles`,
@@ -159,6 +159,7 @@ export default function ArticleDetailPage() {
             {article && (
               <HeroCard
                 title={article.title}
+                subject={article.subject}
                 introduction={article.Introduction}
                 thumbnail={article.thumbnail}
                 createdAt={article.createdAt}
@@ -167,7 +168,10 @@ export default function ArticleDetailPage() {
               />
             )}
 
-            <ArticleBody mainText={article?.mainText} />
+            <ArticleBody
+              mainText={article?.mainText}
+              secondryText={article?.secondryText}
+            />
 
             <div className="flex items-start gap-4 my-6">
               <Thumbnaill />
@@ -235,7 +239,6 @@ function SidebarLatest({ posts }: { posts: any[] }) {
         </h3>
       </div>
 
-      {/* عمودی، فاصله‌ی یکنواخت */}
       <div className="px-4 pb-4 space-y-8">
         {posts.map((p) => (
           <SidebarCard key={p.id} {...p} />
@@ -305,6 +308,7 @@ function HeroCard({
   thumbnail,
   createdAt,
   viewCount,
+  subject,
   category,
 }: HeroCardProps) {
   return (
@@ -378,24 +382,29 @@ function Thumbnail({ thumbnail, category }: ThumbnailProps) {
     </div>
   );
 }
-function ArticleBody({ mainText }: { mainText?: string | null }) {
-  const text = mainText?.trim();
-  const isHTML = !!text && text.startsWith("<");
+function ArticleBody({
+  mainText,
+  secondryText,
+}: {
+  mainText?: string | null;
+  secondryText?: string | null;
+}) {
+  const firstText = mainText?.trim();
+  const isHTML = !!firstText && firstText.startsWith("<");
 
   return (
     <div className=" bg-white  space-y-6 leading-8 text-lg text-slate-700">
-      {text ? (
+      {firstText ? (
         isHTML ? (
           <div
             className="leading-8 text-lg text-slate-700"
-            dangerouslySetInnerHTML={{ __html: text }}
+            dangerouslySetInnerHTML={{ __html: firstText }}
           />
         ) : (
-          <p className="my-6 whitespace-pre-line">{text}</p>
+          <p className="my-6 whitespace-pre-line">{firstText}</p>
         )
       ) : (
         <>
-          {/* متن پیش‌فرض صفحه‌ی شما، دست‌نخورده */}
           <p className="my-6">
             اجرای بی‌نقص استراتژی معاملاتی به مدیریت ریسک وابسته است...
           </p>

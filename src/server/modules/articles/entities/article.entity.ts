@@ -17,6 +17,19 @@ export class Article extends AbstractEntity {
     nullable: false,
   })
   mainText!: string;
+  
+  @Column({
+    type: "text",
+    nullable: false,
+  })
+  secondryText!: string;
+
+  @Column({
+    type: "text",
+    nullable: false,
+  })
+  boldText!: string;
+
   @Column({
     type: "text",
     nullable: false,
@@ -54,4 +67,10 @@ export class Article extends AbstractEntity {
     nullable: false,
   })
   readingPeriod!: string;
+
+  @Column({
+    type: "json",
+    nullable: false,
+  })
+  summery!: string[];
 }
