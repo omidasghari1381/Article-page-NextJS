@@ -11,7 +11,7 @@ type SummaryItem = {
 
 interface SummaryDropdownProps {
   title?: string;
-  items: SummaryItem[];
+  items?: SummaryItem[];
 }
 
 export default function SummaryDropdown({

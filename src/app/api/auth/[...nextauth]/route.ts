@@ -1,67 +1,64 @@
-import NextAuth, { NextAuthOptions } from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
-import * as bcrypt from 'bcryptjs';
+import NextAuth, { type NextAuthOptions } from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import { compare } from "bcryptjs";
+export const runtime = "nodejs";
 
-import { UserRepository } from '@/server/modules/users/repositories/user.repository';
-import { AppDataSource } from '@/server/db/typeorm.datasource';
+function normalizePhoneToE164Iran(input: string): string {
+  const v = String(input).trim();
+  if (/^\+98\d{10}$/.test(v)) return v;
+  if (/^0098\d{10}$/.test(v)) return "+" + v.slice(2);
+  if (/^0?9\d{9}$/.test(v)) return "+98" + v.replace(/^0/, "");
+  throw new Error("Invalid Iranian phone");
+}
 
-const authOptions: NextAuthOptions = {
-  session: { strategy: 'jwt' },
+export const authOptions: NextAuthOptions = {
+  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
   providers: [
     Credentials({
-      name: 'Credentials',
+      name: "Phone & Password",
       credentials: {
-        phone: { label: 'Phone', type: 'text' },
-        password: { label: 'Password', type: 'password' },
+        phone: { label: "Phone", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-      authorize: async (credentials) => {
+      async authorize(credentials) {
         if (!credentials?.phone || !credentials?.password) return null;
 
-        if (!AppDataSource.isInitialized) await AppDataSource.initialize();
-        const users = new UserRepository(AppDataSource);
+        // نرمال‌سازی امن‌تر
+        let phone: string;
+        try {
+          phone = normalizePhoneToE164Iran(credentials.phone);
+        } catch {
+          return null;
+        }
 
-        const raw = String(credentials.phone).trim();
-        let phone = raw;
-        if (/^0?9\d{9}$/.test(raw)) phone = '+98' + raw.replace(/^0/, '');
-        if (/^0098\d{10}$/.test(raw)) phone = '+' + raw.slice(2);
+        const { getDataSource } = await import("@/server/db/typeorm.datasource");
+        const ds = await getDataSource();
+        const { User } = await import("@/server/modules/users/entities/user.entity");
+        const repo = ds.getRepository(User);
 
-        const user = await users.findByPhone(phone);
+        const user = await repo.findOne({ where: { phone } });
         if (!user) return null;
 
-        const ok = await bcrypt.compare(String(credentials.password), user.passwordHash);
+        const ok = await compare(credentials.password, user.passwordHash);
         if (!ok) return null;
 
-        return {
-          id: user.id,
-          name: `${user.firstName} ${user.lastName}`.trim(),
-          phone: user.phone,
-        };
+        return { id: String(user.id), name: user.firstName, phone: user.phone } as any;
       },
     }),
   ],
   pages: {
-    // اگر صفحه‌ی اختصاصی لاگین داری، اینو ست کن
-    // signIn: '/auth/login',
+    signIn: "/login",
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        token.id = (user as any).id;
-        token.phone = (user as any).phone;
-      }
+      if (user) token.uid = (user as any).id;
       return token;
     },
     async session({ session, token }) {
-      // فیلدهای سفارشی به سشن
-      (session as any).user = {
-        id: token.id,
-        name: session.user?.name,
-        phone: (token as any).phone,
-      };
+      if (session.user && token?.uid) (session.user as any).id = token.uid as string;
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);

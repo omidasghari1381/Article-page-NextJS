@@ -1,4 +1,4 @@
 export enum articleCategoryEnum {
-  PROP = "prop",
-  FOREX = "forex",
+  PROP = "پراپ تریدینگ",
+  FOREX = "اموزش فارکس",
 }

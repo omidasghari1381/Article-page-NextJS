@@ -3,9 +3,110 @@ import Breadcrumb from "@/components/Breadcrumb";
 import RepliesAccordion from "@/components/Reply";
 import SummaryDropdown from "@/components/Summery";
 import Image from "next/image";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import axios from "axios";
+import { timeAgoFa } from "@/app/utils/date";
+
+type ArticleDetail = {
+  id: string;
+  title: string;
+  category: string; // مقدار فارسی از enum
+  readingPeriod: string;
+  showStatus: boolean;
+  viewCount: number; // ← number (نه number | 0)
+  thumbnail: string | null;
+  Introduction: string | null;
+  mainText: string; // HTML یا متن ساده
+  author: { id: string; firstName: string; lastName: string } | null;
+  createdAt: string; // "YYYY-MM-DD HH:MM:SS(.xxxxxx)"
+};
+
+type LiteArticle = {
+  id: string;
+  title: string;
+  createdAt: string;
+  readingPeriod: string;
+  category: string;
+  thumbnail: string | null;
+};
+
+type HeroCardProps = {
+  title: string;
+  introduction?: string | null;
+  thumbnail?: string | null;
+  createdAt: string;
+  viewCount: number;
+  category?: string | null;
+};
+
+type ThumbnailProps = {
+  thumbnail?: string | null;
+  category?: string | null;
+};
 
 export default function ArticleDetailPage() {
+  const { id } = useParams<{ id: string }>();
+
+  const [article, setArticle] = useState<ArticleDetail | null>(null);
+  const [latest, setLatest] = useState<LiteArticle[]>([]);
+  const [related, setRelated] = useState<LiteArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancel = false;
+    const source = axios.CancelToken.source();
+
+    (async () => {
+      try {
+        setLoading(true);
+
+        // فچ دیتیل مقاله
+        const { data: a } = await axios.get<ArticleDetail>(
+          `/api/articles/${encodeURIComponent(id)}`,
+          { cancelToken: source.token }
+        );
+        console.log("📄 Article detail:", a);
+        if (!cancel) setArticle(a);
+
+        // فچ آخرین مقالات
+        const { data: l } = await axios.get<{ items: LiteArticle[] }>(
+          `/api/articles`,
+          { params: { perPage: 4, showStatus: 1 }, cancelToken: source.token }
+        );
+        console.log("📰 Latest articles:", l);
+        if (!cancel) setLatest(l.items || []);
+
+        // فچ مقالات مشابه
+        if (a?.category) {
+          const { data: r } = await axios.get<{ items: LiteArticle[] }>(
+            `/api/articles`,
+            {
+              params: { perPage: 3, showStatus: 1, category: a.category },
+              cancelToken: source.token,
+            }
+          );
+          console.log("🔗 Related articles:", r);
+
+          const rel = (r.items || []).filter((x) => x.id !== a.id);
+          if (!cancel) setRelated(rel);
+        }
+      } catch (err) {
+        if (!axios.isCancel(err)) {
+          console.error("axios error:", err);
+        }
+      } finally {
+        if (!cancel) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancel = true;
+      source.cancel("route changed");
+    };
+  }, [id]);
+
   const latestPosts = useMemo(
     () =>
       Array.from({ length: 4 }, (_, i) => ({
@@ -44,23 +145,30 @@ export default function ArticleDetailPage() {
 
   return (
     <main className="  px-3 lg:px-8 py-6">
-      {/* <HeaderBar /> */}
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
           { label: "مقالات", href: "/" },
-          { label: "آموزش فارکس", href: "/" },
-          {
-            label:
-              "چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق",
-          },
+          { label: article?.category || "—", href: "/" },
+          { label: article?.title || "..." },
         ]}
       />
       <div className="hidden lg:grid lg:grid-cols-13 gap-2 mt-6">
         <section className="lg:col-span-9 space-y-8">
           <div>
-            <HeroCard />
-            <ArticleBody />
+            {article && (
+              <HeroCard
+                title={article.title}
+                introduction={article.Introduction}
+                thumbnail={article.thumbnail}
+                createdAt={article.createdAt}
+                viewCount={article.viewCount}
+                category={article.category}
+              />
+            )}
+
+            <ArticleBody mainText={article?.mainText} />
+
             <div className="flex items-start gap-4 my-6">
               <Thumbnaill />
               <InlineNextCard />
@@ -84,25 +192,25 @@ export default function ArticleDetailPage() {
 // Components
 // —————————————————————————————————————————
 
-function HeaderBar() {
-  return (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center gap-2.5 text-base text-[#757878] font-normal">
-        <span className="i-tabler-home-2" />
-        <span>مای پراپ</span>
-        <span className="mx-1">&gt;</span>
-        <span>مقالات</span>
-        <span className="mx-1">&gt;</span>
-        <span>آموزش فارکس</span>
-        <span className="mx-1">&gt;</span>
-        <span className="text-slate-900 font-medium">
-          چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
-        </span>
-      </div>
-      <div className="hidden sm:flex items-center gap-2"></div>
-    </div>
-  );
-}
+// function HeaderBar() {
+//   return (
+//     <div className="flex items-center justify-between py-2">
+//       <div className="flex items-center gap-2.5 text-base text-[#757878] font-normal">
+//         <span className="i-tabler-home-2" />
+//         <span>مای پراپ</span>
+//         <span className="mx-1">&gt;</span>
+//         <span>مقالات</span>
+//         <span className="mx-1">&gt;</span>
+//         <span>آموزش فارکس</span>
+//         <span className="mx-1">&gt;</span>
+//         <span className="text-slate-900 font-medium">
+//           چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
+//         </span>
+//       </div>
+//       <div className="hidden sm:flex items-center gap-2"></div>
+//     </div>
+//   );
+// }
 
 function Divider() {
   return (
@@ -191,44 +299,52 @@ function SidebarCard({
   );
 }
 
-function HeroCard() {
+function HeroCard({
+  title,
+  introduction,
+  thumbnail,
+  createdAt,
+  viewCount,
+  category,
+}: HeroCardProps) {
   return (
-    <article className=" overflow-hidden ">
-      <h3 className="my-3 text-base font-medium leading-9 text-slate-900">
-        راهکارهای مؤثر برای معامله‌گران موفق{" "}
-      </h3>
+    <article className="overflow-hidden">
+      {introduction && (
+        <h3 className="my-3 text-base font-medium leading-9 text-slate-900">
+          {introduction}
+        </h3>
+      )}
+
       <h1 className="my-3 text-2xl font-bold leading-9 text-slate-900">
-        چگونه در فارکس ضرر نکنیم؛ راهکارهای موثر برای معامله‌گران موفق
+        {title}
       </h1>
+
       <div className="relative">
-        {" "}
         <div className="flex flex-wrap items-center gap-3 my-3 text-xs text-[#2E3232]">
-          <Image
-            src="/svg/time.svg"
-            alt="cover"
-            width={24.367347717285156}
-            height={24.367347717285156}
-          />
-          <span>منتشر شده: همین حالا</span>
+          <Image src="/svg/time.svg" alt="time" width={24} height={24} />
+          <span>منتشر شده: {timeAgoFa(createdAt)}</span>
           <span>,</span>
-          <Image src="/svg/eye.svg" alt="cover" width={18} height={14} />
-          <span>۲۴۴ بازدید</span>
+          <Image src="/svg/eye.svg" alt="views" width={18} height={14} />
+          <span>{(viewCount ?? 0).toLocaleString("fa-IR")} بازدید</span>
         </div>
+
         <div className="relative h-72 sm:h-96">
-          <Thumbnail />
+          <Thumbnail thumbnail={thumbnail} category={category ?? undefined} />
         </div>
       </div>
-      <div className="my-6">
-        <p className="mt-3 text-[#4A5054] text-lg leading-7">
-          با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های لحظه‌ای،
-          ما به تو کمک می‌کنیم تا فرصت‌ها را زودتر ببینی، دقیق‌تر تحلیل کنی و
-          هوشمندانه‌تر معامله کنی.
-        </p>
-      </div>{" "}
+
+      {introduction && (
+        <div className="my-6">
+          <p className="mt-3 text-[#4A5054] text-lg leading-7">
+            {introduction}
+          </p>
+        </div>
+      )}
+
       <SummaryDropdown
-        title="خلاصه انچه در مقاله میخوانیم"
+        title="خلاصه آنچه در مقاله می‌خوانیم"
         items={[
-          { id: 1, text: "چگونه در فارکس ضرر نکنیم", href: "#" },
+          { id: 1, text: title ?? "—", href: "#" },
           { id: 2, text: "مدیریت ریسک در معاملات" },
         ]}
       />
@@ -236,18 +352,17 @@ function HeroCard() {
   );
 }
 
-function Thumbnail() {
+function Thumbnail({ thumbnail, category }: ThumbnailProps) {
   return (
     <div>
-      {" "}
       <div className="relative h-72 sm:h-96">
         <Image
-          src="/image/a.png"
+          src={thumbnail || "/image/a.png"}
           alt="cover"
           fill
           className="object-cover rounded-xl"
         />
-      </div>{" "}
+      </div>
       <div>
         <Image
           src="/svg/Rectangle3.svg"
@@ -257,55 +372,58 @@ function Thumbnail() {
           className="absolute bottom-4 right-4 z-10 text-white text-xs px-3 py-1.5 rounded-sm"
         />
         <span className="absolute bottom-8 right-10 z-10 text-base font-semibold">
-          آموزش فارکس
+          {category || "—"}
         </span>
       </div>
     </div>
   );
 }
+function ArticleBody({ mainText }: { mainText?: string | null }) {
+  const text = mainText?.trim();
+  const isHTML = !!text && text.startsWith("<");
 
-function ArticleBody() {
   return (
     <div className=" bg-white  space-y-6 leading-8 text-lg text-slate-700">
-      <p className="my-6">
-        اجرای بی‌نقص استراتژی معاملاتی به مدیریت ریسک وابسته است. اینجا صرفاً
-        متن نمونه قرار گرفته است تا ترکیب فاصله‌گذاری و تایپوگرافی را نشان دهد.
-        لطفاً با محتوای واقعی خود جایگزین کنید.
-      </p>
-      <div className="border border-[#EBEBEB] px-6 ">
-        <Image
-          src="/svg/Frame.svg"
-          alt="cover"
-          width={32.57483673095703}
-          height={32.57483673095703}
-          className="my-5"
-        />
-        <p className="mx-4 text-lg font-bold text-[#1C2121]">
-          علیرضا عسکری در گفت و گو با خبرنگار مهر با بیان اینکه خبر ریزش سقف
-          آرامگاه اردشیر دوم در تخت جمشید صحت ندارد، گفت: بررسی‌های کارشناسان
-          این مجموعه از این آرامگاه عوارضی که بر سقف و دیواره این بنا مشاهده
-          می‌شود.
-        </p>
-        <Image
-          src="/svg/Frame.svg"
-          alt="cover"
-          width={32.57483673095703}
-          height={32.57483673095703}
-          className="block my-5 mr-auto rotate-180"
-        />
-      </div>
-      <p className="mt-10">
-        با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های لحظه‌ای،
-        ما به تو کمک می‌کنیم تا فرصت‌ها را زودتر ببینی، دقیق‌تر تحلیل کنی و
-        هوشمندانه‌تر معامله کنی.با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی
-        مبتنی بر داده‌های لحظه‌ای، ما به تو کمک می‌کنیم تا فرصت‌ها را زودتر
-        ببینی، دقیق‌تر تحلیل کنی و هوشمندانه‌تر معامله کنی.با زیرساختی سریع،
-        پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های لحظه‌ای، ما به تو کمک
-        می‌کنیم تا فرصت‌ها را زودتر ببینی، دقیق‌تر تحلیل کنی و هوشمندانه‌تر
-        معامله کنی.با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های
-        لحظه‌ای، ما به تو کمک می‌کنیم تا فرصت‌ها را زودتر ببینی، دقیق‌تر تحلیل
-        کنی و هوشمندانه‌تر معامله کنی.
-      </p>
+      {text ? (
+        isHTML ? (
+          <div
+            className="leading-8 text-lg text-slate-700"
+            dangerouslySetInnerHTML={{ __html: text }}
+          />
+        ) : (
+          <p className="my-6 whitespace-pre-line">{text}</p>
+        )
+      ) : (
+        <>
+          {/* متن پیش‌فرض صفحه‌ی شما، دست‌نخورده */}
+          <p className="my-6">
+            اجرای بی‌نقص استراتژی معاملاتی به مدیریت ریسک وابسته است...
+          </p>
+          <div className="border border-[#EBEBEB] px-6 ">
+            <Image
+              src="/svg/Frame.svg"
+              alt="cover"
+              width={32.57}
+              height={32.57}
+              className="my-5"
+            />
+            <p className="mx-4 text-lg font-bold text-[#1C2121]">
+              علیرضا عسکری ... مشاهده می‌شود.
+            </p>
+            <Image
+              src="/svg/Frame.svg"
+              alt="cover"
+              width={32.57}
+              height={32.57}
+              className="block my-5 mr-auto rotate-180"
+            />
+          </div>
+          <p className="mt-10">
+            با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های
+            لحظه‌ای...
+          </p>
+        </>
+      )}
     </div>
   );
 }
@@ -575,11 +693,3 @@ function RelatedCard({
     </article>
   );
 }
-
-
-
-
-
-
-
-

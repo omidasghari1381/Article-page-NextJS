@@ -1,67 +1,47 @@
-import { NextResponse } from "next/server";
-
-import { ArticlesService } from "@/server/modules/articles/services/articles.service";
-import { UploadsService } from "@/server/modules/uploads/services/uploads.service";
-import { AppDataSource } from "@/server/lib/datasource";
-import { ArticleRepository } from "@/server/modules/articles/repository/article.repository";
-
-let _service: ArticlesService | null = null;
-async function getService(): Promise<ArticlesService> {
-  if (_service) return _service;
-  if (!AppDataSource.isInitialized) await AppDataSource.initialize();
-  const repo = new ArticleRepository(AppDataSource);
-  const uploads = new UploadsService();
-  _service = new ArticlesService(repo, uploads);
-  return _service;
-}
+import { NextRequest, NextResponse } from "next/server";
+import { getDataSource } from "@/server/db/typeorm.datasource";
+import { Article } from "@/server/modules/articles/entities/article.entity";
 
 export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } }
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
 ) {
   try {
-    const service = await getService();
-    const result = await service.getArticle(1, params.id);
-    return NextResponse.json(result, { status: 200 });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { message: "Failed to fetch article" },
-      { status: 500 }
-    );
-  }
-}
+    console.log(ctx.params);
+    const { id } = await ctx.params;
+    const ds = await getDataSource();
+    const repo = ds.getRepository(Article);
+    const item = await repo.findOne({
+      where: { id },
+      relations: ["author"],
+    });
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const service = await getService();
-    const result = await service.deleteArticle(params.id);
-    return NextResponse.json(result, { status: 200 });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { message: "Failed to delete article" },
-      { status: 500 }
-    );
-  }
-}
+    if (!item) {
+      return NextResponse.json({ error: "NotFound" }, { status: 404 });
+    }
 
-export async function PATCH(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const service = await getService();
-    const result = await service.changeArticleStatus(params.id);
-    return NextResponse.json(result, { status: 200 });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { message: "Failed to change status" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      id: item.id,
+      title: item.title,
+      subject: item.subject, // ✅ جدید
+      category: item.category,
+      readingPeriod: item.readingPeriod,
+      showStatus: item.showStatus,
+      viewCount: item.viewCount,
+      thumbnail: item.thumbnail,
+      Introduction: item.Introduction,
+      mainText: item.mainText,
+      author: item.author
+        ? {
+            id: (item.author as any).id,
+            firstName: (item.author as any).firstName,
+            lastName: (item.author as any).lastName,
+          }
+        : null,
+      createdAt: item.createdAt,
+    });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "ServerError" }, { status: 500 });
   }
 }

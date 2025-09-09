@@ -1,14 +1,29 @@
+import "reflect-metadata";
 import { DataSource } from "typeorm";
+import { User } from "@/server/modules/users/entities/user.entity";
 import { Article } from "@/server/modules/articles/entities/article.entity";
-import { User } from "../modules/users/entities/user.entity";
+import { ENTITIES } from "./entities";
 
-export const AppDataSource = new DataSource({
-  type: "mysql",
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT ?? 3306),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  entities: [Article, User],
-  synchronize: true,
-});
+let ds: DataSource | null = null;
+
+export async function getDataSource(): Promise<DataSource> {
+  if (ds?.isInitialized) return ds;
+
+  ds = new DataSource({
+    type: "mysql", 
+    url: process.env.DATABASE_URL ?? undefined,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : undefined,
+    username: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    entities: [...ENTITIES], // مهم: فقط از یک مرجع
+    synchronize: true, 
+    logging: false,
+  });
+
+  if (!ds.isInitialized) {
+    await ds.initialize();
+  }
+  return ds;
+}

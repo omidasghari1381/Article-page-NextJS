@@ -1,56 +1,169 @@
-import { NextResponse } from "next/server";
-import { plainToInstance } from "class-transformer";
-import { validate } from "class-validator";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // اطمینان بده export شده
+import { getDataSource } from "@/server/db/typeorm.datasource";
 
-import { ArticlesService } from "@/server/modules/articles/services/articles.service";
-import { UploadsService } from "@/server/modules/uploads/services/uploads.service";
-import { AppDataSource } from "@/server/lib/datasource";
-import { ArticleRepository } from "@/server/modules/articles/repository/article.repository";
-import { CreateArticleDto } from "@/server/modules/articles/dto/createArticle.dto";
+import { Article } from "@/server/modules/articles/entities/article.entity";
+import { User } from "@/server/modules/users/entities/user.entity";
+import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
 
-let _service: ArticlesService | null = null;
-async function getService(): Promise<ArticlesService> {
-  if (_service) return _service;
-  if (!AppDataSource.isInitialized) await AppDataSource.initialize();
-  const repo = new ArticleRepository(AppDataSource);
-  const uploads = new UploadsService();
-  _service = new ArticlesService(repo, uploads);
-  return _service;
-}
+const CreateArticleSchema = z.object({
+  title: z.string().min(2).max(200),
+  authorId: z.string().uuid().optional(),
+  subject: z.string().min(1),
+  mainText: z.string().min(1),
+  thumbnail: z
+    .string()
+    .max(2000)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  Introduction: z.string().max(5000).optional(),
+  category: z.nativeEnum(articleCategoryEnum),
+  showStatus: z.boolean().optional().default(false),
+  readingPeriod: z.string().min(1).max(256),
+});
 
-export async function POST(req: Request) {
+const ListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  perPage: z.coerce.number().int().min(1).max(100).default(10),
+  category: z.nativeEnum(articleCategoryEnum).optional(),
+  q: z.string().trim().optional(),
+  showStatus: z.enum(["0", "1"]).optional(),
+});
+
+export async function POST(req: NextRequest) {
   try {
+    const ds = await getDataSource();
     const body = await req.json();
-    const dto = plainToInstance(CreateArticleDto, body);
-    const errors = await validate(dto);
-    if (errors.length) {
-      return NextResponse.json({ errors }, { status: 400 });
+    const parsed = CreateArticleSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "ValidationError", details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
 
-    const service = await getService();
-    const result = await service.createArticle(dto, dto.thumbnail);
-    return NextResponse.json(result, { status: 201 });
-  } catch (err) {
-    console.error(err);
+    const session = await getServerSession(authOptions);
+    const authorId = (session?.user as any)?.id || parsed.data.authorId;
+
+    if (!authorId) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized",
+          message: "شناسه نویسنده پیدا نشد. ابتدا وارد حساب شوید.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const userRepo = ds.getRepository(User);
+    const author = await userRepo.findOne({ where: { id: authorId } });
+    if (!author) {
+      return NextResponse.json(
+        { error: "NotFound", message: "کاربر نویسنده یافت نشد." },
+        { status: 404 }
+      );
+    }
+
+    const articleRepo = ds.getRepository(Article);
+
+    const article = articleRepo.create({
+      title: parsed.data.title,
+      subject: parsed.data.subject, // ✅ جدید
+      author,
+      mainText: parsed.data.mainText,
+      thumbnail: parsed.data.thumbnail || null,
+      Introduction: parsed.data.Introduction || null,
+      category: parsed.data.category,
+      showStatus: parsed.data.showStatus ?? false,
+      readingPeriod: parsed.data.readingPeriod,
+    });
+
+    const saved = await articleRepo.save(article);
+
+    return NextResponse.json({ success: true, id: saved.id }, { status: 201 });
+  } catch (err: any) {
+    console.error("POST /api/articles error:", err);
     return NextResponse.json(
-      { message: "Failed to create article" },
+      { error: "ServerError", message: "مشکل داخلی سرور" },
       { status: 500 }
     );
   }
 }
 
-export async function GET(req: Request) {
+// ---------- GET /api/articles  (List with filters)
+export async function GET(req: NextRequest) {
   try {
+    const ds = await getDataSource();
     const { searchParams } = new URL(req.url);
-    const page = Number(searchParams.get("page") ?? "1");
 
-    const service = await getService();
-    const result = await service.getArticle(page);
-    return NextResponse.json(result, { status: 200 });
-  } catch (err) {
-    console.error(err);
+    const parsed = ListQuerySchema.safeParse({
+      page: searchParams.get("page") ?? undefined,
+      perPage: searchParams.get("perPage") ?? undefined,
+      category: searchParams.get("category") ?? undefined,
+      q: searchParams.get("q") ?? undefined,
+      showStatus: searchParams.get("showStatus") ?? undefined,
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "ValidationError", details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { page, perPage, category, q, showStatus } = parsed.data;
+    const skip = (page - 1) * perPage;
+
+    const articleRepo = ds.getRepository(Article);
+
+    // ساخت where داینامیک
+    const where: any = {};
+    if (category) where.category = category;
+    if (typeof showStatus !== "undefined")
+      where.showStatus = showStatus === "1";
+
+    // QueryBuilder برای سرچِ q در title/Introduction
+    const qb = articleRepo
+      .createQueryBuilder("a")
+      .leftJoinAndSelect("a.author", "author")
+      .where(where);
+
+    if (q) {
+      qb.andWhere("(a.title LIKE :q OR a.Introduction LIKE :q)", {
+        q: `%${q}%`,
+      });
+    }
+
+    qb.orderBy("a.createdAt", "DESC").skip(skip).take(perPage);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    return NextResponse.json({
+      page,
+      perPage,
+      total,
+      items: items.map((it) => ({
+        id: it.id,
+        title: it.title,
+        category: it.category,
+        readingPeriod: it.readingPeriod,
+        showStatus: it.showStatus,
+        viewCount: it.viewCount,
+        thumbnail: it.thumbnail,
+        author: {
+          id: (it.author as any)?.id,
+          firstName: (it.author as any)?.firstName,
+          lastName: (it.author as any)?.lastName,
+        },
+        createdAt: it.createdAt,
+      })),
+    });
+  } catch (err: any) {
+    console.error("GET /api/articles error:", err);
     return NextResponse.json(
-      { message: "Failed to fetch articles" },
+      { error: "ServerError", message: "مشکل داخلی سرور" },
       { status: 500 }
     );
   }

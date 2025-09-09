@@ -19,8 +19,8 @@ export class FAQ extends AbstractEntity {
   answer!: string;
 
   @Column({
-    type: "text",
-    enum: true,
+    type: "simple-enum",
+    enum: faqCategory,
   })
   category!: faqCategory;
 }
