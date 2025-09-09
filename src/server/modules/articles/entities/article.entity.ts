@@ -24,17 +24,13 @@ export class Article extends AbstractEntity {
   })
   secondryText!: string;
 
-  @Column({
-    type: "text",
-    nullable: false,
-  })
-  boldText!: string;
 
   @Column({
     type: "text",
     nullable: false,
   })
   subject!: string;
+  
   @Column({
     type: "text",
     nullable: true,
@@ -46,6 +42,12 @@ export class Article extends AbstractEntity {
     nullable: true,
   })
   Introduction!: string | null;
+
+  @Column({
+    type: "text",
+    nullable: true,
+  })
+  quotes!: string | null;
 
   @Column({ type: "varchar", length: 64 })
   category!: articleCategoryEnum;

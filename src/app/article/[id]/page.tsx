@@ -1,4 +1,5 @@
 "use client";
+
 import Breadcrumb from "@/components/Breadcrumb";
 import RepliesAccordion from "@/components/Reply";
 import SummaryDropdown from "@/components/Summery";
@@ -18,10 +19,12 @@ type ArticleDetail = {
   viewCount: number;
   thumbnail: string | null;
   Introduction: string | null;
+  quotes: string | null;
   mainText: string;
   secondryText: string;
-  author: { id: string; firstName: string; lastName: string } | null;
+  author: { id: string; firstName: string; lastName: string };
   createdAt: string;
+  summery: string[];
 };
 
 type LiteArticle = {
@@ -32,20 +35,30 @@ type LiteArticle = {
   category: string;
   thumbnail: string | null;
 };
+type Author = { id: string; firstName: string; lastName: string };
+interface InlineNextCardProps {
+  author?: Author | null;
+  createdAt?: string | null;
+  subject?: string | null;
+  readingPeriod?: string | null;
+}
 
 type HeroCardProps = {
-  title: string;
-  subject: string;
+  title?: string;
+  subject?: string;
   introduction?: string | null;
+  quotes?: string | null;
   thumbnail?: string | null;
-  createdAt: string;
-  viewCount: number;
+  readingPeriod?: string;
+  viewCount?: number;
   category?: string | null;
+  summery?: string[];
 };
 
 type ThumbnailProps = {
   thumbnail?: string | null;
   category?: string | null;
+  className?: string;
 };
 
 export default function ArticleDetailPage() {
@@ -69,14 +82,13 @@ export default function ArticleDetailPage() {
           `/api/articles/${encodeURIComponent(id)}`,
           { cancelToken: source.token }
         );
-        console.log("📄 Article detail:", a);
+        console.log(a.createdAt);
         if (!cancel) setArticle(a);
 
         const { data: l } = await axios.get<{ items: LiteArticle[] }>(
           `/api/articles`,
           { params: { perPage: 4, showStatus: 1 }, cancelToken: source.token }
         );
-        console.log("📰 Latest articles:", l);
         if (!cancel) setLatest(l.items || []);
 
         if (a?.category) {
@@ -87,7 +99,6 @@ export default function ArticleDetailPage() {
               cancelToken: source.token,
             }
           );
-          console.log("🔗 Related articles:", r);
 
           const rel = (r.items || []).filter((x) => x.id !== a.id);
           if (!cancel) setRelated(rel);
@@ -143,50 +154,60 @@ export default function ArticleDetailPage() {
     []
   );
 
+  const A = article;
   return (
-    <main className="  px-3 lg:px-8 py-6">
+    <main className="px-3 lg:px-8 py-6">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
           { label: "مقالات", href: "/" },
-          { label: article?.category || "—", href: "/" },
-          { label: article?.title || "..." },
+          { label: A?.category || "—", href: "/" },
+          { label: A?.title || "..." },
         ]}
       />
+
       <div className="hidden lg:grid lg:grid-cols-13 gap-2 mt-6">
         <section className="lg:col-span-9 space-y-8">
           <div>
-            {article && (
-              <HeroCard
-                title={article.title}
-                subject={article.subject}
-                introduction={article.Introduction}
-                thumbnail={article.thumbnail}
-                createdAt={article.createdAt}
-                viewCount={article.viewCount}
-                category={article.category}
-              />
-            )}
+            <HeroCard
+              title={A?.title}
+              subject={A?.subject}
+              introduction={A?.Introduction}
+              thumbnail={A?.thumbnail}
+              readingPeriod={A?.readingPeriod}
+              viewCount={A?.viewCount}
+              category={A?.category}
+              summery={A?.summery}
+            />
 
             <ArticleBody
-              mainText={article?.mainText}
-              secondryText={article?.secondryText}
+              mainText={A?.mainText}
+              quotes={A?.quotes}
+              secondryText={A?.secondryText}
             />
 
             <div className="flex items-start gap-4 my-6">
-              <Thumbnaill />
-              <InlineNextCard />
+              <Thumbnaill thumbnail={A?.thumbnail} category={A?.category} />
+              <InlineNextCard
+                author={A?.author}
+                createdAt={A?.createdAt}
+                subject={A?.subject}
+                readingPeriod={A?.readingPeriod}
+              />
             </div>
           </div>
         </section>
+
         <aside className="lg:col-span-3 space-y-9 ">
           <SidebarLatest posts={latestPosts} />
-        </aside>{" "}
-      </div>{" "}
+        </aside>
+      </div>
+
       <div>
         <CommentsBlock comments={comments} />
         <RelatedArticles posts={relatedPosts} />
       </div>
+
       <Divider />
     </main>
   );
@@ -195,26 +216,6 @@ export default function ArticleDetailPage() {
 // —————————————————————————————————————————
 // Components
 // —————————————————————————————————————————
-
-// function HeaderBar() {
-//   return (
-//     <div className="flex items-center justify-between py-2">
-//       <div className="flex items-center gap-2.5 text-base text-[#757878] font-normal">
-//         <span className="i-tabler-home-2" />
-//         <span>مای پراپ</span>
-//         <span className="mx-1">&gt;</span>
-//         <span>مقالات</span>
-//         <span className="mx-1">&gt;</span>
-//         <span>آموزش فارکس</span>
-//         <span className="mx-1">&gt;</span>
-//         <span className="text-slate-900 font-medium">
-//           چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
-//         </span>
-//       </div>
-//       <div className="hidden sm:flex items-center gap-2"></div>
-//     </div>
-//   );
-// }
 
 function Divider() {
   return (
@@ -226,7 +227,7 @@ function Divider() {
 
 function SidebarLatest({ posts }: { posts: any[] }) {
   return (
-    <div className="">
+    <div>
       <div className="flex items-center gap-3 px-4 py-8 ">
         <Image
           src="/svg/Rectangle.svg"
@@ -262,7 +263,6 @@ function SidebarCard({
   return (
     <article className="group">
       <div className="w-[361.66650390625px] h-[236.80545043945312px]">
-        {" "}
         <div className="relative w-[361.66650390625px] h-[236.80545043945312px] rounded-md overflow-hidden">
           <Image
             src="/image/hero1.jpg"
@@ -283,10 +283,7 @@ function SidebarCard({
                 className="block"
                 priority
               />
-              <span
-                className="absolute inset-0 flex items-center justify-center
-                   text-white text-xs font-semibold leading-none px-2"
-              >
+              <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold leading-none px-2">
                 آموزش فارکس
               </span>
             </div>
@@ -306,138 +303,120 @@ function HeroCard({
   title,
   introduction,
   thumbnail,
-  createdAt,
   viewCount,
+  readingPeriod,
   subject,
   category,
+  summery,
 }: HeroCardProps) {
+  const items = (
+    summery && summery.length ? summery : ["چکیده ۱", "چکیده ۲", "چکیده ۳"]
+  ).map((t, i) => ({ id: i + 1, text: t }));
+
   return (
     <article className="overflow-hidden">
-      {introduction && (
+      {title ? (
         <h3 className="my-3 text-base font-medium leading-9 text-slate-900">
-          {introduction}
+          {title}
         </h3>
-      )}
+      ) : null}
 
       <h1 className="my-3 text-2xl font-bold leading-9 text-slate-900">
-        {title}
+        {subject || "—"}
       </h1>
 
       <div className="relative">
         <div className="flex flex-wrap items-center gap-3 my-3 text-xs text-[#2E3232]">
           <Image src="/svg/time.svg" alt="time" width={24} height={24} />
-          <span>منتشر شده: {timeAgoFa(createdAt)}</span>
+          <span>{readingPeriod || "—"}</span>
           <span>,</span>
           <Image src="/svg/eye.svg" alt="views" width={18} height={14} />
           <span>{(viewCount ?? 0).toLocaleString("fa-IR")} بازدید</span>
         </div>
 
         <div className="relative h-72 sm:h-96">
-          <Thumbnail thumbnail={thumbnail} category={category ?? undefined} />
+          <Thumbnail thumbnail={thumbnail} category={category ?? "—"} />
         </div>
       </div>
 
-      {introduction && (
+      {introduction ? (
         <div className="my-6">
           <p className="mt-3 text-[#4A5054] text-lg leading-7">
             {introduction}
           </p>
         </div>
-      )}
+      ) : null}
 
-      <SummaryDropdown
-        title="خلاصه آنچه در مقاله می‌خوانیم"
-        items={[
-          { id: 1, text: title ?? "—", href: "#" },
-          { id: 2, text: "مدیریت ریسک در معاملات" },
-        ]}
-      />
+      <SummaryDropdown title="خلاصه آنچه در مقاله می‌خوانیم" items={items} />
     </article>
   );
 }
 
-function Thumbnail({ thumbnail, category }: ThumbnailProps) {
+function Thumbnail({ thumbnail, category, className }: ThumbnailProps) {
+  const src = thumbnail && thumbnail.trim().length ? thumbnail : "/image/a.png";
+
   return (
-    <div>
-      <div className="relative h-72 sm:h-96">
-        <Image
-          src={thumbnail || "/image/a.png"}
-          alt="cover"
-          fill
-          className="object-cover rounded-xl"
-        />
-      </div>
-      <div>
-        <Image
-          src="/svg/Rectangle3.svg"
-          alt="cover"
-          width={145.64422607421875}
-          height={46.73657989501953}
-          className="absolute bottom-4 right-4 z-10 text-white text-xs px-3 py-1.5 rounded-sm"
-        />
-        <span className="absolute bottom-8 right-10 z-10 text-base font-semibold">
-          {category || "—"}
-        </span>
-      </div>
+    <div className={`relative h-72 sm:h-96 ${className ?? ""}`}>
+      <Image src={src} alt="cover" fill className="object-cover rounded-xl" />
+      <Image
+        src="/svg/Rectangle3.svg"
+        alt="cover"
+        width={145.64422607421875}
+        height={46.73657989501953}
+        className="absolute bottom-4 right-4 z-10 text-white text-xs px-3 py-1.5 rounded-sm"
+      />
+      <span className="absolute bottom-[30px] right-11 z-10 text-base font-semibold">
+        {category || "—"}
+      </span>
     </div>
   );
 }
+
 function ArticleBody({
+  quotes,
   mainText,
   secondryText,
 }: {
+  quotes?: string | null;
   mainText?: string | null;
   secondryText?: string | null;
 }) {
-  const firstText = mainText?.trim();
-  const isHTML = !!firstText && firstText.startsWith("<");
-
   return (
     <div className=" bg-white  space-y-6 leading-8 text-lg text-slate-700">
-      {firstText ? (
-        isHTML ? (
-          <div
-            className="leading-8 text-lg text-slate-700"
-            dangerouslySetInnerHTML={{ __html: firstText }}
+      <p className="my-6">{mainText || ""}</p>
+
+      {quotes ? (
+        <div className="border border-[#EBEBEB] px-6 ">
+          <Image
+            src="/svg/Frame.svg"
+            alt="cover"
+            width={32.57}
+            height={32.57}
+            className="my-5"
           />
-        ) : (
-          <p className="my-6 whitespace-pre-line">{firstText}</p>
-        )
-      ) : (
-        <>
-          <p className="my-6">
-            اجرای بی‌نقص استراتژی معاملاتی به مدیریت ریسک وابسته است...
-          </p>
-          <div className="border border-[#EBEBEB] px-6 ">
-            <Image
-              src="/svg/Frame.svg"
-              alt="cover"
-              width={32.57}
-              height={32.57}
-              className="my-5"
-            />
-            <p className="mx-4 text-lg font-bold text-[#1C2121]">
-              علیرضا عسکری ... مشاهده می‌شود.
-            </p>
-            <Image
-              src="/svg/Frame.svg"
-              alt="cover"
-              width={32.57}
-              height={32.57}
-              className="block my-5 mr-auto rotate-180"
-            />
-          </div>
-          <p className="mt-10">
-            با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های
-            لحظه‌ای...
-          </p>
-        </>
-      )}
+          <p className="mx-4 text-lg font-bold text-[#1C2121]">{quotes}</p>
+          <Image
+            src="/svg/Frame.svg"
+            alt="cover"
+            width={32.57}
+            height={32.57}
+            className="block my-5 mr-auto rotate-180"
+          />
+        </div>
+      ) : null}
+
+      <p className="mt-10">{secondryText || ""}</p>
     </div>
   );
 }
 
-function InlineNextCard() {
+function InlineNextCard({
+  author,
+  createdAt,
+  subject,
+  readingPeriod,
+}: InlineNextCardProps) {
+  const fullName = author ? `${author.firstName} ${author.lastName}` : "—";
   return (
     <div className="flex-1 min-w-0 rounded-2xl border border-[#E4E4E4] shadow-sm px-5 ">
       <div className="flex items-center text-[#3B3F3F] my-5">
@@ -449,30 +428,35 @@ function InlineNextCard() {
           className="object-cover rounded-full ml-3"
         />
         <span className="text-xs font-medium ">نوشته شده توسط </span>
-        <span className="text-xs font-medium">آرش موسوی</span>
+        <span className="text-xs font-medium">{fullName}</span>
       </div>
+
       <div className="min-w-0">
         <h4 className="font-bold text-slate-900 text-base truncate my-4">
-          چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
+          {subject}{" "}
         </h4>
+
         <div className="flex gap-4">
           <div className="mt-1 text-xs rounded-sm font-medium text-black  bg-[#E4E4E43B] w-[97.59028625488281px] h-[32.23965072631836px] flex items-center gap-2 my-4 px-2">
             <Image
               src="/svg/time.svg"
               alt="time"
-              width={14.377140045166016}
-              height={14.377140045166016}
+              width={14.38}
+              height={14.38}
             />
-            <span className="">یک روز پیش</span>
+            <span className="whitespace-nowrap">{readingPeriod} </span>
           </div>
+
           <div className="mt-1 text-xs rounded-sm font-medium text-black  bg-[#E4E4E43B] w-[97.59028625488281px] h-[32.23965072631836px] flex items-center gap-2 my-4 px-2">
             <Image
               src="/svg/calender.svg"
               alt="time"
-              width={14.377140045166016}
-              height={14.377140045166016}
+              width={14.38}
+              height={14.38}
             />
-            <span className="">5 روز پیش</span>
+            <span className="whitespace-nowrap">
+              {createdAt ? timeAgoFa(createdAt) : "—"}
+            </span>
           </div>
         </div>
       </div>
@@ -480,15 +464,16 @@ function InlineNextCard() {
   );
 }
 
-function Thumbnaill() {
+function Thumbnaill({ thumbnail, category, className }: ThumbnailProps) {
+  const src = thumbnail && thumbnail.trim().length ? thumbnail : "/image/a.png";
+
   return (
-    <div className="relative h-[163.5px] w-[291.14px] shrink-0">
-      <Image
-        src="/image/a.png"
-        alt="cover"
-        fill
-        className="object-cover rounded-xl"
-      />
+    <div
+      className={
+        "relative h-[163.5px] w-[291.14px] shrink-0 " + (className ?? "")
+      }
+    >
+      <Image src={src} alt="cover" fill className="object-cover rounded-xl" />
       <Image
         src="/svg/Rectangle3.svg"
         alt="badge"
@@ -497,7 +482,7 @@ function Thumbnaill() {
         className="absolute bottom-2 right-2 pointer-events-none"
       />
       <span className="absolute bottom-3.5 right-5 z-10 text-xs font-semibold">
-        آموزش فارکس
+        {category || "—"}
       </span>
     </div>
   );
@@ -525,7 +510,7 @@ function CommentsBlock({ comments }: { comments: any[] }) {
           </h3>
         </div>
         <AddComment />
-      </section>{" "}
+      </section>
       <div className="mt-6 space-y-5">
         {comments.map((c) => (
           <CommentItem key={c.id} {...c} />
@@ -596,7 +581,6 @@ function CommentItem({
           </div>
           <div className=" flex justify-between items-center gap-3">
             <button className="w-[42.666526794433594px] h-[42.666526794433594px] rounded-md flex justify-center items-center">
-              {" "}
               <Image
                 src={"/svg/dislike.svg"}
                 alt="dislike"
@@ -606,7 +590,6 @@ function CommentItem({
               />
             </button>
             <button className="w-[42.666526794433594px] h-[42.666526794433594px] rounded-md bg-[#E8FAF6] flex justify-center items-center">
-              {" "}
               <Image
                 src={"/svg/like.svg"}
                 alt="like"
@@ -632,7 +615,7 @@ function CommentItem({
         </p>
         <div className="mt-3 flex items-center gap-2 text-xs text-slate-500"></div>
       </div>
-      <RepliesAccordion className="mt-1" />{" "}
+      <RepliesAccordion className="mt-1" />
     </article>
   );
 }
@@ -674,27 +657,6 @@ function RelatedCard({
 }) {
   return (
     <article className="group ">
-      {/* <div className="relative aspect-[16/9] bg-slate-50">
-        <Image
-          src="/placeholder-1280x720.jpg"
-          alt="related"
-          fill
-          className="object-cover"
-        />
-        <button className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs shadow">
-          آموزش
-        </button>
-      </div> */}
-      {/* <div className="p-4">
-        <h4 className="font-bold text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-2">
-          {title}
-        </h4>
-        <div className="mt-2 text-xs text-slate-500 flex items-center gap-2">
-          <span>{date}</span>
-          <span className="w-1 h-1 rounded-full bg-slate-300" />
-          <span>{readTime}</span>
-        </div>
-      </div> */}
       <div className="flex items-start gap-4 my-6">
         <Thumbnaill />
         <InlineNextCard />

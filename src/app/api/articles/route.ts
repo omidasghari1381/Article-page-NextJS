@@ -20,6 +20,7 @@ const CreateArticleSchema = z.object({
     .optional()
     .or(z.literal("").transform(() => undefined)),
   Introduction: z.string().max(5000).optional(),
+  quotes: z.string().max(5000).optional(),
   category: z.nativeEnum(articleCategoryEnum),
   showStatus: z.boolean().optional().default(false),
   readingPeriod: z.string().min(1).max(256),
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
       secondryText: parsed.data.secondryText,
       thumbnail: parsed.data.thumbnail || null,
       Introduction: parsed.data.Introduction || null,
+      quotes: parsed.data.quotes || null,
       category: parsed.data.category,
       showStatus: parsed.data.showStatus ?? false,
       readingPeriod: parsed.data.readingPeriod,
@@ -133,7 +135,7 @@ export async function GET(req: NextRequest) {
       .where(where);
 
     if (q) {
-      qb.andWhere("(a.title LIKE :q OR a.Introduction LIKE :q)", {
+      qb.andWhere("(a.title LIKE :q )", {
         q: `%${q}%`,
       });
     }
@@ -155,6 +157,7 @@ export async function GET(req: NextRequest) {
         viewCount: it.viewCount,
         summery: it.summery,
         thumbnail: it.thumbnail,
+        quotes: it.quotes,
         author: {
           id: (it.author as any)?.id,
           firstName: (it.author as any)?.firstName,

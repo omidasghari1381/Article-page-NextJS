@@ -11,12 +11,13 @@ type ArticleCreatePayload = {
   authorId?: string;
   category: articleCategoryEnum;
   Introduction: string | null;
+  quotes: string | null;
   mainText: string;
   secondryText: string;
   thumbnail: string | null;
   showStatus: boolean;
   readingPeriod: string;
-  summery: string[]; 
+  summery: string[];
 };
 
 export default function Page() {
@@ -78,6 +79,7 @@ function ArticleForm() {
     authorId: string;
     category: "" | articleCategoryEnum;
     Introduction: string;
+    quotes: string;
     mainText: string;
     secondryText: string;
     thumbnail: string;
@@ -89,6 +91,7 @@ function ArticleForm() {
     authorId: "",
     category: "",
     Introduction: "",
+    quotes: "",
     mainText: "",
     secondryText: "",
     thumbnail: "",
@@ -169,6 +172,7 @@ function ArticleForm() {
       authorId: form.authorId || undefined,
       category: form.category as articleCategoryEnum,
       Introduction: form.Introduction || null,
+      quotes: form.quotes || null,
       mainText: form.mainText,
       secondryText: form.secondryText,
       thumbnail: form.thumbnail || null,
@@ -349,6 +353,19 @@ function ArticleForm() {
                 maxLength={600}
               />
             </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm text-black mb-2">نقل قول</label>
+                <CharCounter value={form.quotes} max={600} />
+              </div>
+              <textarea
+                className="w-full min-h-[120px]  text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                placeholder="متن نقل قول رو بنویسید"
+                value={form.quotes}
+                onChange={handleChange("quotes")}
+                maxLength={600}
+              />
+            </div>
 
             <div>
               <label className="block text-sm text-black mb-2">
@@ -452,6 +469,7 @@ function ArticleForm() {
                     authorId: "",
                     category: "",
                     Introduction: "",
+                    quotes: "",
                     mainText: "",
                     secondryText: "",
                     thumbnail: "",

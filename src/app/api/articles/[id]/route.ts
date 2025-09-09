@@ -19,17 +19,21 @@ export async function GET(
     if (!item) {
       return NextResponse.json({ error: "NotFound" }, { status: 404 });
     }
+    item.viewCount = (item.viewCount ?? 0) + 1;
+    await repo.save(item);
 
     return NextResponse.json({
       id: item.id,
       title: item.title,
-      subject: item.subject, 
+      subject: item.subject,
       category: item.category,
       readingPeriod: item.readingPeriod,
       showStatus: item.showStatus,
       viewCount: item.viewCount,
       thumbnail: item.thumbnail,
       Introduction: item.Introduction,
+      quotes: item.quotes,
+      summery: item.summery,
       mainText: item.mainText,
       secondryText: item.secondryText,
       author: item.author

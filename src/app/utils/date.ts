@@ -20,7 +20,7 @@ export function parseMySQLDate(str: string): Date {
 
 // نمایش نسبی فارسی (دقیقه/ساعت/روز)
 export function timeAgoFa(mysqlDate: string): string {
-
+  console.log(mysqlDate);
   const date = parseMySQLDate(mysqlDate);
   if (isNaN(date.getTime())) return "تاریخ نامعتبر";
 
