@@ -118,6 +118,7 @@ export default function HomePage() {
       <div className="px-20 pb-10">
         <Chosen
           categories={categories}
+          article={article}
           selected={selected}
           onSelect={setSelected}
         />
@@ -141,10 +142,12 @@ export default function HomePage() {
 }
 
 function Chosen({
+  article,
   categories,
   selected,
   onSelect,
 }: {
+  article: Latest | null;
   categories: articleCategoryEnum[];
   selected: articleCategoryEnum | null;
   onSelect: (v: articleCategoryEnum | null) => void;
@@ -185,36 +188,36 @@ function Chosen({
           </button>
         ))}
       </div>
-      {/* <Article article={} /> */}
+      <Article article={article} />
     </div>
   );
 }
 
-function Article({ article }: { article: Latest }) {
+function Article({ article }: { article: Latest | null }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center mb-15">
       <Image
-        src={article.thumbnail ?? "/image/a.png"}
+        src={article?.thumbnail ?? "/image/a.png"}
         alt="thumb"
         width={159.5223846435547}
         height={88.8358154296875}
         className="rounded-sm"
       />
-      <div>
+      <div className="mx-4">
         <span className="text-xl font-semibold text-[#1C2121]">
-          {article.subject}
+          {article?.subject}
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ">
           <div className="gap-2 flex items-center ">
             <Image
-              src={"/avg/calender.svg"}
+              src={"/svg/calender.svg"}
               alt="thumb"
               width={21}
               height={21}
               className="rounded-sm"
             />
             <span className="text-sm text-[#373A41]">
-              {article.createdAt && timeAgoFa(article?.createdAt)}
+              {article?.createdAt && timeAgoFa(article?.createdAt)}
             </span>{" "}
           </div>
           <div className="gap-2 flex items-center ">
@@ -227,7 +230,7 @@ function Article({ article }: { article: Latest }) {
               className="rounded-sm"
             />
             <span className="text-sm text-[#373A41]">
-              بازدید {article.viewCount}
+              بازدید {article?.viewCount}
             </span>{" "}
           </div>
         </div>
