@@ -15,7 +15,6 @@ type ArticleCreatePayload = {
   mainText: string;
   secondryText: string;
   thumbnail: string | null;
-  showStatus: boolean;
   readingPeriod: string;
   summery: string[];
 };
@@ -84,7 +83,6 @@ function ArticleForm() {
     secondryText: string;
     thumbnail: string;
     readingPeriod: string;
-    showStatus: boolean;
   }>({
     title: "",
     subject: "",
@@ -96,7 +94,6 @@ function ArticleForm() {
     secondryText: "",
     thumbnail: "",
     readingPeriod: "",
-    showStatus: false,
   });
 
   const [summeryList, setSummeryList] = useState<string[]>([]);
@@ -176,7 +173,6 @@ function ArticleForm() {
       mainText: form.mainText,
       secondryText: form.secondryText,
       thumbnail: form.thumbnail || null,
-      showStatus: form.showStatus,
       readingPeriod: form.readingPeriod,
       summery: summeryList,
     };
@@ -252,23 +248,6 @@ function ArticleForm() {
                 value={form.readingPeriod}
                 onChange={handleChange("readingPeriod")}
               />
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
-              <span className="text-sm text-gray-700">نمایش عمومی</span>
-              <button
-                type="button"
-                onClick={() => handleChange("showStatus")(!form.showStatus)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                  form.showStatus ? "bg-green-500" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${
-                    form.showStatus ? "translate-x-5" : "translate-x-1"
-                  }`}
-                />
-              </button>
             </div>
 
             <div>
@@ -474,7 +453,6 @@ function ArticleForm() {
                     secondryText: "",
                     thumbnail: "",
                     readingPeriod: "",
-                    showStatus: false,
                     subject: "",
                   });
                   setSummeryList([]);

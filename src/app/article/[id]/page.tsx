@@ -4,10 +4,12 @@ import Breadcrumb from "@/components/Breadcrumb";
 import RepliesAccordion from "@/components/Reply";
 import SummaryDropdown from "@/components/Summery";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
 import { timeAgoFa } from "@/app/utils/date";
+import AddComment from "@/components/AddComment";
+import { SessionProvider } from "next-auth/react";
 
 type ArticleDetail = {
   id: string;
@@ -15,7 +17,6 @@ type ArticleDetail = {
   subject: string;
   category: string;
   readingPeriod: string;
-  showStatus: boolean;
   viewCount: number;
   thumbnail: string | null;
   Introduction: string | null;
@@ -31,34 +32,41 @@ type LiteArticle = {
   id: string;
   title: string;
   createdAt: string;
+  category: string;
+  author: { id: string; firstName: string; lastName: string };
+  thumbnail: string | null;
   readingPeriod: string;
+};
+
+type LikeArticle = {
+  id: string;
+  subject: string;
+  createdAt: string;
+  readingPeriod: string;
+  author: { id: string; firstName: string; lastName: string };
   category: string;
   thumbnail: string | null;
 };
-type Author = { id: string; firstName: string; lastName: string };
-interface InlineNextCardProps {
-  author?: Author | null;
-  createdAt?: string | null;
-  subject?: string | null;
-  readingPeriod?: string | null;
-}
 
-type HeroCardProps = {
-  title?: string;
-  subject?: string;
-  introduction?: string | null;
-  quotes?: string | null;
-  thumbnail?: string | null;
-  readingPeriod?: string;
-  viewCount?: number;
-  category?: string | null;
-  summery?: string[];
+type Author = { id: string; firstName: string; lastName: string };
+
+type Reply = {
+  id: string;
+  text: string;
+  createdAt: string;
+  updatedAt: string;
+  user: Author;
 };
 
-type ThumbnailProps = {
-  thumbnail?: string | null;
-  category?: string | null;
-  className?: string;
+type CommentWithReplies = {
+  id: string;
+  text: string;
+  createdAt: string;
+  updatedAt: string;
+  user: Author;
+  like: number;
+  dislike: number;
+  replies?: Reply[];
 };
 
 export default function ArticleDetailPage() {
@@ -66,8 +74,27 @@ export default function ArticleDetailPage() {
 
   const [article, setArticle] = useState<ArticleDetail | null>(null);
   const [latest, setLatest] = useState<LiteArticle[]>([]);
-  const [related, setRelated] = useState<LiteArticle[]>([]);
+  const [related, setRelated] = useState<LikeArticle | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [comments, setComments] = useState<CommentWithReplies[]>([]);
+  const [commentsTotal, setCommentsTotal] = useState(0);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+
+  const fetchComments = useCallback(async () => {
+    if (!id) return;
+    setCommentsLoading(true);
+    try {
+      const { data } = await axios.get(
+        `/api/articles/${encodeURIComponent(id)}/comments`,
+        { params: { skip: 0, take: 10, withReplies: 1 } }
+      );
+      setComments(data?.data || []);
+      setCommentsTotal(data?.total || 0);
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -82,33 +109,38 @@ export default function ArticleDetailPage() {
           `/api/articles/${encodeURIComponent(id)}`,
           { cancelToken: source.token }
         );
-        console.log(a.createdAt);
         if (!cancel) setArticle(a);
 
         const { data: l } = await axios.get<{ items: LiteArticle[] }>(
           `/api/articles`,
-          { params: { perPage: 4, showStatus: 1 }, cancelToken: source.token }
+          { params: { perPage: 4 }, cancelToken: source.token }
         );
         if (!cancel) setLatest(l.items || []);
 
         if (a?.category) {
-          const { data: r } = await axios.get<{ items: LiteArticle[] }>(
+          const { data: r } = await axios.get<{ items: LikeArticle[] }>(
             `/api/articles`,
             {
-              params: { perPage: 3, showStatus: 1, category: a.category },
+              params: { perPage: 4, category: a.category },
               cancelToken: source.token,
             }
           );
-
-          const rel = (r.items || []).filter((x) => x.id !== a.id);
-          if (!cancel) setRelated(rel);
+          const items = Array.isArray((r as any).items) ? (r.items as LikeArticle[]) : [];
+          const firstOther =
+          items.find((x) => x.id !== a.id) || null;
+          
+          if (!cancel) setRelated(firstOther);
         }
+
+        if (!cancel) await fetchComments();
       } catch (err) {
         if (!axios.isCancel(err)) {
           console.error("axios error:", err);
         }
       } finally {
-        if (!cancel) setLoading(false);
+        if (!cancel) {
+          setLoading(false);
+        }
       }
     })();
 
@@ -116,100 +148,72 @@ export default function ArticleDetailPage() {
       cancel = true;
       source.cancel("route changed");
     };
-  }, [id]);
-
-  const latestPosts = useMemo(
-    () =>
-      Array.from({ length: 4 }, (_, i) => ({
-        id: i + 1,
-        title: "عنوان نمونه برای جدیدترین مقالات",
-        date: "5 دقیقه پیش",
-        readTime: "7 دقیقه",
-        tag: i === 1 ? "آموزشی" : undefined,
-      })),
-    []
-  );
-
-  const comments = useMemo(
-    () =>
-      Array.from({ length: 5 }, (_, i) => ({
-        id: i + 1,
-        author: "کاربر نمونه",
-        avatar: "/placeholder-avatar.png",
-        time: "دوشنبه 17 بهمن 1401 ساعت 12:40",
-        text: "چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق",
-      })),
-    []
-  );
-
-  const relatedPosts = useMemo(
-    () =>
-      Array.from({ length: 1 }, (_, i) => ({
-        id: i + 1,
-        title:
-          "چگونه در فارکس ضرر نکنیم (راهکارهای موثر برای معامله‌گران موفق)",
-        date: "دیروز",
-        readTime: "7 دقیقه",
-      })),
-    []
-  );
+  }, [id, fetchComments]);
 
   const A = article;
+
   return (
-    <main className="px-3 lg:px-8 py-6">
-      <Breadcrumb
-        items={[
-          { label: "مای پراپ", href: "/" },
-          { label: "مقالات", href: "/" },
-          { label: A?.category || "—", href: "/" },
-          { label: A?.title || "..." },
-        ]}
-      />
+    <SessionProvider>
+      <main className="px-3 lg:px-8 py-6">
+        <Breadcrumb
+          items={[
+            { label: "مای پراپ", href: "/" },
+            { label: "مقالات", href: "/" },
+            { label: A?.category || "—", href: "/" },
+            { label: A?.title || "..." },
+          ]}
+        />
 
-      <div className="hidden lg:grid lg:grid-cols-13 gap-2 mt-6">
-        <section className="lg:col-span-9 space-y-8">
-          <div>
-            <HeroCard
-              title={A?.title}
-              subject={A?.subject}
-              introduction={A?.Introduction}
-              thumbnail={A?.thumbnail}
-              readingPeriod={A?.readingPeriod}
-              viewCount={A?.viewCount}
-              category={A?.category}
-              summery={A?.summery}
-            />
-
-            <ArticleBody
-              mainText={A?.mainText}
-              quotes={A?.quotes}
-              secondryText={A?.secondryText}
-            />
-
-            <div className="flex items-start gap-4 my-6">
-              <Thumbnaill thumbnail={A?.thumbnail} category={A?.category} />
-              <InlineNextCard
-                author={A?.author}
-                createdAt={A?.createdAt}
+        <div className="hidden lg:grid lg:grid-cols-13 gap-2 mt-6">
+          <section className="lg:col-span-9 space-y-8">
+            <div>
+              <HeroCard
+                title={A?.title}
                 subject={A?.subject}
+                introduction={A?.Introduction}
+                thumbnail={A?.thumbnail}
                 readingPeriod={A?.readingPeriod}
+                viewCount={A?.viewCount}
+                category={A?.category}
+                summery={A?.summery}
               />
+
+              <ArticleBody
+                mainText={A?.mainText}
+                quotes={A?.quotes}
+                secondryText={A?.secondryText}
+              />
+
+              <div className="flex items-start gap-4 my-6">
+                <Thumbnaill thumbnail={A?.thumbnail} category={A?.category} />
+                <InlineNextCard
+                  author={A?.author}
+                  createdAt={A?.createdAt}
+                  subject={A?.subject}
+                  readingPeriod={A?.readingPeriod}
+                />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <aside className="lg:col-span-3 space-y-9 ">
-          <SidebarLatest posts={latestPosts} />
-        </aside>
-      </div>
+          <aside className="lg:col-span-3 space-y-9 ">
+            <SidebarLatest posts={latest} />
+          </aside>
+        </div>
 
-      <div>
-        <CommentsBlock comments={comments} />
-        <RelatedArticles posts={relatedPosts} />
-      </div>
+        <div>
+          <CommentsBlock
+            comments={comments}
+            articleId={A?.id}
+            loading={commentsLoading}
+            onSubmitted={fetchComments}
+          />
+          <RelatedArticles post={related} />
+        </div>
 
-      <Divider />
-    </main>
+        <Divider />
+      </main>
+    </SessionProvider>
   );
 }
 
@@ -225,7 +229,7 @@ function Divider() {
   );
 }
 
-function SidebarLatest({ posts }: { posts: any[] }) {
+function SidebarLatest({ posts }: { posts: LiteArticle[] }) {
   return (
     <div>
       <div className="flex items-center gap-3 px-4 py-8 ">
@@ -242,30 +246,20 @@ function SidebarLatest({ posts }: { posts: any[] }) {
 
       <div className="px-4 pb-4 space-y-8">
         {posts.map((p) => (
-          <SidebarCard key={p.id} {...p} />
+          <SidebarCard key={p.id} post={p} />
         ))}
       </div>
     </div>
   );
 }
 
-function SidebarCard({
-  title,
-  date,
-  readTime,
-  tag,
-}: {
-  title: string;
-  date: string;
-  readTime: string;
-  tag?: string;
-}) {
+function SidebarCard({ post }: { post: LiteArticle }) {
   return (
     <article className="group">
-      <div className="w-[361.66650390625px] h-[236.80545043945312px]">
-        <div className="relative w-[361.66650390625px] h-[236.80545043945312px] rounded-md overflow-hidden">
+      <div className="w-[361.67px] h-[236.81px]">
+        <div className="relative w-[361.67px] h-[236.81px] rounded-md overflow-hidden">
           <Image
-            src="/image/hero1.jpg"
+            src={post.thumbnail || "/image/hero1.jpg"}
             alt="thumb"
             fill
             className="object-cover"
@@ -284,13 +278,13 @@ function SidebarCard({
                 priority
               />
               <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold leading-none px-2">
-                آموزش فارکس
+                {post.category}
               </span>
             </div>
           </div>
           <div className="absolute bottom-3 right-4 text-white">
             <h5 className="sm:text-base font-medium leading-7">
-              چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
+              {post.title}
             </h5>
           </div>
         </div>
@@ -298,6 +292,18 @@ function SidebarCard({
     </article>
   );
 }
+
+type HeroCardProps = {
+  title?: string;
+  subject?: string;
+  introduction?: string | null;
+  quotes?: string | null;
+  thumbnail?: string | null;
+  readingPeriod?: string;
+  viewCount?: number;
+  category?: string | null;
+  summery?: string[];
+};
 
 function HeroCard({
   title,
@@ -309,9 +315,9 @@ function HeroCard({
   category,
   summery,
 }: HeroCardProps) {
-  const items = (
-    summery && summery.length ? summery : ["چکیده ۱", "چکیده ۲", "چکیده ۳"]
-  ).map((t, i) => ({ id: i + 1, text: t }));
+  const items = (summery && summery.length ? summery : ["چکیده ۱", "چکیده ۲", "چکیده ۳"]).map(
+    (t, i) => ({ id: i + 1, text: t })
+  );
 
   return (
     <article className="overflow-hidden">
@@ -352,6 +358,12 @@ function HeroCard({
   );
 }
 
+type ThumbnailProps = {
+  thumbnail?: string | null;
+  category?: string | null;
+  className?: string;
+};
+
 function Thumbnail({ thumbnail, category, className }: ThumbnailProps) {
   const src = thumbnail && thumbnail.trim().length ? thumbnail : "/image/a.png";
 
@@ -361,8 +373,8 @@ function Thumbnail({ thumbnail, category, className }: ThumbnailProps) {
       <Image
         src="/svg/Rectangle3.svg"
         alt="cover"
-        width={145.64422607421875}
-        height={46.73657989501953}
+        width={145.64}
+        height={46.74}
         className="absolute bottom-4 right-4 z-10 text-white text-xs px-3 py-1.5 rounded-sm"
       />
       <span className="absolute bottom-[30px] right-11 z-10 text-base font-semibold">
@@ -410,6 +422,13 @@ function ArticleBody({
   );
 }
 
+type InlineNextCardProps = {
+  author?: Author | null;
+  createdAt?: string | null;
+  subject?: string | null;
+  readingPeriod?: string | null;
+};
+
 function InlineNextCard({
   author,
   createdAt,
@@ -418,26 +437,25 @@ function InlineNextCard({
 }: InlineNextCardProps) {
   const fullName = author ? `${author.firstName} ${author.lastName}` : "—";
   return (
-    <div className="flex-1 min-w-0 rounded-2xl border border-[#E4E4E4] shadow-sm px-5 ">
-      <div className="flex items-center text-[#3B3F3F] my-5">
+    <div className="flex-1 w-[555.1796264648438px] rounded-sm h-[163.46401977539062px] border border-[#E4E4E4] px-5 ">
+      <div className="flex items-center text-[#3B3F3F] my-5 ">
         <Image
           src="/image/author.png"
           alt="next"
-          width={33.35630798339844}
-          height={33.35630798339844}
+          width={33.36}
+          height={33.36}
           className="object-cover rounded-full ml-3"
         />
         <span className="text-xs font-medium ">نوشته شده توسط </span>
         <span className="text-xs font-medium">{fullName}</span>
       </div>
-
       <div className="min-w-0">
         <h4 className="font-bold text-slate-900 text-base truncate my-4">
           {subject}{" "}
         </h4>
 
         <div className="flex gap-4">
-          <div className="mt-1 text-xs rounded-sm font-medium text-black  bg-[#E4E4E43B] w-[97.59028625488281px] h-[32.23965072631836px] flex items-center gap-2 my-4 px-2">
+          <div className="mt-1 text-xs rounded-sm font-medium text-black  bg-[#E4E4E43B] w-[97.59px] h-[32.24px] flex items-center gap-2 my-4 px-2">
             <Image
               src="/svg/time.svg"
               alt="time"
@@ -447,7 +465,7 @@ function InlineNextCard({
             <span className="whitespace-nowrap">{readingPeriod} </span>
           </div>
 
-          <div className="mt-1 text-xs rounded-sm font-medium text-black  bg-[#E4E4E43B] w-[97.59028625488281px] h-[32.23965072631836px] flex items-center gap-2 my-4 px-2">
+          <div className="mt-1 text-xs rounded-sm font-medium text-black  bg-[#E4E4E43B] w-[97.59px] h-[32.24px] flex items-center gap-2 my-4 px-2">
             <Image
               src="/svg/calender.svg"
               alt="time"
@@ -488,7 +506,17 @@ function Thumbnaill({ thumbnail, category, className }: ThumbnailProps) {
   );
 }
 
-function CommentsBlock({ comments }: { comments: any[] }) {
+function CommentsBlock({
+  comments,
+  articleId,
+  loading,
+  onSubmitted,
+}: {
+  comments: CommentWithReplies[];
+  articleId: string | undefined;
+  loading: boolean;
+  onSubmitted: () => void;
+}) {
   return (
     <div className="rounded-sm bg-white border border-slate-200 p-5 sm:p-8 ">
       <section>
@@ -496,60 +524,47 @@ function CommentsBlock({ comments }: { comments: any[] }) {
           <Image
             src="/svg/Rectangle2.svg"
             alt="thumb"
-            width={5.731499671936035}
-            height={31.113859176635742}
+            width={5.73}
+            height={31.11}
           />
           <Image
             src="/svg/comment.svg"
             alt="thumb"
-            width={20.363636016845703}
-            height={20.363636016845703}
+            width={20.36}
+            height={20.36}
           />
           <h3 className="font-extrabold text-lg text-slate-900">
             نظرات کاربران
           </h3>
         </div>
-        <AddComment />
-      </section>
-      <div className="mt-6 space-y-5">
-        {comments.map((c) => (
-          <CommentItem key={c.id} {...c} />
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function AddComment() {
-  return (
-    <div className="border bg-[#F5F5F5] h-[69.81818389892578px] w-full order-[#DADADA] my-9 px-4 flex justify-between items-center rounded-lg">
-      <span className="text-sm font-medium text-[#171717]">
-        برای ثبت نظر خود وارد شوید.
-      </span>
-      <button className="bg-[#19CCA7] flex items-center justify-center w-[137px] h-[51px] rounded-md gap-1 text-sm">
-        ورود و ثبت نام
-        <Image
-          src="/svg/userWrite.svg"
-          alt="thumb"
-          width={20.363636016845703}
-          height={20.363636016845703}
-        />
-      </button>
+        <AddComment articleId={articleId} onSubmitted={onSubmitted} />
+      </section>
+
+      {loading ? (
+        <div className="mt-6 text-sm text-slate-500">در حال بارگیری نظرات…</div>
+      ) : (
+        <div className="mt-6 space-y-5">
+          {comments.map((c) => (
+            <CommentItem key={c.id} c={c} onSubmitted={onSubmitted} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 function CommentItem({
-  author,
-  avatar,
-  time,
-  text,
+  c,
+  onSubmitted,
 }: {
-  author: string;
-  avatar: string;
-  time: string;
-  text: string;
+  c: CommentWithReplies;
+  onSubmitted: () => void;
 }) {
+  const authorName =
+    [c.user?.firstName, c.user?.lastName].filter(Boolean).join(" ") || "—";
+  const when = c.createdAt ? timeAgoFa(c.createdAt) : "—";
+
   return (
     <article className="rounded-2xl border border-slate-200 p-4 shadow-xs bg-[#FBFBFB]">
       <div className=" gap-3">
@@ -558,109 +573,112 @@ function CommentItem({
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-1 ring-slate-200 bg-slate-100">
               <Image
                 src={"/image/guy2.png"}
-                alt={author}
-                width={45.57575607299805}
-                height={45.57575607299805}
+                alt={authorName}
+                width={45.58}
+                height={45.58}
                 className="object-cover"
               />
             </div>
             <div className="flex items-center justify-between gap-2 text-sm">
               <span className="font-semibold text-base text-slate-900">
-                {author}
+                {authorName}
               </span>
               <span className="text-slate-400">,</span>
               <Image
                 src={"/svg/CalendarM.svg"}
-                alt={author}
-                width={20.36363410949707}
-                height={20.36363410949707}
+                alt="date"
+                width={20.36}
+                height={20.36}
                 className="object-cover rounded-sm"
               />
-              <span className="text-[#1C2121] text-sm font-medium">{time}</span>
+              <span className="text-[#1C2121] text-sm font-medium">{when}</span>
             </div>
           </div>
           <div className=" flex justify-between items-center gap-3">
-            <button className="w-[42.666526794433594px] h-[42.666526794433594px] rounded-md flex justify-center items-center">
+            <button className="w-[42.67px] h-[42.67px] rounded-md flex justify-center items-center">
               <Image
                 src={"/svg/dislike.svg"}
                 alt="dislike"
-                width={18.131977081298896}
-                height={17.066246032714908}
+                width={18.13}
+                height={17.07}
                 className="object-cover rounded-sm"
               />
             </button>
-            <button className="w-[42.666526794433594px] h-[42.666526794433594px] rounded-md bg-[#E8FAF6] flex justify-center items-center">
+            <button className="w-[42.67px] h-[42.67px] rounded-md bg-[#E8FAF6] flex justify-center items-center">
               <Image
                 src={"/svg/like.svg"}
                 alt="like"
-                width={18.131977081298896}
-                height={17.066246032714908}
+                width={18.13}
+                height={17.07}
                 className="object-cover rounded-sm"
               />
             </button>
-            <button className="h-[42.666526794433594px] w-[84.26638793945312px] rounded-md flex justify-center items-center bg-[#E8FAF6]">
+            <button
+              onClick={async () => {
+                try {
+                  await axios.post(`/api/comments/${c.id}/replies`, {
+                    userId: c.user.id,
+                    text: "این یک پاسخ تستی است",
+                  });
+                  onSubmitted();
+                } catch (e) {
+                  console.error("خطا در ثبت ریپلای:", e);
+                }
+              }}
+              className="h-[42.67px] w-[84.27px] rounded-md flex justify-center items-center bg-[#E8FAF6]"
+            >
               <span className="text-[#19CCA7] text-base">پاسخ</span>
               <Image
                 src={"/svg/reply.svg"}
-                alt="dislike"
-                width={18.131977081298896}
-                height={17.066246032714908}
+                alt="reply"
+                width={18.13}
+                height={17.07}
                 className="object-cover rounded-sm"
               />
             </button>
           </div>
         </div>
+
         <p className="mt-1 text-[18px] font-semibold leading-7  text-[#3B3F3F]">
-          {text}
+          {c.text}
         </p>
-        <div className="mt-3 flex items-center gap-2 text-xs text-slate-500"></div>
+
+        {c.replies && c.replies.length > 0 ? (
+          <div className="mt-3">
+            <RepliesAccordion commentId={c.id} defaultOpen={false} className="mt-2" />
+          </div>
+        ) : null}
       </div>
-      <RepliesAccordion className="mt-1" />
     </article>
   );
 }
 
-function RelatedArticles({ posts }: { posts: any[] }) {
+function RelatedArticles({ post }: { post: LikeArticle | null }) {
+  if (!post) return null;
   return (
     <section className="mt-14">
       <div className="flex items-center mb-6 gap-4 ">
         <Image
           src="/svg/Rectangle2.svg"
           alt="thumb"
-          width={5.731499671936035}
-          height={31.113859176635742}
+          width={5.73}
+          height={31.11}
         />
         <h3 className="font-bold text-2xl text-[#2E3232] whitespace-nowrap mt-2">
           مقالات مشابه
         </h3>
       </div>
       <div className="space-y-6">
-        {posts.map((p) => (
-          <div key={p.id} className="flex items-start gap-4">
-            <Thumbnaill />
-            <InlineNextCard />
-          </div>
-        ))}
+        <div className="flex items-start gap-4 w-[864px]">
+          <Thumbnaill thumbnail={post.thumbnail} category={post.category} />
+          <InlineNextCard
+            author={post.author}
+            createdAt={post.createdAt}
+            subject={post.subject}
+            readingPeriod={post.readingPeriod}
+          />
+        </div>
       </div>
     </section>
-  );
-}
-
-function RelatedCard({
-  title,
-  date,
-  readTime,
-}: {
-  title: string;
-  date: string;
-  readTime: string;
-}) {
-  return (
-    <article className="group ">
-      <div className="flex items-start gap-4 my-6">
-        <Thumbnaill />
-        <InlineNextCard />
-      </div>
-    </article>
   );
 }

@@ -28,7 +28,6 @@ export async function GET(
       subject: item.subject,
       category: item.category,
       readingPeriod: item.readingPeriod,
-      showStatus: item.showStatus,
       viewCount: item.viewCount,
       thumbnail: item.thumbnail,
       Introduction: item.Introduction,

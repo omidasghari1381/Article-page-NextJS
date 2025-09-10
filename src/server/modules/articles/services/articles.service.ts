@@ -60,17 +60,4 @@ export class ArticlesService {
       throw new Error("Failed to delete article");
     }
   };
-  //=================================================================================================
-  changeArticleStatus = async (id: string) => {
-    try {
-      const article = await this.articleRepo.findOneAndUpdate(
-        { where: { id } },
-        { showStatus: () => "NOT showStatus" } as any
-      );
-      return { status: 200, data: article };
-    } catch (err) {
-      console.error(err);
-      throw new Error("Failed to change article status");
-    }
-  };
 }

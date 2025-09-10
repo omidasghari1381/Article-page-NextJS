@@ -22,7 +22,6 @@ const CreateArticleSchema = z.object({
   Introduction: z.string().max(5000).optional(),
   quotes: z.string().max(5000).optional(),
   category: z.nativeEnum(articleCategoryEnum),
-  showStatus: z.boolean().optional().default(false),
   readingPeriod: z.string().min(1).max(256),
   summery: z.array(z.string().min(1)),
 });
@@ -32,7 +31,6 @@ const ListQuerySchema = z.object({
   perPage: z.coerce.number().int().min(1).max(100).default(10),
   category: z.nativeEnum(articleCategoryEnum).optional(),
   q: z.string().trim().optional(),
-  showStatus: z.enum(["0", "1"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -82,7 +80,6 @@ export async function POST(req: NextRequest) {
       Introduction: parsed.data.Introduction || null,
       quotes: parsed.data.quotes || null,
       category: parsed.data.category,
-      showStatus: parsed.data.showStatus ?? false,
       readingPeriod: parsed.data.readingPeriod,
     });
 
@@ -98,7 +95,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ---------- GET /api/articles  (List with filters)
 export async function GET(req: NextRequest) {
   try {
     const ds = await getDataSource();
@@ -109,7 +105,6 @@ export async function GET(req: NextRequest) {
       perPage: searchParams.get("perPage") ?? undefined,
       category: searchParams.get("category") ?? undefined,
       q: searchParams.get("q") ?? undefined,
-      showStatus: searchParams.get("showStatus") ?? undefined,
     });
 
     if (!parsed.success) {
@@ -119,15 +114,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { page, perPage, category, q, showStatus } = parsed.data;
+    const { page, perPage, category, q } = parsed.data;
     const skip = (page - 1) * perPage;
 
     const articleRepo = ds.getRepository(Article);
 
     const where: any = {};
     if (category) where.category = category;
-    if (typeof showStatus !== "undefined")
-      where.showStatus = showStatus === "1";
 
     const qb = articleRepo
       .createQueryBuilder("a")
@@ -143,17 +136,15 @@ export async function GET(req: NextRequest) {
     qb.orderBy("a.createdAt", "DESC").skip(skip).take(perPage);
 
     const [items, total] = await qb.getManyAndCount();
-
     return NextResponse.json({
       page,
       perPage,
       total,
       items: items.map((it) => ({
         id: it.id,
-        title: it.title,
+        subject: it.subject,
         category: it.category,
         readingPeriod: it.readingPeriod,
-        showStatus: it.showStatus,
         viewCount: it.viewCount,
         summery: it.summery,
         thumbnail: it.thumbnail,
