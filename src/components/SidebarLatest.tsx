@@ -1,13 +1,13 @@
 import Image from "next/image";
 
 type LiteArticle = {
-  id: string;
-  title: string;
-  createdAt: string;
-  category: string;
-  author: { id: string; firstName: string; lastName: string };
-  thumbnail: string | null;
-  readingPeriod: string;
+  id?: string;
+  title?: string;
+  createdAt?: string;
+  category?: string;
+  author?: { id: string; firstName: string; lastName: string };
+  thumbnail?: string | null;
+  readingPeriod?: string;
 };
 
 export default function SidebarLatest({ posts }: { posts: LiteArticle[] }) {

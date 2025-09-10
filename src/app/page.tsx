@@ -5,6 +5,7 @@ import axios from "axios";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { timeAgoFa } from "./utils/date";
+import SidebarLatest from "@/components/SidebarLatest";
 
 type ArticleDetail = {
   id: string;
@@ -24,9 +25,7 @@ type Latest = {
   subject: string;
   createdAt: string;
 };
-
 type ApiList<T> = { items: T[]; total?: number };
-
 export default function HomePage() {
   const [article, setArticle] = useState<ArticleDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +43,11 @@ export default function HomePage() {
     (async () => {
       try {
         setLoading(true);
+        const { data: l } = await axios.get<{ items: Latest[] }>(
+          `/api/articles`,
+          { params: { perPage: 4 }, cancelToken: source.token }
+        );
+        if (!cancel) setLatest(l.items || []);
 
         const { data: hero } = await axios.get<ApiList<ArticleDetail>>(
           "/api/articles",
@@ -54,14 +58,6 @@ export default function HomePage() {
             ? hero.items[0] ?? null
             : null;
           setArticle(first);
-        }
-
-        const { data: latestRes } = await axios.get<ApiList<Latest>>(
-          "/api/articles",
-          { params: { perPage: 4 }, cancelToken: source.token }
-        );
-        if (!cancel) {
-          setLatest(Array.isArray(latestRes.items) ? latestRes.items : []);
         }
       } catch (err) {
         if (!axios.isCancel(err)) console.error("axios error:", err);
@@ -75,7 +71,47 @@ export default function HomePage() {
       source.cancel("route changed");
     };
   }, []);
-
+  const related = [
+    {
+      id: "1a591415-538a-462a-990d-ef3d390c1289",
+      title: "DSAFADSFASDF",
+      createdAt: " 2025-09-10 14:10:52.900681",
+      category: " پراپ تریدینگ",
+      author: {
+        id: "1a591415-538a-466a-990d-ef3d390c1289",
+        firstName: "امید",
+        lastName: "اصغری",
+      },
+      thumbnail: "/image/a.png",
+      readingPeriod: "7 min",
+    },
+    {
+      id: "1a591415-538a-461a-990d-ef3d390c1289",
+      title: "DSAFADSFASDF",
+      createdAt: " 2025-09-10 14:10:52.900681",
+      category: " پراپ تریدینگ",
+      author: {
+        id: "1a591415-538a-466a-990d-ef3d390c1289",
+        firstName: "امید",
+        lastName: "اصغری",
+      },
+      thumbnail: "/image/a.png",
+      readingPeriod: "7 min",
+    },
+    {
+      id: "1a591415-538a-466a-990d-ef3d390c1289",
+      title: "DSAFADSFASDF",
+      createdAt: " 2025-09-10 14:10:52.900681",
+      category: " پراپ تریدینگ",
+      author: {
+        id: "1a591415-538a-466a-990d-ef3d390c1289",
+        firstName: "امید",
+        lastName: "اصغری",
+      },
+      thumbnail: "/image/a.png",
+      readingPeriod: "7 min",
+    },
+  ];
   return (
     <main className="w-full">
       <HeroSection article={article} items={latest} />
@@ -94,6 +130,11 @@ export default function HomePage() {
           height={367}
           className="rounded-lg"
         />
+        <div className="flex justify-between ">
+          <LatestArticle />
+          <SidebarLatest posts={related} />
+        </div>
+        <Video />
       </div>
     </main>
   );
@@ -397,6 +438,181 @@ function Boxes() {
         </div>
         <h1 className="mt-3">چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر</h1>
       </div>{" "}
+    </div>
+  );
+}
+function LatestArticle() {
+  return (
+    <div className="">
+      <div className="flex items-center gap-3 py-8">
+        <Image
+          src="/svg/Rectangle.svg"
+          alt="thumb"
+          width={6.69}
+          height={36.3}
+        />
+        <h3 className="text-xl font-semibold text-[#1C2121]">آخرین مقالات</h3>
+      </div>
+      <div className="">
+        <div className=" gap-5 flex">
+          <LateArticle />
+          <LateArticle />
+        </div>
+        <div className="gap-5 flex">
+          <LateArticle />
+          <LateArticle />
+        </div>
+      </div>
+      <div className="flex justify-center items-center">
+        <button className="w-[211px] h-[56px] bg-[#19CCA7] gap-2 rounded-md flex items-center justify-center">
+          {" "}
+          <Image
+            src={"/svg/whiteEye.svg"}
+            alt="thumb"
+            width={24.48882293701172}
+            height={19.046863555908203}
+            className="rounded-sm "
+          />
+          <span className="text-base font-medium">مشاهده همه مقالات</span>
+        </button>{" "}
+      </div>
+    </div>
+  );
+}
+
+function LateArticle() {
+  return (
+    <div className="mb-4 mx-3 justify-center">
+      <Image
+        src="/image/chart.png"
+        alt="thumb"
+        width={433.4188232421875}
+        height={240.58114624023438}
+        className="rounded-sm"
+      />
+      <div className="flex justify-between">
+        {" "}
+        <div className="flex items-center my-4 gap-3">
+          <div className="relative inline-block">
+            {" "}
+            <Image
+              src="/svg/arrowLeftBlack.svg"
+              alt="badge"
+              width={108}
+              height={34.66}
+              className="block rounded-sm"
+              priority
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold leading-none px-2">
+              اموزش فارکس
+            </span>
+          </div>
+          <span className="text-[#373A41] text-base font-medium ">
+            3 روز پیش
+          </span>
+        </div>{" "}
+        <div className="gap-2 flex items-center pl-7">
+          {" "}
+          <Image
+            src={"/svg/eye.svg"}
+            alt="thumb"
+            width={17.194028854370117}
+            height={13.373133659362793}
+            className="rounded-sm"
+          />
+          <span className="text-sm text-[#373A41] ">بازدید 3</span>{" "}
+        </div>
+      </div>
+      <p className="text-lg text-[#121212] font-bold">
+        چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
+      </p>
+      <p className="text-sm font-normal text-[#121212] my-6">
+        با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های لحظه‌ای،
+        ما به تو کمک می‌کنیم تا فرصت‌ها را زودتر ببینی، دقیق‌تر تحلیل کنی و
+        هوشمندانه‌تر معامله کنی.با زیرساختی سریع{" "}
+      </p>
+    </div>
+  );
+}
+
+function Video() {
+  return (
+    <div className="my-20">
+      <div className="flex justify-between items-center ">
+        <div className="flex items-center gap-3 mt-4">
+          <Image
+            src="/svg/Rectangle.svg"
+            alt="thumb"
+            width={6.69}
+            height={36.3}
+          />
+          <h3 className="text-xl font-semibold text-[#1C2121]">
+            آخرین ویدیو ها
+          </h3>
+        </div>{" "}
+        <button className="w-[211px] h-[56px] bg-[#19CCA7] gap-2 rounded-md flex items-center justify-center">
+          {" "}
+          <Image
+            src={"/svg/whiteEye.svg"}
+            alt="thumb"
+            width={24.48882293701172}
+            height={19.046863555908203}
+            className="rounded-sm "
+          />
+          <span className="text-base font-medium">مشاهده همه ویدیو ها</span>
+        </button>{" "}
+      </div>
+      <div className="flex justify-between gap-4 mt-7">
+        <div>
+          <VideoCart />
+          <VideoCart />
+        </div>
+        <div>
+          <VideoCart />
+          <VideoCart />
+        </div>
+        <div className="relative ">
+          <Image
+            src="/image/mac.png"
+            alt="thumb"
+            width={626.6666870117188}
+            height={572.3809814453125}
+          />
+          <Image
+            src="/svg/play.svg"
+            alt="thumb"
+            width={180.19835662841797}
+            height={180}
+            className="absolute bottom-[35%] right-[35%] "
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VideoCart() {
+  return (
+    <div className="bg-white border rounded-sm h-[280px] w-[304.76190185546875px] p-3 mb-3 ">
+      <div className="mb-6 relative">
+        <Image
+          src="/image/a.png"
+          alt="thumb"
+          width={277.40740966796875}
+          height={186.6666717529297}
+          className="object-cover"
+        />
+        <Image
+          src="/svg/play.svg"
+          alt="thumb"
+          width={80.19835662841797}
+          height={80}
+          className="absolute bottom-[27%] right-[35%] "
+        />
+      </div>
+      <span className="text-[#1C2121] text-lg font-semibold">
+        چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
+      </span>
     </div>
   );
 }
