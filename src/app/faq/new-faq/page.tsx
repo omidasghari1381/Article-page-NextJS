@@ -12,7 +12,7 @@ type ArticleCreatePayload = {
 
 export default function Page() {
   return (
-    <main className="pb-24">
+    <main className="pb-24 px-20 py-10">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
@@ -20,8 +20,7 @@ export default function Page() {
           { label: "افزودن سوالات", href: "/articles/new" },
         ]}
       />
-      <BannerWithBox />
-      <div className="mt-24">
+      <div className="mt-10">
         <ArticleForm />
       </div>
     </main>
@@ -30,7 +29,7 @@ export default function Page() {
 
 function BannerWithBox() {
   return (
-    <section className="relative w-full">
+    <section className="relative w-full ">
       <div className="relative h-[228px] w-full rounded-2xl overflow-hidden">
         <img
           src="/image/faqMain.png"

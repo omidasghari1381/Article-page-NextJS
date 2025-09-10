@@ -26,14 +26,11 @@ function Page() {
     (async () => {
       try {
         setLoading(true);
-        // ✅ با توجه به روت داینامیک: /api/faq/[category]
         const { data } = await axios.get<{ items: FAQDetail[] }>(
           `/api/faq/${encodeURIComponent(category)}`,
           { cancelToken: source.token }
         );
 
-        // برای دیباگ:
-        console.log("FAQ list:", data);
 
         if (!cancel) setFaq(data.items || []);
       } catch (err) {
@@ -52,7 +49,7 @@ function Page() {
   }, [category]);
 
   return (
-    <main>
+    <main className="px-20 py-10   mx-auto">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
@@ -92,7 +89,7 @@ function BannerWithBox({
   setCategory: (c: faqCategory) => void;
 }) {
   return (
-    <section className="relative w-full">
+    <section className="relative w-full my-6">
       <div className="relative h-[228px] w-full rounded-2xl overflow-hidden">
         <img
           src="/image/faqMain.png"

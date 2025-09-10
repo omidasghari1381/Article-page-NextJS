@@ -21,7 +21,7 @@ type ArticleCreatePayload = {
 
 export default function Page() {
   return (
-    <main className="pb-24">
+    <main className="pb-24 pt-6 px-20">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
@@ -29,47 +29,13 @@ export default function Page() {
           { label: "افزودن مقاله", href: "/articles/new" },
         ]}
       />
-      <BannerWithBox />
-      <div className="mt-24">
+      <div className="mt-5">
         <ArticleForm />
       </div>
     </main>
   );
 }
 
-function BannerWithBox() {
-  return (
-    <section className="relative w-full">
-      <div className="relative h-[228px] w-full rounded-2xl overflow-hidden">
-        <img
-          src="/image/faqMain.png"
-          alt="banner"
-          className="w-full h-full object-cover"
-        />
-      </div>
-      <div className="flex justify-center items-center border absolute rounded-lg left-1/2 -bottom-12 transform -translate-x-1/2 w-[92%] md:w-[80%] bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap justify-between items-center gap-10 w-full">
-          <IconItem src="/svg/tarnsaction.svg" label="مقالات من" />
-          <IconItem src="/svg/faqNote.svg" label="لیست مقالات" />
-          <IconItem src="/svg/lock.svg" label="پیش‌نویس‌ها" />
-          <IconItem src="/svg/faqNote.svg" label="دسته‌بندی‌ها" />
-          <IconItem src="/svg/wallet.svg" label="آمار بازدید" />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function IconItem({ src, label }: { src: string; label: string }) {
-  return (
-    <div className="flex items-center justify-center flex-1 min-w-[140px] gap-2">
-      <Image src={src} alt={label} width={48} height={48} />
-      <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-        {label}
-      </span>
-    </div>
-  );
-}
 
 function ArticleForm() {
   const [form, setForm] = useState<{

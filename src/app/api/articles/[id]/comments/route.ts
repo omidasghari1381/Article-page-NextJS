@@ -7,6 +7,7 @@ import { ReplyComment } from "@/server/modules/articles/entities/reply.entity";
 import { User } from "@/server/modules/users/entities/user.entity";
 
 export const runtime = "nodejs";
+
 export async function GET(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
@@ -18,7 +19,7 @@ export async function GET(
     const articleRepo = ds.getRepository(Article);
     const replyRepo = ds.getRepository(ReplyComment);
 
-    // اطمینان از وجود آرتیکل
+    // بررسی وجود آرتیکل
     const articleExists = await articleRepo.exist({ where: { id } });
     if (!articleExists) {
       return NextResponse.json({ error: "ArticleNotFound" }, { status: 404 });
@@ -29,36 +30,37 @@ export async function GET(
     const take = Math.min(Number(searchParams.get("take") ?? 10), 50);
     const withReplies = searchParams.get("withReplies") === "1";
 
-    // چون OneToMany تعریف نکرده‌ایم، ابتدا کامنت‌ها را می‌گیریم
+    // گرفتن کامنت‌ها (بدون OneToMany)
     const [comments, total] = await commentRepo.findAndCount({
       where: { article: { id } },
-      relations: ["user"], // نویسندهٔ کامنت
+      relations: ["user"],
       order: { createdAt: "DESC" },
       skip,
       take,
     });
 
-    // اگر ریپلای هم خواستی، برای هر کامنت ریپلای‌ها را می‌گیریم
-    if (withReplies && comments.length) {
+    // اگر ریپلای خواسته بودیم:
+    if (withReplies) {
+      if (comments.length === 0) {
+        // لیست خالی ولی همچنان باید پاسخ بدهیم
+        return NextResponse.json({ data: [], total, skip, take });
+      }
+
       const commentIds = comments.map((c) => c.id);
       const replies = await replyRepo
         .createQueryBuilder("reply")
         .leftJoinAndSelect("reply.user", "user")
-        .leftJoinAndSelect("reply.comment", "comment") // مهم: comment لود شود
+        .leftJoinAndSelect("reply.comment", "comment")
         .where("comment.id IN (:...ids)", { ids: commentIds })
         .orderBy("reply.createdAt", "ASC")
         .getMany();
 
-      // Map ریپلای‌ها به کامنت‌ها
-
-      const grouped = replies.reduce<Record<string, ReplyComment[]>>(
-        (acc, r) => {
-          const cid = r.comment.id;
-          (acc[cid] ??= []).push(r);
-          return acc;
-        },
-        {}
-      );
+      // گروه‌بندی ریپلای‌ها بر اساس آیدی کامنت
+      const grouped = replies.reduce<Record<string, ReplyComment[]>>((acc, r) => {
+        const cid = r.comment.id;
+        (acc[cid] ??= []).push(r);
+        return acc;
+      }, {});
 
       const payload = comments.map((c) => ({
         ...c,
@@ -67,14 +69,15 @@ export async function GET(
 
       return NextResponse.json({ data: payload, total, skip, take });
     }
+
+    // حالت بدون ریپلای: حتماً پاسخ بده
+    return NextResponse.json({ data: comments, total, skip, take });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "ServerError" }, { status: 500 });
   }
 }
 
-// POST /api/articles/:id/comments
-// body: { userId: string; text: string; }
 export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
@@ -109,10 +112,12 @@ export async function POST(
       article,
     });
     const saved = await commentRepo.save(comment);
+
     const withUser = await commentRepo.findOne({
       where: { id: saved.id },
       relations: ["user"],
     });
+
     return NextResponse.json({ data: withUser }, { status: 201 });
   } catch (err) {
     console.error(err);

@@ -10,6 +10,7 @@ import axios from "axios";
 import { timeAgoFa } from "@/app/utils/date";
 import AddComment from "@/components/AddComment";
 import { SessionProvider } from "next-auth/react";
+import SidebarLatest from "@/components/SidebarLatest";
 
 type ArticleDetail = {
   id: string;
@@ -125,10 +126,11 @@ export default function ArticleDetailPage() {
               cancelToken: source.token,
             }
           );
-          const items = Array.isArray((r as any).items) ? (r.items as LikeArticle[]) : [];
-          const firstOther =
-          items.find((x) => x.id !== a.id) || null;
-          
+          const items = Array.isArray((r as any).items)
+            ? (r.items as LikeArticle[])
+            : [];
+          const firstOther = items.find((x) => x.id !== a.id) || null;
+
           if (!cancel) setRelated(firstOther);
         }
 
@@ -153,8 +155,9 @@ export default function ArticleDetailPage() {
   const A = article;
 
   return (
+    // mx-auto px-4 sm:px-6 lg:px-8 py-6
     <SessionProvider>
-      <main className="px-3 lg:px-8 py-6">
+      <main className="px-7 sm:px-6 lg:px- py-6 mx-auto ">
         <Breadcrumb
           items={[
             { label: "مای پراپ", href: "/" },
@@ -229,69 +232,7 @@ function Divider() {
   );
 }
 
-function SidebarLatest({ posts }: { posts: LiteArticle[] }) {
-  return (
-    <div>
-      <div className="flex items-center gap-3 px-4 py-8 ">
-        <Image
-          src="/svg/Rectangle.svg"
-          alt="thumb"
-          width={6.69}
-          height={36.3}
-        />
-        <h3 className="text-xl font-semibold text-[#1C2121]">
-          محبوب ترین مقالات
-        </h3>
-      </div>
 
-      <div className="px-4 pb-4 space-y-8">
-        {posts.map((p) => (
-          <SidebarCard key={p.id} post={p} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SidebarCard({ post }: { post: LiteArticle }) {
-  return (
-    <article className="group">
-      <div className="w-[361.67px] h-[236.81px]">
-        <div className="relative w-[361.67px] h-[236.81px] rounded-md overflow-hidden">
-          <Image
-            src={post.thumbnail || "/image/hero1.jpg"}
-            alt="thumb"
-            fill
-            className="object-cover"
-          />
-
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-
-          <div className="absolute top-3 right-3" dir="rtl">
-            <div className="relative inline-block">
-              <Image
-                src="/svg/arrowLeftBlack.svg"
-                alt="badge"
-                width={108}
-                height={34.66}
-                className="block"
-                priority
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold leading-none px-2">
-                {post.category}
-              </span>
-            </div>
-          </div>
-          <div className="absolute bottom-3 right-4 text-white">
-            <h5 className="sm:text-base font-medium leading-7">
-              {post.title}
-            </h5>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
 
 type HeroCardProps = {
   title?: string;
@@ -315,9 +256,9 @@ function HeroCard({
   category,
   summery,
 }: HeroCardProps) {
-  const items = (summery && summery.length ? summery : ["چکیده ۱", "چکیده ۲", "چکیده ۳"]).map(
-    (t, i) => ({ id: i + 1, text: t })
-  );
+  const items = (
+    summery && summery.length ? summery : ["چکیده ۱", "چکیده ۲", "چکیده ۳"]
+  ).map((t, i) => ({ id: i + 1, text: t }));
 
   return (
     <article className="overflow-hidden">
@@ -645,7 +586,11 @@ function CommentItem({
 
         {c.replies && c.replies.length > 0 ? (
           <div className="mt-3">
-            <RepliesAccordion commentId={c.id} defaultOpen={false} className="mt-2" />
+            <RepliesAccordion
+              commentId={c.id}
+              defaultOpen={false}
+              className="mt-2"
+            />
           </div>
         ) : null}
       </div>
