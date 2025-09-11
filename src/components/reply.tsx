@@ -18,8 +18,8 @@ type RepliesAccordionProps = {
   commentId: string;
   defaultOpen?: boolean;
   className?: string;
-  pageSize?: number;        // اختیاری: برای لود تدریجی
-  reloadSignal?: number;    // اختیاری: تغییرش باعث refetch می‌شود
+  pageSize?: number;       
+  reloadSignal?: number;  
 };
 
 export default function RepliesAccordion({
@@ -34,7 +34,6 @@ export default function RepliesAccordion({
   const [replies, setReplies] = useState<ApiReply[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // صفحه‌بندی ساده‌ی کلاینتی (اگر خواستی)
   const [visible, setVisible] = useState(pageSize);
 
   useEffect(() => {
@@ -64,20 +63,17 @@ export default function RepliesAccordion({
       }
     }
 
-    // فقط وقتی آکاردئون باز می‌شود، فچ می‌زنیم (اولین‌بار)؛
-    // اگر از قبل باز است، بلافاصله فچ کن.
+
     if (open) fetchReplies();
 
     return () => {
       cancel = true;
       source.cancel("abort replies fetch");
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commentId, open, reloadSignal, pageSize]);
 
   const displayCount = replies.length;
 
-  // اگر هیچ ریپلایی نداریم، تا وقتی باز نشده، دکمه نشان بده که "نمایش 0 پاسخ" نمایش داده نشود
   const showToggle = displayCount > 0 || !open;
 
   const list = useMemo(() => replies.slice(0, visible), [replies, visible]);
@@ -111,7 +107,6 @@ export default function RepliesAccordion({
           open ? "max-h-[9999px] border-t border-slate-100" : "max-h-0"
         }`}
       >
-        {/* وضعیت‌ها */}
         {open && (
           <div className="p-4">
             {loading && (
@@ -121,7 +116,6 @@ export default function RepliesAccordion({
               <div className="text-xs text-red-600">{error}</div>
             )}
 
-            {/* لیست ریپلای‌ها */}
             {!loading && !error && displayCount > 0 && (
               <ul className="space-y-4">
                 {list.map((r) => {
@@ -156,7 +150,6 @@ export default function RepliesAccordion({
               </ul>
             )}
 
-            {/* لود بیشتر (اگر ریپلای زیاد باشد) */}
             {!loading && !error && displayCount > visible && (
               <div className="mt-3">
                 <button

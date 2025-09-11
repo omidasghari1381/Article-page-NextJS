@@ -23,7 +23,6 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.phone || !credentials?.password) return null;
 
-        // نرمال‌سازی امن‌تر
         let phone: string;
         try {
           phone = normalizePhoneToE164Iran(credentials.phone);

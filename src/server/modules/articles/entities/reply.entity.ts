@@ -1,4 +1,3 @@
-// src/server/modules/articles/entities/reply.entity.ts
 import { Entity, Column, ManyToOne, JoinColumn } from "typeorm";
 import { AbstractEntity } from "@/server/core/abstracts/entity.base";
 import { User } from "../../users/entities/user.entity";

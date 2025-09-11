@@ -1,6 +1,5 @@
 import { Entity, Column, Index, OneToMany } from "typeorm";
 import { AbstractEntity } from "@/server/core/abstracts/entity.base";
-import { Article } from "../../articles/entities/article.entity"; // value-import
 
 @Entity("users")
 export class User extends AbstractEntity {

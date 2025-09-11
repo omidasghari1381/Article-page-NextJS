@@ -1,4 +1,3 @@
-// app/api/comments/[id]/replies/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getDataSource } from "@/server/db/typeorm.datasource";
 import { CommentArticle } from "@/server/modules/articles/entities/comment.entity";
@@ -7,7 +6,6 @@ import { User } from "@/server/modules/users/entities/user.entity";
 
 export const runtime = "nodejs";
 
-// GET /api/comments/:id/replies
 export async function GET(
   _req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
@@ -36,8 +34,7 @@ export async function GET(
   }
 }
 
-// POST /api/comments/:id/replies
-// body: { userId: string; text: string; }
+
 export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }

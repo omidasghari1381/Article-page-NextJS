@@ -38,7 +38,6 @@ function BannerWithBox() {
         />
       </div>
 
-      {/* باکس وسط صفحه روی بنر */}
       <div className="flex justify-center items-center border absolute rounded-lg left-1/2 -bottom-12 transform -translate-x-1/2 w-[92%] md:w-[80%] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap justify-between items-center gap-10 w-full">
           <IconItem src="/svg/tarnsaction.svg" label="مقالات من" />

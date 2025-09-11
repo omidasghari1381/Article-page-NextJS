@@ -1,6 +1,6 @@
 import { DataSource } from "typeorm";
 import { AbstractRepository } from "@/server/core/abstracts/repository.base";
-import { User } from "@/server/db/entities"; // ⬅️ از barrel واحد
+import { User } from "@/server/db/entities"; 
 
 export class UserRepository extends AbstractRepository<User> {
   protected readonly logger = console;

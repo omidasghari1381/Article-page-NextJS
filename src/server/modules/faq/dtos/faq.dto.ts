@@ -1,4 +1,3 @@
-// src/server/modules/faq/dto/faq.dto.ts
 import { IsEnum, IsNotEmpty, IsString, MaxLength } from "class-validator";
 import { faqCategory } from "../enums/faqCategory.enum";
 

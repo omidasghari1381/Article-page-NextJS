@@ -25,7 +25,6 @@ export default function SignupHeroSlider() {
   const timer = useRef<number | null>(null);
   const DURATION = 5_000; 
 
-  // اتوپلی
   useEffect(() => {
     play();
     return stop;

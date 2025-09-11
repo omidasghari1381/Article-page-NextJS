@@ -61,7 +61,6 @@ export default function SummaryDropdown({
         </button>
       </div>
 
-      {/* Body */}
       <div
         className={`transition-all duration-300 overflow-hidden ${
           open ? "mt-4 max-h-[480px] opacity-100" : "max-h-0 opacity-0"

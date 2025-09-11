@@ -155,7 +155,6 @@ export default function ArticleDetailPage() {
   const A = article;
 
   return (
-    // mx-auto px-4 sm:px-6 lg:px-8 py-6
     <SessionProvider>
       <main className="px-7 sm:px-6 lg:px- py-6 mx-auto ">
         <Breadcrumb
@@ -231,8 +230,6 @@ function Divider() {
     </div>
   );
 }
-
-
 
 type HeroCardProps = {
   title?: string;

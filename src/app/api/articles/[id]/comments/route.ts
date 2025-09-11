@@ -1,4 +1,3 @@
-// app/api/articles/[id]/comments/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getDataSource } from "@/server/db/typeorm.datasource";
 import { Article } from "@/server/modules/articles/entities/article.entity";
@@ -30,7 +29,6 @@ export async function GET(
     const take = Math.min(Number(searchParams.get("take") ?? 10), 50);
     const withReplies = searchParams.get("withReplies") === "1";
 
-    // گرفتن کامنت‌ها (بدون OneToMany)
     const [comments, total] = await commentRepo.findAndCount({
       where: { article: { id } },
       relations: ["user"],
@@ -39,10 +37,8 @@ export async function GET(
       take,
     });
 
-    // اگر ریپلای خواسته بودیم:
     if (withReplies) {
       if (comments.length === 0) {
-        // لیست خالی ولی همچنان باید پاسخ بدهیم
         return NextResponse.json({ data: [], total, skip, take });
       }
 
@@ -55,7 +51,6 @@ export async function GET(
         .orderBy("reply.createdAt", "ASC")
         .getMany();
 
-      // گروه‌بندی ریپلای‌ها بر اساس آیدی کامنت
       const grouped = replies.reduce<Record<string, ReplyComment[]>>((acc, r) => {
         const cid = r.comment.id;
         (acc[cid] ??= []).push(r);
@@ -70,7 +65,6 @@ export async function GET(
       return NextResponse.json({ data: payload, total, skip, take });
     }
 
-    // حالت بدون ریپلای: حتماً پاسخ بده
     return NextResponse.json({ data: comments, total, skip, take });
   } catch (err) {
     console.error(err);

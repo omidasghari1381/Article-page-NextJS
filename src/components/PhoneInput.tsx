@@ -32,7 +32,6 @@ export default function PhoneInput({
   const [phone, setPhone] = useState(value ?? "");
   const rootRef = useRef<HTMLDivElement | null>(null);
 
-  // بستن منو با کلیک بیرون
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (!rootRef.current) return;
@@ -46,7 +45,6 @@ export default function PhoneInput({
 
   return (
     <div ref={rootRef} className={`relative ${className}`} dir="rtl">
-      {/* کانتینر واحد (مثل یک input) */}
       <div
         className={`
           h-11 w-full rounded-2xl border border-gray-300 bg-white
@@ -54,7 +52,6 @@ export default function PhoneInput({
           focus-within:ring-2 focus-within:ring-[#19CCA7]/30 focus-within:border-[#19CCA7]/60
         `}
       >
-        {/* بخش سرشماره (راست) */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -78,10 +75,8 @@ export default function PhoneInput({
           </svg>
         </button>
 
-        {/* جداکننده عمودی */}
         <span className="w-px h-6 bg-gray-300" aria-hidden />
 
-        {/* بخش شماره (چپِ باکس) — یکپارچه با سرشماره */}
         <input
           dir="ltr"
           inputMode="tel"
@@ -97,7 +92,6 @@ export default function PhoneInput({
         />
       </div>
 
-      {/* منوی انتخاب سرشماره */}
       {open && (
         <ul
           className="absolute right-0 top-[calc(100%+6px)] z-30 w-56 rounded-2xl border border-gray-200 bg-white shadow-xl p-1 text-sm"

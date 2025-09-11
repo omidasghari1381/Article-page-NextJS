@@ -7,7 +7,6 @@ import { getDataSource } from "@/server/db/typeorm.datasource";
 import { Article } from "@/server/modules/articles/entities/article.entity";
 import { User } from "@/server/modules/users/entities/user.entity";
 import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
-import { title } from "process";
 
 const CreateArticleSchema = z.object({
   title: z.string().min(2).max(200),
