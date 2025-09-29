@@ -28,6 +28,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
 
-    return NextResponse.json({ error: err.message ?? "Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message ?? "Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const parsed = CreateCategorySchema.parse(body);
+
+    const ds = await getDataSource();
+    const service = new CategoryService(ds);
+
+    const newCategory = await service.createCategory(parsed);
+
+    return NextResponse.json(newCategory, { status: 201 });
+  } catch (err: any) {
+    console.error("❌ Category create error:", err);
+
+    if (err.name === "ZodError") {
+      return NextResponse.json({ error: err.errors }, { status: 400 });
+    }
+
+    return NextResponse.json(
+      { error: err.message ?? "Server Error" },
+      { status: 500 }
+    );
   }
 }
