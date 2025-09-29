@@ -151,7 +151,14 @@ export default function Header() {
             href="/contact"
             className="flex items-center justify-center leading-6 text-base gap-2 border border-gray-300 px-4 py-2 rounded-sm  font-medium hover:bg-gray-50 transition text-black w-[150px] h-[51px]"
           >
-            <span className="text-lg">📞</span>
+            <Image
+              src="/svg/phone2.svg"
+              alt="arrowUp"
+              width={20}
+              height={20}
+              className="rounded-sm"
+            />
+            <span className="text-lg"></span>
             تماس با ما
           </Link>
           <Link
