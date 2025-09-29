@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       );
     }
-
+    
     const articleRepo = ds.getRepository(Article);
 
     const article = articleRepo.create({
@@ -146,6 +146,7 @@ export async function GET(req: NextRequest) {
         title: it.title,
         category: it.category,
         readingPeriod: it.readingPeriod,
+        mainText: it.mainText,
         viewCount: it.viewCount,
         summery: it.summery,
         thumbnail: it.thumbnail,
@@ -160,6 +161,37 @@ export async function GET(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("GET /api/articles error:", err);
+    return NextResponse.json(
+      { error: "ServerError", message: "مشکل داخلی سرور" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const ds = await getDataSource();
+    const body = await req.json();
+    const { id } = body as { id: string };
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ValidationError", message: "شناسه (id) الزامی است." },
+        { status: 400 }
+      );
+    }
+    const articleRepo = ds.getRepository(Article);
+    const found = await articleRepo.findOne({ where: { id } });
+    if (!found) {
+      return NextResponse.json(
+        { error: "NotFound", message: "مقاله پیدا نشد." },
+        { status: 404 }
+      );
+    }
+    await articleRepo.remove(found);
+    return NextResponse.json({ success: true, id }, { status: 200 });
+  } catch (err: any) {
+    console.error("DELETE /api/articles/inner-article error:", err);
     return NextResponse.json(
       { error: "ServerError", message: "مشکل داخلی سرور" },
       { status: 500 }

@@ -1,8 +1,8 @@
 "use client";
 
 import Breadcrumb from "@/components/Breadcrumb";
-import RepliesAccordion from "@/components/Reply";
-import SummaryDropdown from "@/components/Summery";
+import RepliesAccordion from "@/components/reply";
+import SummaryDropdown from "@/components/summery";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
@@ -11,6 +11,8 @@ import { timeAgoFa } from "@/app/utils/date";
 import AddComment from "@/components/AddComment";
 import { SessionProvider } from "next-auth/react";
 import SidebarLatest from "@/components/SidebarLatest";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type ArticleDetail = {
   id: string;
@@ -212,6 +214,7 @@ export default function ArticleDetailPage() {
           />
           <RelatedArticles post={related} />
         </div>
+        <AdminEditButton articleId={A?.id} />
 
         <Divider />
       </main>
@@ -622,5 +625,30 @@ function RelatedArticles({ post }: { post: LikeArticle | null }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function AdminEditButton({ articleId }: { articleId?: string }) {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
+  // فرض: نقش داخل session.user.role آمده است
+  const role = (session?.user as any)?.role;
+
+  if (status !== "authenticated" || role !== "admin" || !articleId) return null;
+
+  return (
+    <div className="mt-10 flex justify-end">
+      <button
+        onClick={() =>
+          router.push(
+            `/article/editor/new-article/${encodeURIComponent(articleId)}`
+          )
+        }
+        className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
+      >
+        ویرایش این مقاله
+      </button>
+    </div>
   );
 }

@@ -14,18 +14,20 @@ import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCate
 import { NewArticle } from "@/server/modules/articles/entities/innerArticle";
 import type { Repository, DeepPartial } from "typeorm";
 
+/* -------------------- Schemas -------------------- */
+// فقط تغییر اینجاست: summery آرایه‌ی استرینگ است.
 const CreateArticleSchema = z.object({
   title: z.string().min(2).max(200),
   authorId: z.string().uuid().optional(),
   subject: z.string().min(1),
   mainText: z.string().min(1),
-  summery: z.string().max(2000).optional(),
+  summery: z.array(z.string().min(1).max(2000)).optional(),
   thumbnail: z
     .string()
     .max(2000)
     .optional()
     .or(z.literal("").transform(() => undefined)),
-  category: z.string(),
+  category: z.string(), // اگر enum داشتی می‌تونی اینجا z.nativeEnum بذاری
   readingPeriod: z.string().optional(),
 });
 
@@ -36,12 +38,12 @@ const ListQuerySchema = z.object({
   q: z.string().trim().optional(),
 });
 
-const transformA: Transformer = (tag: string, attribs: Attributes): Tag => {
+/* -------------------- sanitize-html config -------------------- */
+const transformA: Transformer = (_tag: string, attribs: Attributes): Tag => {
   const href = attribs.href ?? "";
   const isHttp = /^https?:\/\//i.test(href);
   const isMail = /^mailto:/i.test(href);
   if (!isHttp && !isMail) {
-    // حتما attribs بده—even if empty
     return { tagName: "span", attribs: {}, text: attribs.title ?? "" };
   }
   return {
@@ -50,55 +52,31 @@ const transformA: Transformer = (tag: string, attribs: Attributes): Tag => {
   };
 };
 
-const transformImg: Transformer = (tag: string, attribs: Attributes): Tag => {
+const transformImg: Transformer = (_tag: string, attribs: Attributes): Tag => {
   const src = attribs.src ?? "";
   if (!/^https?:\/\//i.test(src)) {
     return { tagName: "span", attribs: {}, text: "" };
   }
-  return {
-    tagName: "img",
-    attribs: { ...attribs, loading: "lazy" },
-  };
+  return { tagName: "img", attribs: { ...attribs, loading: "lazy" } };
 };
 
 const SAN_CONFIG: IOptions = {
   allowedTags: [
-    "p",
-    "br",
-    "strong",
-    "em",
-    "u",
-    "s",
-    "blockquote",
-    "ul",
-    "ol",
-    "li",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "code",
-    "pre",
-    "hr",
-    "a",
-    "img",
-    "span",
+    "p","br","strong","em","u","s","blockquote",
+    "ul","ol","li","h1","h2","h3","h4","h5","h6",
+    "code","pre","hr","a","img","span"
   ],
   allowedAttributes: {
-    a: ["href", "title", "target", "rel"],
-    img: ["src", "alt", "title", "width", "height", "loading"],
+    a: ["href","title","target","rel"],
+    img: ["src","alt","title","width","height","loading"],
     span: ["class"],
   },
-  allowedSchemes: ["http", "https", "mailto"],
+  allowedSchemes: ["http","https","mailto"],
   allowProtocolRelative: false,
-  transformTags: {
-    a: transformA,
-    img: transformImg,
-  },
+  transformTags: { a: transformA, img: transformImg },
 };
 
+/* -------------------- POST (Create) -------------------- */
 export async function POST(req: NextRequest) {
   try {
     const ds = await getDataSource();
@@ -133,15 +111,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // --- Sanitization فقط روی mainText و تک‌تک آیتم‌های summery ---
     const cleanMainText = sanitizeHtml(parsed.data.mainText, SAN_CONFIG);
-    // const cleanSummery = parsed.data.summery
-    //   ? sanitizeHtml(parsed.data.summery, {
-    //       ...SAN_CONFIG,
-    //       allowedTags: ["p", "br", "strong", "em"],
-    //     })
-    //   : undefined;
 
-    // const articleRepo = ds.getRepository(NewArticle);
+    const cleanSummery = Array.isArray(parsed.data.summery)
+      ? parsed.data.summery
+          .map((s) => sanitizeHtml(s, { ...SAN_CONFIG, allowedTags: ["p","br","strong","em"] }))
+          // اگر آیتمی بعد از sanitize خالی شد، حذفش کنیم:
+          .filter((s) => s && s.replace(/<[^>]*>/g, "").trim().length > 0)
+      : undefined;
+
     const articleRepo: Repository<NewArticle> = ds.getRepository(NewArticle);
 
     const input: DeepPartial<NewArticle> = {
@@ -149,15 +128,16 @@ export async function POST(req: NextRequest) {
       subject: parsed.data.subject,
       author,
       mainText: cleanMainText,
-      summery: cleanSummery,
+      summery: cleanSummery, // ← آرایه‌ی پاک‌سازی‌شده (یا undefined)
       thumbnail: parsed.data.thumbnail ?? null,
       category: parsed.data.category,
-      readingPeriod: parsed.data.readingPeriod,
+      readingPeriod: parsed.data.readingPeriod, // بدون تغییر
     };
 
-    const article = articleRepo.create(input); // ✅ خروجی: NewArticle
+    const article = articleRepo.create(input);
     const saved = await articleRepo.save(article);
-    return NextResponse.json({ success: true }, { status: 201 });
+
+    return NextResponse.json({ success: true, id: saved.id }, { status: 201 });
   } catch (err: any) {
     console.error("POST /api/articles/inner-article error:", err);
     return NextResponse.json(
@@ -167,6 +147,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/* -------------------- GET (List) -------------------- */
 export async function GET(req: NextRequest) {
   try {
     const ds = await getDataSource();
@@ -200,14 +181,13 @@ export async function GET(req: NextRequest) {
       .where(where);
 
     if (q) {
-      qb.andWhere("(a.title LIKE :q )", {
-        q: `%${q}%`,
-      });
+      qb.andWhere("(a.title LIKE :q )", { q: `%${q}%` });
     }
 
     qb.orderBy("a.createdAt", "DESC").skip(skip).take(perPage);
 
     const [items, total] = await qb.getManyAndCount();
+
     return NextResponse.json({
       page,
       perPage,
@@ -220,9 +200,8 @@ export async function GET(req: NextRequest) {
         readingPeriod: it.readingPeriod,
         mainText: it.mainText,
         viewCount: it.viewCount,
-        summery: it.summery,
+        summery: it.summery,         // ← آرایه همان‌طور که هست برمی‌گردد
         thumbnail: it.thumbnail,
-        // quotes: it.quotes,
         author: {
           id: (it.author as any)?.id,
           firstName: (it.author as any)?.firstName,
@@ -233,58 +212,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("GET /api/articles error:", err);
-    return NextResponse.json(
-      { error: "ServerError", message: "مشکل داخلی سرور" },
-      { status: 500 }
-    );
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-import { NextRequest, NextResponse } from "next/server";
-import { getDataSource } from "@/server/db/typeorm.datasource";
-import { NewArticle } from "@/server/modules/articles/entities/innerArticle";
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const ds = await getDataSource();
-
-    // گرفتن body
-    const body = await req.json(); 
-    const { id } = body as { id: string };
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "ValidationError", message: "شناسه (id) الزامی است." },
-        { status: 400 }
-      );
-    }
-
-    const articleRepo = ds.getRepository(NewArticle);
-    const found = await articleRepo.findOne({ where: { id } });
-
-    if (!found) {
-      return NextResponse.json(
-        { error: "NotFound", message: "مقاله پیدا نشد." },
-        { status: 404 }
-      );
-    }
-
-    await articleRepo.remove(found);
-
-    return NextResponse.json({ success: true, id }, { status: 200 });
-  } catch (err: any) {
-    console.error("DELETE /api/articles/inner-article error:", err);
     return NextResponse.json(
       { error: "ServerError", message: "مشکل داخلی سرور" },
       { status: 500 }

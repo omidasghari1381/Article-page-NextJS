@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
 import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
@@ -10,10 +9,10 @@ type ArticleCreatePayload = {
   subject: string;
   authorId?: string;
   category: articleCategoryEnum;
-  Introduction: string | null;
-  quotes: string | null;
+  // Introduction: string | null;
+  // quotes: string | null;
   mainText: string;
-  secondryText: string;
+  // secondryText: string;
   thumbnail: string | null;
   readingPeriod: string;
   summery: string[];
@@ -43,10 +42,10 @@ function ArticleForm() {
     subject: string;
     authorId: string;
     category: "" | articleCategoryEnum;
-    Introduction: string;
-    quotes: string;
+    // Introduction: string;
+    // quotes: string;
     mainText: string;
-    secondryText: string;
+    // secondryText: string;
     thumbnail: string;
     readingPeriod: string;
   }>({
@@ -54,10 +53,10 @@ function ArticleForm() {
     subject: "",
     authorId: "",
     category: "",
-    Introduction: "",
-    quotes: "",
+    // Introduction: "",
+    // quotes: "",
     mainText: "",
-    secondryText: "",
+    // secondryText: "",
     thumbnail: "",
     readingPeriod: "",
   });
@@ -121,8 +120,8 @@ function ArticleForm() {
     if (!form.readingPeriod.trim())
       errs.readingPeriod = "مدت زمان مطالعه الزامی است.";
     if (!form.mainText.trim()) errs.mainText = "متن اصلی مقاله الزامی است.";
-    if (!form.secondryText.trim())
-      errs.secondryText = "متن ثانویه مقاله الزامی است.";
+    // if (!form.secondryText.trim())
+    //   errs.secondryText = "متن ثانویه مقاله الزامی است.";
 
     if (Object.keys(errs).length) {
       alert(Object.values(errs).join("\n"));
@@ -134,17 +133,17 @@ function ArticleForm() {
       subject: form.subject,
       authorId: form.authorId || undefined,
       category: form.category as articleCategoryEnum,
-      Introduction: form.Introduction || null,
-      quotes: form.quotes || null,
+      // Introduction: form.Introduction || null,
+      // quotes: form.quotes || null,
       mainText: form.mainText,
-      secondryText: form.secondryText,
+      // secondryText: form.secondryText,
       thumbnail: form.thumbnail || null,
       readingPeriod: form.readingPeriod,
       summery: summeryList,
     };
 
     try {
-      const res = await fetch("/api/articles", {
+      const res = await fetch("/api/articles/inner-article", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -285,7 +284,7 @@ function ArticleForm() {
               </p>
             </div>
 
-            <div>
+            {/* <div>
               <div className="flex items-center justify-between">
                 <label className="block text-sm text-black mb-2">مقدمه</label>
                 <CharCounter value={form.Introduction} max={600} />
@@ -297,8 +296,8 @@ function ArticleForm() {
                 onChange={handleChange("Introduction")}
                 maxLength={600}
               />
-            </div>
-            <div>
+            </div> */}
+            {/* <div>
               <div className="flex items-center justify-between">
                 <label className="block text-sm text-black mb-2">نقل قول</label>
                 <CharCounter value={form.quotes} max={600} />
@@ -310,7 +309,7 @@ function ArticleForm() {
                 onChange={handleChange("quotes")}
                 maxLength={600}
               />
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-sm text-black mb-2">
@@ -388,7 +387,7 @@ function ArticleForm() {
               />
             </div>
 
-            <div>
+            {/* <div>
               <div className="flex items-center justify-between">
                 <label className="block text-sm text-black mb-2">
                   متن ثانویه
@@ -402,7 +401,7 @@ function ArticleForm() {
                 onChange={handleChange("secondryText")}
                 maxLength={20000}
               />
-            </div>
+            </div> */}
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
@@ -413,10 +412,10 @@ function ArticleForm() {
                     title: "",
                     authorId: "",
                     category: "",
-                    Introduction: "",
-                    quotes: "",
+                    // Introduction: "",
+                    // quotes: "",
                     mainText: "",
-                    secondryText: "",
+                    // secondryText: "",
                     thumbnail: "",
                     readingPeriod: "",
                     subject: "",

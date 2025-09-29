@@ -1,10 +1,10 @@
-import { Entity, Column, ManyToOne, JoinColumn, ManyToMany, JoinTable } from "typeorm";
+import { Entity, Column, ManyToOne, JoinColumn } from "typeorm";
 import { AbstractEntity } from "@/server/core/abstracts/entity.base";
 import { User } from "../../users/entities/user.entity";
-import { ArticleCategory } from "./articleCategory.entity";
+import { articleCategoryEnum } from "../enums/articleCategory.enum";
 
-@Entity("articles")
-export class Article extends AbstractEntity {
+@Entity("newArticle")
+export class NewArticle extends AbstractEntity {
   @Column({ type: "varchar", length: 200 })
   title!: string;
 
@@ -15,8 +15,8 @@ export class Article extends AbstractEntity {
   @Column({ type: "text", nullable: false })
   mainText!: string;
 
-  @Column({ type: "text", nullable: false })
-  secondryText!: string;
+  // @Column({ type: "text", nullable: false })
+  // secondryText!: string;
 
   @Column({ type: "text", nullable: false })
   subject!: string;
@@ -24,21 +24,16 @@ export class Article extends AbstractEntity {
   @Column({ type: "text", nullable: true })
   thumbnail!: string | null;
 
-  @Column({ type: "text", nullable: true })
-  Introduction!: string | null;
+  // @Column({ type: "text", nullable: true })
+  // Introduction!: string | null;
 
-  @Column({ type: "text", nullable: true })
-  quotes!: string | null;
+  // @Column({ type: "text", nullable: true })
+  // quotes!: string | null;
 
-  // @Column({ type: "varchar", length: 64 })
+  @Column({ type: "varchar", length: 64 })
+  category!: string;
   // category!: articleCategoryEnum;
-  @ManyToMany(() => ArticleCategory, { cascade: false })
-  @JoinTable({
-    name: "article_categories",
-    joinColumn: { name: "article_id", referencedColumnName: "id" },
-    inverseJoinColumn: { name: "category_id", referencedColumnName: "id" },
-  })
-  categories!: ArticleCategory[];
+  
   @Column({ type: "int", default: 0 })
   viewCount!: number;
 

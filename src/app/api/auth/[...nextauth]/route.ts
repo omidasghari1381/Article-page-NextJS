@@ -41,23 +41,33 @@ export const authOptions: NextAuthOptions = {
         const ok = await compare(credentials.password, user.passwordHash);
         if (!ok) return null;
 
-        return { id: String(user.id), name: user.firstName, phone: user.phone } as any;
+        return { id: String(user.id), name: user.firstName, phone: user.phone} as any;
       },
     }),
   ],
   pages: {
     signIn: "/login",
   },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) token.uid = (user as any).id;
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user && token?.uid) (session.user as any).id = token.uid as string;
-      return session;
-    },
+callbacks: {
+  async jwt({ token, user }) {
+    if (user) {
+      token.uid = (user as any).id;
+      token.role = (user as any).role; 
+    }
+    return token;
   },
+  async session({ session, token }) {
+    if (session.user) {
+      if (token?.uid) {
+        (session.user as any).id = token.uid as string;
+      }
+      if (token?.role) {
+        (session.user as any).role = token.role as string;
+      }
+    }
+    return session;
+  },
+}
 };
 
 const handler = NextAuth(authOptions);
