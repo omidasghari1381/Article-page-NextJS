@@ -7,12 +7,14 @@ import { ReplyComment } from "../modules/articles/entities/reply.entity";
 import { CommentArticle } from "../modules/articles/entities/comment.entity";
 import { NewArticle } from "../modules/articles/entities/innerArticle";
 import { ArticleCategory } from "../modules/articles/entities/articleCategory.entity";
+import { ArticleTag } from "../modules/articles/entities/articleTages.entity";
 export const ENTITIES = [
+  ArticleTag,
   User,
   Article,
   NewArticle,
   FAQ,
   CommentArticle,
   ReplyComment,
-  ArticleCategory
+  ArticleCategory,
 ] as const;

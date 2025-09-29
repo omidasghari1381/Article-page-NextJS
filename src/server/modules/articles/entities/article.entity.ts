@@ -1,4 +1,11 @@
-import { Entity, Column, ManyToOne, JoinColumn, ManyToMany, JoinTable } from "typeorm";
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  ManyToMany,
+  JoinTable,
+} from "typeorm";
 import { AbstractEntity } from "@/server/core/abstracts/entity.base";
 import { User } from "../../users/entities/user.entity";
 import { ArticleCategory } from "./articleCategory.entity";
@@ -35,10 +42,19 @@ export class Article extends AbstractEntity {
   @ManyToMany(() => ArticleCategory, { cascade: false })
   @JoinTable({
     name: "article_categories",
-    joinColumn: { name: "article_id", referencedColumnName: "id" },
-    inverseJoinColumn: { name: "category_id", referencedColumnName: "id" },
+    joinColumn: {
+      name: "article_id",
+      referencedColumnName: "id",
+      onDelete: "CASCADE",
+    },
+    inverseJoinColumn: {
+      name: "category_id",
+      referencedColumnName: "id",
+      onDelete: "CASCADE",
+    },
   })
   categories!: ArticleCategory[];
+
   @Column({ type: "int", default: 0 })
   viewCount!: number;
 

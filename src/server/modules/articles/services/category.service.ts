@@ -3,8 +3,6 @@ import { ArticleCategory } from "../entities/articleCategory.entity";
 
 export class CategoryService {
   constructor(private ds: DataSource) {}
-
-  /** پیدا کردن مسیر اجداد برای جلوگیری از حلقه و محاسبه depth */
   private async getAncestorsChain(catId: string): Promise<ArticleCategory[]> {
     const repo = this.ds.getRepository(ArticleCategory);
     const chain: ArticleCategory[] = [];
@@ -22,7 +20,6 @@ export class CategoryService {
     return chain;
   }
 
-  /** ایجاد دسته جدید */
   async createCategory(input: {
     name: string;
     slug: string;
@@ -37,7 +34,7 @@ export class CategoryService {
 
     const cat = repo.create({
       name: input.name.trim(),
-      slug: input.slug.trim().toLowerCase(), // نرمال‌سازی اسلاگ
+      slug: input.slug.trim().toLowerCase(),
       description: input.description ?? null,
       parent,
       depth: parent ? (parent.depth ?? 0) + 1 : 0,
@@ -46,7 +43,6 @@ export class CategoryService {
     return await repo.save(cat);
   }
 
-  /** تغییر والد/به‌روزرسانی اطلاعات دسته */
   async updateCategory(
     id: string,
     updates: {
@@ -64,29 +60,21 @@ export class CategoryService {
     if (updates.slug !== undefined) cat.slug = updates.slug.trim().toLowerCase();
     if (updates.description !== undefined) cat.description = updates.description;
 
-    // تغییر والد
     if (updates.parentId !== undefined) {
       const newParent = updates.parentId
         ? await repo.findOne({ where: { id: updates.parentId } })
         : null;
 
-      // جلوگیری از حلقه: newParent نباید خود cat یا فرزندِ cat باشد
       if (newParent) {
         if (newParent.id === cat.id) throw new Error("A category cannot be its own parent");
 
-        // تمام اجداد newParent را بیاور؛ اگر cat در بین اجداد بود یعنی حلقه می‌شود
         const ancestorsOfNewParent = await this.getAncestorsChain(newParent.id);
         if (ancestorsOfNewParent.some((a) => a.id === cat.id)) {
           throw new Error("Invalid parent: would create a cycle");
         }
       }
-
       cat.parent = newParent ?? null;
       cat.depth = newParent ? (newParent.depth ?? 0) + 1 : 0;
-
-      // اگر لازم شد: به‌روزرسانی عمق برای همهٔ نوه‌ها (آبشاری)
-      // این قسمت می‌تواند با یک کوئری بازگشتی (CTE) یا حلقهٔ برنامه‌ای انجام شود.
-      // برای سادگی، اینجا از الگوریتم برنامه‌ای استفاده می‌کنیم:
       const queue = [...(cat.children ?? [])];
       while (queue.length) {
         const child = queue.shift()!;
