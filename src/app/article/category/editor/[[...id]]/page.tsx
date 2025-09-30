@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
+import CategorySeoSettingsForm from "./CategorySeoSettingsForm";
 
 type CategoryDTO = {
   id: string;
@@ -31,17 +32,56 @@ export default function Page() {
         ]}
       />
       <div className="mt-5">
-        <CategoryForm />
+        <CategoryEditWithTabs />
       </div>
     </main>
   );
 }
 
+/** ---------------- Tabs Wrapper ---------------- */
+function CategoryEditWithTabs() {
+  const [tab, setTab] = useState<"category" | "seo">("category");
+  return (
+    <section className="w-full" dir="rtl">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          className={`px-4 py-2 rounded-lg border ${
+            tab === "category"
+              ? "bg-black text-white"
+              : "bg-white text-gray-800 hover:bg-gray-50"
+          }`}
+          onClick={() => setTab("category")}
+        >
+          اطلاعات دسته
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg border ${
+            tab === "seo"
+              ? "bg-black text-white"
+              : "bg-white text-gray-800 hover:bg-gray-50"
+          }`}
+          onClick={() => setTab("seo")}
+        >
+          SEO
+        </button>
+      </div>
+
+      {tab === "category" ? <CategoryForm /> : <CategorySeoTab />}
+    </section>
+  );
+}
+
+function CategorySeoTab() {
+  const params = useParams<{ id?: string }>();
+  const id = params?.id?.[0] ?? null; // اگر صفحه new است، id ندارد
+  <CategorySeoSettingsForm categoryId={id || null} />;
+}
+
+/** ---------------- Original Form (kept, minimal tweaks) ---------------- */
 function CategoryForm() {
   const params = useParams<{ id?: string }>();
   const router = useRouter();
 
-  // اگر مسیرت /article/new-category/[id] باشد:
   const id = params?.id?.[0] ?? null;
   const isEdit = !!id;
 
@@ -70,7 +110,7 @@ function CategoryForm() {
       .toString()
       .trim()
       .toLowerCase()
-      .replace(/[\u0600-\u06FF]/g, "") 
+      .replace(/[\u0600-\u06FF]/g, "")
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-]/g, "")
       .replace(/\-+/g, "-")
@@ -78,6 +118,7 @@ function CategoryForm() {
 
   const parentOptions = useMemo(() => {
     return allCategories
+      .slice()
       .sort((a, b) => a.depth - b.depth || a.name.localeCompare(b.name))
       .map((c) => ({
         id: c.id,
@@ -85,19 +126,18 @@ function CategoryForm() {
       }));
   }, [allCategories]);
 
-  // --- Load categories for parent select ---
+  // Load categories list (for parent select)
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        // انتظار: GET /api/categories → Array<CategoryDTO>
         const res = await fetch(`/api/categories`, { cache: "no-store" });
         if (res.ok) {
           const arr = (await res.json()) as CategoryDTO[];
           if (active) setAllCategories(Array.isArray(arr) ? arr : []);
         }
       } catch {
-        // بی‌خیال، بدون لیست هم فرم کار می‌کند
+        // ignore
       }
     })();
     return () => {
@@ -105,7 +145,7 @@ function CategoryForm() {
     };
   }, []);
 
-  // --- Load category if edit mode ---
+  // Load category by id (edit mode)
   useEffect(() => {
     if (!isEdit) return;
     let active = true;
@@ -152,7 +192,7 @@ function CategoryForm() {
     };
   }, [id, isEdit]);
 
-  // --- Handlers ---
+  // Handlers
   const handleChange =
     (field: keyof typeof form) =>
     (
@@ -164,7 +204,6 @@ function CategoryForm() {
     ) => {
       const val = typeof e === "string" ? e : e.target.value;
 
-      // اگر نام تغییر کند و اسلاگ را کاربر دستی دست نزده باشد، اسلاگ را اتومات به‌روز کن
       if (field === "name") {
         setForm((f) => {
           const next: any = { ...f, name: val };
@@ -198,9 +237,8 @@ function CategoryForm() {
       }
 
       alert("دسته با موفقیت حذف شد.");
-      router.push("/articles"); // هر جا می‌خواهی برگردی
-      // router.refresh();
-    } catch (err) {
+      router.push("/articles");
+    } catch {
       alert("مشکل در ارتباط با سرور");
     } finally {
       setDeleting(false);
@@ -214,7 +252,6 @@ function CategoryForm() {
     if (!form.name.trim()) errs.name = "نام الزامی است.";
     if (!form.slug.trim()) errs.slug = "اسلاگ الزامی است.";
 
-    // جلوگیری از والد‌شدن خود دسته (در حالت ویرایش)
     if (isEdit && form.parentId && form.parentId === id) {
       errs.parentId = "نمی‌توانید والد را خود دسته قرار دهید.";
     }
@@ -235,6 +272,7 @@ function CategoryForm() {
       setSaving(true);
       setError(null);
 
+      // طبق صفحه‌ی شما بدون تغییر:
       const url = isEdit ? `/api/categories/${id}` : `/api/articles/categories`;
       const method = isEdit ? "PATCH" : "POST";
 
@@ -250,7 +288,7 @@ function CategoryForm() {
       }
 
       alert(isEdit ? "تغییرات ثبت شد ✅" : "دسته با موفقیت ایجاد شد ✅");
-    //   router.push("/articles");
+      // router.push("/articles");
       router.refresh();
     } catch (err: any) {
       setError(err?.message || "خطایی رخ داد");
@@ -320,7 +358,8 @@ function CategoryForm() {
                 ))}
               </select>
               <p className="text-xs text-gray-400 mt-1">
-                والد باعث ساختار درختی می‌شود. حذف والد، این دسته را ریشه‌ای می‌کند.
+                والد باعث ساختار درختی می‌شود. حذف والد، این دسته را ریشه‌ای
+                می‌کند.
               </p>
             </div>
           </div>

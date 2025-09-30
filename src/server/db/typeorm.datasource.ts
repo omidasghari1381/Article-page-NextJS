@@ -16,7 +16,7 @@ export async function getDataSource(): Promise<DataSource> {
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
     entities: [...ENTITIES], 
-    synchronize: false, 
+    synchronize: true, 
     logging: false,
   });
 

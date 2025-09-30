@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
+import RedirectCard from "./RedirectCart";
 
 // ---------- Types ----------
 type RedirectDTO = {
@@ -302,7 +303,6 @@ function Page() {
         </div>
       </section>
 
-      {/* لیست کارت‌ها */}
       <section className="mt-6" dir="rtl">
         {error && (
           <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">{error}</div>
@@ -326,7 +326,6 @@ function Page() {
           )}
         </div>
 
-        {/* صفحه‌بندی */}
         <div className="flex items-center justify-between px-0 py-6">
           <div className="text-sm text-gray-500">
             {data ? (
@@ -371,105 +370,102 @@ export default Page;
 /* ==========================================================
    Component: RedirectCard  (همین فایل؛ برای مپ زدن روی آیتم‌ها)
    ========================================================== */
-function RedirectCard({
-  item,
-  editHref,
-  onDeleteClick,
-  onToggleActive,
-  showDates = true,
-}: {
-  item: RedirectDTO;
-  editHref?: string | ((id: string) => string);
-  onDeleteClick?: (id: string) => void;
-  onToggleActive?: (id: string, next: boolean) => void;
-  showDates?: boolean;
-}) {
-  const { id, fromPath, toPath, statusCode, isActive, createdAt, updatedAt } = item;
-  const editLink =
-    typeof editHref === "function" ? editHref(id) : typeof editHref === "string" ? `${editHref}` : null;
+// function RedirectCard({
+//   item,
+//   editHref,
+//   onDeleteClick,
+//   onToggleActive,
+//   showDates = true,
+// }: {
+//   item: RedirectDTO;
+//   editHref?: string | ((id: string) => string);
+//   onDeleteClick?: (id: string) => void;
+//   onToggleActive?: (id: string, next: boolean) => void;
+//   showDates?: boolean;
+// }) {
+//   const { id, fromPath, toPath, statusCode, isActive, createdAt, updatedAt } = item;
+//   const editLink =
+//     typeof editHref === "function" ? editHref(id) : typeof editHref === "string" ? `${editHref}` : null;
 
-  return (
-    <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-5" dir="rtl">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        {/* مسیرها */}
-        <div className="flex-1 min-w-0">
-          <div className="text-[13px] text-gray-500 mb-1">fromPath</div>
-          <div className="font-mono text-xs md:text-sm text-black break-all ltr">{fromPath}</div>
+//   return (
+//     <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-5" dir="rtl">
+//       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+//         {/* مسیرها */}
+//         <div className="flex-1 min-w-0">
+//           <div className="text-[13px] text-gray-500 mb-1">fromPath</div>
+//           <div className="font-mono text-xs md:text-sm text-black break-all ltr">{fromPath}</div>
 
-          <div className="text-[13px] text-gray-500 mt-3 mb-1">toPath</div>
-          <div className="font-mono text-xs md:text-sm text-black break-all ltr">{toPath}</div>
-        </div>
+//           <div className="text-[13px] text-gray-500 mt-3 mb-1">toPath</div>
+//           <div className="font-mono text-xs md:text-sm text-black break-all ltr">{toPath}</div>
+//         </div>
 
-        {/* وضعیت و کد */}
-        <div className="w-full md:w-auto grid grid-cols-2 md:grid-cols-1 gap-3 md:gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] text-gray-500">کد:</span>
-            <span className="px-2 py-1 rounded-lg border text-sm">{statusCode}</span>
-          </div>
+//         <div className="w-full md:w-auto grid grid-cols-2 md:grid-cols-1 gap-3 md:gap-4">
+//           <div className="flex items-center gap-2">
+//             <span className="text-[13px] text-gray-500">کد:</span>
+//             <span className="px-2 py-1 rounded-lg border text-sm">{statusCode}</span>
+//           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] text-gray-500">وضعیت:</span>
-            <span
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-                isActive ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              <span className={`h-2 w-2 rounded-full ${isActive ? "bg-green-600" : "bg-gray-500"}`} />
-              {isActive ? "فعال" : "غیرفعال"}
-            </span>
-          </div>
-        </div>
-      </div>
+//           <div className="flex items-center gap-2">
+//             <span className="text-[13px] text-gray-500">وضعیت:</span>
+//             <span
+//               className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+//                 isActive ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"
+//               }`}
+//             >
+//               <span className={`h-2 w-2 rounded-full ${isActive ? "bg-green-600" : "bg-gray-500"}`} />
+//               {isActive ? "فعال" : "غیرفعال"}
+//             </span>
+//           </div>
+//         </div>
+//       </div>
 
-      {/* تاریخ‌ها */}
-      {showDates && (createdAt || updatedAt) && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-500">
-          {createdAt && (
-            <div>
-              <span className="text-gray-400">ایجاد: </span>
-              <time dateTime={createdAt}>{formatDateTime(createdAt)}</time>
-            </div>
-          )}
-          {updatedAt && (
-            <div>
-              <span className="text-gray-400">ویرایش: </span>
-              <time dateTime={updatedAt}>{formatDateTime(updatedAt)}</time>
-            </div>
-          )}
-        </div>
-      )}
+//       {showDates && (createdAt || updatedAt) && (
+//         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-500">
+//           {createdAt && (
+//             <div>
+//               <span className="text-gray-400">ایجاد: </span>
+//               <time dateTime={createdAt}>{formatDateTime(createdAt)}</time>
+//             </div>
+//           )}
+//           {updatedAt && (
+//             <div>
+//               <span className="text-gray-400">ویرایش: </span>
+//               <time dateTime={updatedAt}>{formatDateTime(updatedAt)}</time>
+//             </div>
+//           )}
+//         </div>
+//       )}
 
-      {/* اکشن‌ها */}
-      {(editLink || onDeleteClick || onToggleActive) && (
-        <div className="mt-5 flex items-center justify-end gap-2">
-          {typeof onToggleActive === "function" && (
-            <button
-              className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50"
-              onClick={() => onToggleActive(id, !isActive)}
-            >
-              {isActive ? "غیرفعال کن" : "فعال کن"}
-            </button>
-          )}
+//       {(editLink || onDeleteClick || onToggleActive) && (
+//         <div className="mt-5 flex items-center justify-end gap-2">
+//           {typeof onToggleActive === "function" && (
+//             <button
+//               className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50"
+//               onClick={() => onToggleActive(id, !isActive)}
+//             >
+//               {isActive ? "غیرفعال کن" : "فعال کن"}
+//             </button>
+//           )}
 
-          {editLink && (
-            <Link href={editLink} className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50">
-              ویرایش
-            </Link>
-          )}
+//           {editLink && (
+//             <Link href={editLink} className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50">
+//               ویرایش
+//             </Link>
+//           )}
 
-          {typeof onDeleteClick === "function" && (
-            <button
-              className="px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800"
-              onClick={() => onDeleteClick(id)}
-            >
-              حذف
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+//           {typeof onDeleteClick === "function" && (
+//             <button
+//               className="px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800"
+//               onClick={() => onDeleteClick(id)}
+//             >
+//               حذف
+//             </button>
+//           )}
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
 
 /* ===== Helpers ===== */
 function formatDateTime(iso?: string) {
