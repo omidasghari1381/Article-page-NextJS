@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getDataSource } from "@/server/db/typeorm.datasource"; // همونی که قبلاً ساختی
+import { getDataSource } from "@/server/db/typeorm.datasource";
 import { CategoryService } from "@/server/modules/articles/services/category.service";
 
 const CreateCategorySchema = z.object({

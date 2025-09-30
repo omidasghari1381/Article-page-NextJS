@@ -78,7 +78,6 @@ export default function Page() {
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-[28px] shadow-xl overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2">
-            {/* ستون اسلایدر */}
             <div className="relative bg-[#FAFAFA]">
               <div className="relative bg-gray-50">
                 <div className="p-8 sm:p-12 lg:p-16 h-full">
@@ -87,7 +86,6 @@ export default function Page() {
               </div>
             </div>
 
-            {/* ستون فرم */}
             <div className="p-6 sm:p-10">
               <div className="flex items-center mb-6 justify-end gap-2.5">
                 <a
@@ -125,9 +123,7 @@ export default function Page() {
                 </p>
               </div>
 
-              {/* فرم */}
               <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-                {/* نام و نام خانوادگی */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-base text-[#1C2120]">نام</label>
@@ -165,7 +161,6 @@ export default function Page() {
                   </div>
                 </div>
 
-                {/* موبایل */}
                 <div className="space-y-2">
                   <label className="text-base text-[#1C2120] font-medium">
                     شماره موبایل
@@ -183,7 +178,6 @@ export default function Page() {
                   )}
                 </div>
 
-                {/* رمز عبور */}
                 <div className="space-y-2">
                   <label className="text-base text-[#1C2120] font-medium">
                     رمز عبور
@@ -215,7 +209,6 @@ export default function Page() {
                   )}
                 </div>
 
-                {/* مرا به خاطر بسپار */}
                 <label className="flex items-center gap-2 text-base text-[#1C2120]">
                   <input
                     type="checkbox"
@@ -228,7 +221,6 @@ export default function Page() {
                   مرا به خاطر بسپار
                 </label>
 
-                {/* دکمه ثبت‌نام */}
                 <button
                   type="submit"
                   disabled={!canSubmit}
@@ -249,7 +241,6 @@ export default function Page() {
                   </span>
                 </button>
 
-                {/* خط جداکننده */}
                 <div className="relative text-center">
                   <div className="h-px bg-[#DEDFDE]" />
                   <span className="absolute inset-0 -top-3 mx-auto bg-white px-3 text-sm font-normal text-gray-400 w-fit">
@@ -257,7 +248,6 @@ export default function Page() {
                   </span>
                 </div>
 
-                {/* گوگل (اکنون ماک) */}
                 <button
                   type="button"
                   onClick={() => alert("ورود با گوگل - بعداً اتصال واقعی")}
@@ -274,14 +264,12 @@ export default function Page() {
                   </span>
                 </button>
 
-                {/* خطای کلی */}
                 {errors.general && (
                   <div className="text-sm text-red-600 text-center">
                     {errors.general}
                   </div>
                 )}
 
-                {/* لینک ورود */}
                 <p className="text-sm text-gray-600 text-center">
                   حساب کاربری دارید؟
                   <a

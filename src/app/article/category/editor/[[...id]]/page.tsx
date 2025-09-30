@@ -63,23 +63,20 @@ function CategoryForm() {
   const [deleting, setDeleting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // کنترل اتوماتیک‌سازی اسلاگ
   const [slugTouched, setSlugTouched] = useState<boolean>(false);
 
-  // ---- Helpers ----
   const slugify = (s: string) =>
     s
       .toString()
       .trim()
       .toLowerCase()
-      .replace(/[\u0600-\u06FF]/g, "") // حذف حروف فارسی (دلخواه)
+      .replace(/[\u0600-\u06FF]/g, "") 
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-]/g, "")
       .replace(/\-+/g, "-")
       .replace(/^\-+|\-+$/g, "");
 
   const parentOptions = useMemo(() => {
-    // اگر API عمق را برمی‌گرداند (depth)، از آن برای تورفتگی استفاده می‌کنیم
     return allCategories
       .sort((a, b) => a.depth - b.depth || a.name.localeCompare(b.name))
       .map((c) => ({

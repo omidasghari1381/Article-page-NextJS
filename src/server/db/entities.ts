@@ -8,7 +8,9 @@ import { CommentArticle } from "../modules/articles/entities/comment.entity";
 import { NewArticle } from "../modules/articles/entities/innerArticle";
 import { ArticleCategory } from "../modules/articles/entities/articleCategory.entity";
 import { ArticleTag } from "../modules/articles/entities/articleTages.entity";
+import { Redirect } from "../modules/redirects/entities/redirect.entity";
 export const ENTITIES = [
+  Redirect,
   ArticleTag,
   User,
   Article,
