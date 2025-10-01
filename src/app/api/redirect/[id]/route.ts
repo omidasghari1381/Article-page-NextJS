@@ -3,25 +3,25 @@ import { z } from "zod";
 import { getDataSource } from "@/server/db/typeorm.datasource";
 import { RedirectService } from "@/server/modules/redirects/services/redirect.service";
 
-type Params = { params: { id: string } };
+// نکته: params اینجا Promise است
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, ctx: Ctx) {
   try {
-    console.log("redirect id", params);
+    const { id } = await ctx.params; // ⬅️ حتما await
     const ds = await getDataSource();
     const service = new RedirectService(ds);
-    const newCategory = await service.getOneById(params.id);
 
-    return NextResponse.json(newCategory, { status: 201 });
-  } catch (err: any) {
-    console.error("❌ redirect GET create error:", err);
-
-    if (err.name === "ZodError") {
-      return NextResponse.json({ error: err.errors }, { status: 400 });
+    const item = await service.getOneById(id);
+    if (!item) {
+      return NextResponse.json({ error: "Redirect not found" }, { status: 404 });
     }
 
+    return NextResponse.json(item, { status: 200 }); // ⬅️ 200 به‌جای 201
+  } catch (err: any) {
+    console.error("❌ redirect GET error:", err);
     return NextResponse.json(
-      { error: err.message ?? "Server Error" },
+      { error: err?.message ?? "Server Error" },
       { status: 500 }
     );
   }
@@ -47,15 +47,16 @@ const UpdateRedirectSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export async function PATCH(req: NextRequest, { params }: Params) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
   try {
+    const { id } = await ctx.params; // ⬅️ حتما await
     const body = await req.json();
     const parsed = UpdateRedirectSchema.parse(body);
 
     const ds = await getDataSource();
     const service = new RedirectService(ds);
 
-    const updated = await service.update(params.id, parsed);
+    const updated = await service.update(id, parsed);
     if (!updated) {
       return NextResponse.json(
         { error: "Redirect not found" },
@@ -66,11 +67,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json(updated, { status: 200 });
   } catch (err: any) {
     console.error("❌ Redirect update error:", err);
-
     if (err?.name === "ZodError") {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-
     return NextResponse.json(
       { error: err?.message ?? "Server Error" },
       { status: 500 }

@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import type { SimpleMediaType } from "@/server/modules/media/enums/media.enums";
-import { MediaGrid } from "./mediaCart";
 import { MediaFilters } from "./MediaFilter";
+import { MediaGrid } from "./MediaCart";
+import Breadcrumb from "@/components/Breadcrumb";
 
 /** ---- Types ---- */
 type MediaDTO = {
@@ -42,34 +42,33 @@ async function fetchMedia(searchParams: {
 }
 
 /** ---- Page ---- */
+// نکته مهم: در Next جدید، searchParams یک Promise است و باید await شود
 export default async function MediaListPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // نرمال‌سازی searchParams (تک‌ارزشی)
+  const spRaw = await searchParams;
   const sp = {
-    q: typeof searchParams.q === "string" ? searchParams.q : undefined,
-    type: typeof searchParams.type === "string" ? searchParams.type : "all",
-    sort: typeof searchParams.sort === "string" ? searchParams.sort : "newest",
-    limit: typeof searchParams.limit === "string" ? searchParams.limit : "100",
-    offset: typeof searchParams.offset === "string" ? searchParams.offset : "0",
+    q: typeof spRaw.q === "string" ? spRaw.q : undefined,
+    type: typeof spRaw.type === "string" ? spRaw.type : "all",
+    sort: typeof spRaw.sort === "string" ? spRaw.sort : "newest",
+    limit: typeof spRaw.limit === "string" ? spRaw.limit : "100",
+    offset: typeof spRaw.offset === "string" ? spRaw.offset : "0",
   };
 
   const dataPromise = fetchMedia(sp);
 
   return (
     <main className="p-6 md:p-8" dir="rtl">
+      <Breadcrumb
+        items={[
+          { label: "مای پراپ", href: "/" },
+          { label: "مدیا", href: "/media" },
+        ]}
+      />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">مدیا</h1>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/media/editor"
-            className="px-4 py-2 rounded-xl bg-black text-white hover:bg-gray-800"
-          >
-            افزودن مدیا
-          </Link>
-        </div>
+        <h1 className="text-2xl font-semibold text-black">مدیا</h1>
       </div>
 
       <MediaFilters

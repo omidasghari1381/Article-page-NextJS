@@ -13,15 +13,15 @@ import { SeoMeta } from "../modules/metaData/entities/seoMeta.entity";
 import { MediaItem } from "../modules/media/entities/mediaItem.entity";
 
 export const ENTITIES = [
-  // Redirect,
-  // ArticleTag,
-  // User,
-  // Article,
-  // NewArticle,
-  // FAQ,
-  // CommentArticle,
-  // ReplyComment,
-  // ArticleCategory,
-  // SeoMeta,
+  Redirect,
+  ArticleTag,
+  User,
+  Article,
+  NewArticle,
+  FAQ,
+  CommentArticle,
+  ReplyComment,
+  ArticleCategory,
+  SeoMeta,
   MediaItem,
 ] as const;
