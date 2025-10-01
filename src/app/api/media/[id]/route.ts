@@ -6,14 +6,16 @@ import {
   UpdateMediaInput,
 } from "@/server/modules/media/services/media.service";
 import { commitTempUrlToPermanent } from "@/app/utils/commitTemp";
+import path from "path";
+import { promises as fsp } from "node:fs";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Ctx) {
   try {
     const ds = await getDataSource();
     const svc = new MediaService(ds);
-    const item = await svc.getMediaById(params.id);
+    const item = await svc.getMediaById((await params).id);
     if (!item)
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(item);
@@ -28,42 +30,87 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
   try {
+    const { id } = await ctx.params;
+
     const ds = await getDataSource();
     const svc = new MediaService(ds);
 
-    // رکورد فعلی را بگیر تا اگر URL عوض شد، بتونیم بعداً فایل قدیمی را پاک کنیم (اختیاری)
-    const current = await svc.getMediaById(params.id);
+    // رکورد فعلی
+    const current = await svc.getMediaById(id);
     if (!current) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // 1) ورودی خام
-    const raw = await req.json();
+    // ورودی خام
+    const raw = (await req.json()) as Record<string, any>;
 
-    // 2) اگر url جدید موقت است، اول انتقال بده
-    if (typeof raw?.url === "string" && raw.url.startsWith("/uploads/tmp/")) {
-      const { url } = await commitTempUrlToPermanent(raw.url);
-      raw.url = url;
+    // اگر url نیومده، یعنی قصد تغییر فایل نداریم → فقط سایر فیلدها
+    if (typeof raw.url === "undefined") {
+      const updates = UpdateMediaInput.parse(raw);
+      const updated = await svc.updateMedia(id, updates);
+      return NextResponse.json(updated);
     }
 
-    // 3) اعتبارسنجی
-    const updates = UpdateMediaInput.parse(raw); // name?, url?, type?, description?
+    // اگر url اومده:
+    let nextUrl: string | undefined = raw.url;
+    let deleteOldAfterSuccess: string | null = null;
 
-    // 4) بروزرسانی DB
-    const updated = await svc.updateMedia(params.id, updates);
+    // اگر همونه که قبلاً ثبت شده، دست نزنیم به فایل
+    if (typeof raw.url === "string" && raw.url === current.url) {
+      // همون URL فعلی؛ لازم نیست چیزی تغییر بدیم
+      // از updates، فیلد url رو حذف می‌کنیم که بیخودی ذخیره نشه
+      delete raw.url;
+    } else if (
+      typeof raw.url === "string" &&
+      raw.url.startsWith("/uploads/tmp/")
+    ) {
+      // فقط در این حالت (ویرایش + فایل جدید temp) منتقل کن
+      try {
+        const { url } = await commitTempUrlToPermanent(raw.url);
+        nextUrl = url;
+        // بعد از موفقیت ذخیره، فایل قدیمی رو پاک کن (اختیاری)
+        // فقط اگر قبلی مسیر دائمی بود
+        if (current.url && current.url.startsWith("/uploads/media/")) {
+          deleteOldAfterSuccess = current.url;
+        }
+      } catch (err: any) {
+        // اگر فایل temp پیدا نشد یا قبلاً منتقل شده بود
+        return NextResponse.json(
+          { error: err?.message || "انتقال فایل موقت ناموفق بود" },
+          { status: 400 }
+        );
+      }
+    } else {
+      // URL جدید ولی temp نیست؛ همون رو ذخیره کن (مثلاً کاربر دستی آدرس CDN داده)
+      // nextUrl = raw.url (از بالا مقدار گرفته)
+    }
 
-    // 5) (اختیاری) اگر URL تغییر کرده و خواستی فایل قدیمی را پاک کنی:
-    //    این کار را پس از موفقیت ذخیره انجام بده. مراقب باش فایل قدیمی tmp نبود.
-    // if (updates.url && current.url && current.url !== updates.url && !current.url.startsWith("/uploads/tmp/")) {
-    //   try {
-    //     // اینجا سرویس حذف فایل دائمی خودت را صدا بزن (مثلاً fs.unlink)
-    //     // await deletePhysicalFileByPublicUrl(current.url);
-    //   } catch {
-    //     // silent (لاگ کن)
-    //   }
-    // }
+    // ساخت updates با URL نهایی (اگر لازم بود)
+    const payload = {
+      ...raw,
+      ...(typeof nextUrl === "string" ? { url: nextUrl } : {}), // اگر url حذف شده بود، دست نزن
+    };
+
+    // اعتبارسنجی
+    const updates = UpdateMediaInput.parse(payload);
+
+    // ذخیره در DB
+    const updated = await svc.updateMedia(id, updates);
+
+    // پاکسازی فایل قبلی بعد از موفقیت (اختیاری)
+    if (deleteOldAfterSuccess) {
+      // path واقعی روی دیسک
+      const absOldPath = path.join(
+        process.cwd(),
+        "public",
+        deleteOldAfterSuccess.replace(/^\/+/, "")
+      );
+      fsp.unlink(absOldPath).catch(() => {
+        // Silent; می‌تونی لاگ کنی
+      });
+    }
 
     return NextResponse.json(updated);
   } catch (e: any) {
@@ -72,11 +119,12 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: msg }, { status });
   }
 }
+
 export async function DELETE(_req: NextRequest, { params }: Ctx) {
   try {
     const ds = await getDataSource();
     const svc = new MediaService(ds);
-    await svc.deleteMedia(params.id);
+    await svc.deleteMedia((await params).id);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     const msg = e.message ?? "Bad Request";

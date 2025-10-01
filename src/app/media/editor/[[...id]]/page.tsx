@@ -16,9 +16,9 @@ type MediaDTO = {
 };
 
 type TempUpload = {
-  tempId: string;  // برای Cleanup
-  url: string;     // آدرس public برای پیش‌نمایش/کپی
-  path: string;    // مسیر ذخیره‌ی موقت در سرور
+  tempId: string; 
+  url: string; 
+  path: string; 
   mime?: string;
   size?: number;
 };
@@ -28,9 +28,8 @@ export default function MediaEditorPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // اگر مسیر مثل /media/editor/123 باشد => id = "123"
-  // اگر /media/editor باشد => id = null (ساخت)
-  const id = Array.isArray(params?.id) && params.id.length ? params.id[0] : null;
+  const id =
+    Array.isArray(params?.id) && params.id.length ? params.id[0] : null;
   const isEdit = !!id;
 
   // فرم ساده
@@ -170,7 +169,10 @@ export default function MediaEditorPage() {
             resolve(
               new Response(xhr.responseText, {
                 status: xhr.status,
-                headers: new Headers({ "Content-Type": xhr.getResponseHeader("Content-Type") || "application/json" }),
+                headers: new Headers({
+                  "Content-Type":
+                    xhr.getResponseHeader("Content-Type") || "application/json",
+                }),
               })
             );
           } else {
@@ -293,7 +295,9 @@ export default function MediaEditorPage() {
   return (
     <main className="pb-24 pt-6 px-20" dir="rtl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold">{isEdit ? "ویرایش مدیا" : "افزودن مدیا"}</h1>
+        <h1 className="text-2xl font-semibold">
+          {isEdit ? "ویرایش مدیا" : "افزودن مدیا"}
+        </h1>
       </div>
 
       {error && (
@@ -317,9 +321,17 @@ export default function MediaEditorPage() {
                 <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 mb-3">
                   {type === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={previewUrl} alt={name || "preview"} className="w-full h-full object-cover" />
+                    <img
+                      src={previewUrl}
+                      alt={name || "preview"}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <video src={previewUrl} className="w-full h-full object-cover" controls />
+                    <video
+                      src={previewUrl}
+                      className="w-full h-full object-cover"
+                      controls
+                    />
                   )}
                 </div>
                 <div className="flex items-center justify-center gap-2">
@@ -381,7 +393,10 @@ export default function MediaEditorPage() {
               <div className="w-full h-2 bg-gray-200 rounded">
                 <div
                   className="h-2 bg-black rounded"
-                  style={{ width: `${uploadProgress ?? 0}%`, transition: "width .2s" }}
+                  style={{
+                    width: `${uploadProgress ?? 0}%`,
+                    transition: "width .2s",
+                  }}
                 />
               </div>
             </div>
@@ -421,9 +436,7 @@ export default function MediaEditorPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-black mb-2">
-                توضیح
-              </label>
+              <label className="block text-sm text-black mb-2">توضیح</label>
               <textarea
                 className="w-full min-h-[120px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 value={description}

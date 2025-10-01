@@ -14,7 +14,7 @@ export type CreateMediaInputType = z.infer<typeof CreateMediaInput>;
 
 export const UpdateMediaInput = z.object({
   name: z.string().min(1).max(255).optional(),
-  url: z.string().url().max(1000).optional(),
+  url: z.string().max(1000).optional(),
   type: z.enum(SimpleMediaType).optional(),
   description: z.string().nullable().optional(),
 });
