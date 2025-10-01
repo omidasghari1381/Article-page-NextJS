@@ -10,6 +10,7 @@ import { ArticleCategory } from "../modules/articles/entities/articleCategory.en
 import { ArticleTag } from "../modules/articles/entities/articleTages.entity";
 import { Redirect } from "../modules/redirects/entities/redirect.entity";
 import { SeoMeta } from "../modules/metaData/entities/seoMeta.entity";
+import { MediaItem } from "../modules/media/entities/mediaItem.entity";
 
 export const ENTITIES = [
   Redirect,
@@ -22,4 +23,5 @@ export const ENTITIES = [
   ReplyComment,
   ArticleCategory,
   SeoMeta,
+  MediaItem,
 ] as const;
