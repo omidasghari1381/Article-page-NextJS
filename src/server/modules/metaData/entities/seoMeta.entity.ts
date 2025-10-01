@@ -34,15 +34,12 @@ export class SeoMeta extends AbstractEntity {
   @Column({ type: "char", length: 36 })
   entityId!: string;
 
-  // برای یکتایی مطمئن، NULL نباشه؛ خالی ("") = پیش‌فرض/عمومی
   @Column({ type: "varchar", length: 16, default: "" })
   locale!: string;
 
-  // حالت خودکار: اگر true باشد، فیلدهای زیر نقش override دارند و می‌توانند تهی باشند
   @Column({ type: "boolean", default: true })
   useAuto!: boolean;
 
-  // --- SEO Basics ---
   @Column({ type: "varchar", length: 255, nullable: true })
   seoTitle!: string | null;
 
@@ -55,7 +52,6 @@ export class SeoMeta extends AbstractEntity {
   @Column({ type: "enum", enum: RobotsSetting, nullable: true })
   robots!: RobotsSetting | null;
 
-  // --- Open Graph ---
   @Column({ type: "varchar", length: 255, nullable: true })
   ogTitle!: string | null;
 
@@ -63,13 +59,11 @@ export class SeoMeta extends AbstractEntity {
   ogDescription!: string | null;
 
   @Column({ type: "text", nullable: true })
-  ogImageUrl!: string | null; // URL از سیستم مدیا شما
+  ogImageUrl!: string | null; 
 
-  // --- Twitter ---
   @Column({ type: "enum", enum: TwitterCardType, nullable: true })
   twitterCard!: TwitterCardType | null;
 
-  // --- Article-like meta ---
   @Column({ type: "datetime", nullable: true })
   publishedTime!: Date | null;
 
@@ -79,7 +73,6 @@ export class SeoMeta extends AbstractEntity {
   @Column({ type: "varchar", length: 255, nullable: true })
   authorName!: string | null;
 
-  // برچسب‌ها (اختیاری)
   @Column({ type: "json", nullable: true })
   tags!: string[] | null;
 }

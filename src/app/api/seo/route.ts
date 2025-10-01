@@ -1,14 +1,13 @@
-// app/api/seo/meta/route.ts
+export const runtime = "nodejs";
+
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDataSource } from "@/server/db/typeorm.datasource";
-
 import {
-  SeoMeta,
   SeoEntityType,
   RobotsSetting,
   TwitterCardType,
-} from "@/server/modules/metaData/entities/seoMeta.entity";
+} from "@/server/modules/metaData/entities/seoMeta.entity"; // فقط برای enum ها
 import { SeoMetaService } from "@/server/modules/metaData/services/seoMeta.service";
 
 /** ---------- Schemas ---------- */
@@ -42,17 +41,13 @@ const BaseBodySchema = z.object({
   modifiedTime: z.string().datetime().nullable().optional(),
   authorName: z.string().trim().max(255).nullable().optional(),
 
-  // Tags (comma separated handled on client; here expect array)
+  // Tags
   tags: z.array(z.string().trim()).nullable().optional(),
 });
 
-// For POST: require entityType/entityId; fields optional (same as Base)
 const CreateSchema = BaseBodySchema;
-
-// For PATCH: same requirements (we need entity identifiers to update)
 const UpdateSchema = BaseBodySchema;
 
-// For GET/DELETE query
 const QuerySchema = z.object({
   entityType: EntityTypeEnum,
   entityId: z.string().min(1, "entityId الزامی است"),
@@ -102,18 +97,14 @@ export async function POST(req: NextRequest) {
     const parsed = CreateSchema.parse(body);
 
     const ds = await getDataSource();
-    const service = new SeoMetaService(ds.getRepository(SeoMeta));
+    const service = new SeoMetaService(ds); // ← دیگه repo مستقیم نمی‌دیم
 
     const fields = fieldsFromParsed(parsed);
 
     const out =
       parsed.entityType === SeoEntityType.ARTICLE
         ? await service.createForArticle(parsed.entityId, fields, parsed.locale)
-        : await service.createForCategory(
-            parsed.entityId,
-            fields,
-            parsed.locale
-          );
+        : await service.createForCategory(parsed.entityId, fields, parsed.locale);
 
     return NextResponse.json(out, { status: 201 });
   } catch (err: any) {
@@ -121,14 +112,11 @@ export async function POST(req: NextRequest) {
     if (err?.name === "ZodError") {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    return NextResponse.json(
-      { error: err?.message ?? "Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
   }
 }
 
-/** ---------- GET: Read one by (entityType, entityId, locale) ---------- */
+/** ---------- GET: Read one (entityType, entityId, locale) ---------- */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -139,7 +127,7 @@ export async function GET(req: NextRequest) {
     });
 
     const ds = await getDataSource();
-    const service = new SeoMetaService(ds.getRepository(SeoMeta));
+    const service = new SeoMetaService(ds);
 
     const record =
       parsed.entityType === SeoEntityType.ARTICLE
@@ -147,10 +135,7 @@ export async function GET(req: NextRequest) {
         : await service.getForCategory(parsed.entityId, parsed.locale);
 
     if (!record) {
-      return NextResponse.json(
-        { error: "SEO meta not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "SEO meta not found" }, { status: 404 });
     }
 
     return NextResponse.json(record, { status: 200 });
@@ -159,10 +144,7 @@ export async function GET(req: NextRequest) {
     if (err?.name === "ZodError") {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    return NextResponse.json(
-      { error: err?.message ?? "Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
   }
 }
 
@@ -173,18 +155,14 @@ export async function PATCH(req: NextRequest) {
     const parsed = UpdateSchema.parse(body);
 
     const ds = await getDataSource();
-    const service = new SeoMetaService(ds.getRepository(SeoMeta));
+    const service = new SeoMetaService(ds);
 
     const fields = fieldsFromParsed(parsed);
 
     const out =
       parsed.entityType === SeoEntityType.ARTICLE
         ? await service.updateForArticle(parsed.entityId, fields, parsed.locale)
-        : await service.updateForCategory(
-            parsed.entityId,
-            fields,
-            parsed.locale
-          );
+        : await service.updateForCategory(parsed.entityId, fields, parsed.locale);
 
     return NextResponse.json(out, { status: 200 });
   } catch (err: any) {
@@ -192,14 +170,11 @@ export async function PATCH(req: NextRequest) {
     if (err?.name === "ZodError") {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    return NextResponse.json(
-      { error: err?.message ?? "Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
   }
 }
 
-/** ---------- DELETE: Remove one by (entityType, entityId, locale) ---------- */
+/** ---------- DELETE: Remove one ---------- */
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -210,7 +185,7 @@ export async function DELETE(req: NextRequest) {
     });
 
     const ds = await getDataSource();
-    const service = new SeoMetaService(ds.getRepository(SeoMeta));
+    const service = new SeoMetaService(ds);
 
     if (parsed.entityType === SeoEntityType.ARTICLE) {
       await service.deleteForArticle(parsed.entityId, parsed.locale);
@@ -224,9 +199,6 @@ export async function DELETE(req: NextRequest) {
     if (err?.name === "ZodError") {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    return NextResponse.json(
-      { error: err?.message ?? "Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
   }
 }

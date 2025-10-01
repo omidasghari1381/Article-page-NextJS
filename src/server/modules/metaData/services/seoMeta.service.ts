@@ -1,11 +1,6 @@
-// seoMeta.service.ts
-import { Repository, DeleteResult } from "typeorm";
-import {
-  SeoMeta,
-  SeoEntityType,
-  RobotsSetting,
-  TwitterCardType,
-} from "../entities/seoMeta.entity";
+// src/server/modules/metaData/services/seoMeta.service.ts
+import { DataSource, DeleteResult } from "typeorm";
+import { SeoMeta, SeoEntityType, RobotsSetting, TwitterCardType } from "@/server/modules/metaData/entities/seoMeta.entity";
 
 export type SeoFields = {
   useAuto?: boolean;
@@ -25,7 +20,7 @@ export type SeoFields = {
   twitterCard?: TwitterCardType | null;
 
   // Article-like meta
-  publishedTime?: Date | null;
+  publishedTime?: Date | null; // ← مسیر شما این‌ها را Date می‌فرستد (تبدیل ISO → Date را در route انجام بده)
   modifiedTime?: Date | null;
   authorName?: string | null;
 
@@ -34,113 +29,37 @@ export type SeoFields = {
 };
 
 export class SeoMetaService {
-  constructor(private readonly repo: Repository<SeoMeta>) {}
-
-  // ---------- CREATE ----------
-
-  async createForArticle(
-    articleId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
-    return this.createGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
+  constructor(private ds: DataSource) {}
+  private get repo() {
+    return this.ds.getRepository(SeoMeta);
   }
 
-  async createForCategory(
-    categoryId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
-    return this.createGeneric(
-      SeoEntityType.CATEGORY,
-      categoryId,
-      fields,
-      locale
-    );
+  /* ------------------------- GET ------------------------- */
+  async getBy(entityType: SeoEntityType, entityId: string, locale: string = ""): Promise<SeoMeta | null> {
+    return this.repo.findOne({ where: { entityType, entityId, locale } });
   }
 
-  // ---------- GET ----------
-
-  async getForArticle(
-    articleId: string,
-    locale: string = ""
-  ): Promise<SeoMeta | null> {
-    return this.repo.findOne({
-      where: { entityType: SeoEntityType.ARTICLE, entityId: articleId, locale },
-    });
+  async getForArticle(articleId: string, locale: string = ""): Promise<SeoMeta | null> {
+    return this.getBy(SeoEntityType.ARTICLE, articleId, locale);
   }
 
-  async getForCategory(
-    categoryId: string,
-    locale: string = ""
-  ): Promise<SeoMeta | null> {
-    return this.repo.findOne({
-      where: {
-        entityType: SeoEntityType.CATEGORY,
-        entityId: categoryId,
-        locale,
-      },
-    });
+  async getForCategory(categoryId: string, locale: string = ""): Promise<SeoMeta | null> {
+    return this.getBy(SeoEntityType.CATEGORY, categoryId, locale);
   }
 
-  // ---------- UPDATE ----------
-
-  async updateForArticle(
-    articleId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
-    return this.updateGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
-  }
-
-  async updateForCategory(
-    categoryId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
-    return this.updateGeneric(
-      SeoEntityType.CATEGORY,
-      categoryId,
-      fields,
-      locale
-    );
-  }
-
-  // ---------- DELETE ----------
-
-  async deleteForArticle(
-    articleId: string,
-    locale: string = ""
-  ): Promise<void> {
-    await this.deleteGeneric(SeoEntityType.ARTICLE, articleId, locale);
-  }
-
-  async deleteForCategory(
-    categoryId: string,
-    locale: string = ""
-  ): Promise<void> {
-    await this.deleteGeneric(SeoEntityType.CATEGORY, categoryId, locale);
-  }
-
-  // ---------- private helpers ----------
-
-  private async createGeneric(
+  /* ------------------------ CREATE ----------------------- */
+  async createGeneric(
     entityType: SeoEntityType,
     entityId: string,
     fields: SeoFields,
-    locale: string
+    locale: string = ""
   ): Promise<SeoMeta> {
-    const exists = await this.repo.findOne({
-      where: { entityType, entityId, locale },
-      withDeleted: false,
-    });
+    const exists = await this.repo.findOne({ where: { entityType, entityId, locale }, withDeleted: false });
     if (exists) {
-      throw new Error(
-        `SEO meta already exists for ${entityType}(${entityId}) locale="${locale}".`
-      );
+      throw new Error(`SEO meta already exists for ${entityType}(${entityId}) locale="${locale}".`);
     }
 
-    const record = this.repo.create({
+    const rec = this.repo.create({
       entityType,
       entityId,
       locale,
@@ -164,51 +83,60 @@ export class SeoMetaService {
       tags: fields.tags ?? null,
     });
 
-    return this.repo.save(record);
+    return this.repo.save(rec);
   }
 
-  private async updateGeneric(
+  async createForArticle(articleId: string, fields: SeoFields, locale: string = ""): Promise<SeoMeta> {
+    return this.createGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
+  }
+
+  async createForCategory(categoryId: string, fields: SeoFields, locale: string = ""): Promise<SeoMeta> {
+    return this.createGeneric(SeoEntityType.CATEGORY, categoryId, fields, locale);
+  }
+
+  /* ------------------------ UPDATE ----------------------- */
+  private assignIfProvided<T extends object, K extends keyof T>(obj: T, source: Partial<T>, key: K) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      // اجازه به null برای پاک‌کردن مقدار
+      (obj as any)[key] = (source as any)[key] ?? null;
+    }
+  }
+
+  async updateGeneric(
     entityType: SeoEntityType,
     entityId: string,
     fields: SeoFields,
-    locale: string
+    locale: string = ""
   ): Promise<SeoMeta> {
-    const existing = await this.repo.findOne({
-      where: { entityType, entityId, locale },
-    });
+    const existing = await this.repo.findOne({ where: { entityType, entityId, locale } });
     if (!existing) {
-      throw new Error(
-        `SEO meta not found for ${entityType}(${entityId}) locale="${locale}".`
-      );
+      throw new Error(`SEO meta not found for ${entityType}(${entityId}) locale="${locale}".`);
     }
-
-    // فقط فیلدهایی که در ورودی آمده را به‌روزرسانی کن (از بین نرفتن مقادیر دیگر)
-    const assignIfProvided = <K extends keyof SeoFields>(key: K) => {
-      if (Object.prototype.hasOwnProperty.call(fields, key)) {
-        // اجازه به null برای پاک‌کردن مقدار
-        (existing as any)[key] = (fields as any)[key] ?? null;
-      }
-    };
 
     if (Object.prototype.hasOwnProperty.call(fields, "useAuto")) {
       existing.useAuto = Boolean(fields.useAuto);
     }
 
-    assignIfProvided("seoTitle");
-    assignIfProvided("seoDescription");
-    assignIfProvided("canonicalUrl");
-    assignIfProvided("robots");
+    // Basics
+    this.assignIfProvided(existing, fields, "seoTitle");
+    this.assignIfProvided(existing, fields, "seoDescription");
+    this.assignIfProvided(existing, fields, "canonicalUrl");
+    this.assignIfProvided(existing, fields, "robots");
 
-    assignIfProvided("ogTitle");
-    assignIfProvided("ogDescription");
-    assignIfProvided("ogImageUrl");
+    // OG
+    this.assignIfProvided(existing, fields, "ogTitle");
+    this.assignIfProvided(existing, fields, "ogDescription");
+    this.assignIfProvided(existing, fields, "ogImageUrl");
 
-    assignIfProvided("twitterCard");
+    // Twitter
+    this.assignIfProvided(existing, fields, "twitterCard");
 
-    assignIfProvided("publishedTime");
-    assignIfProvided("modifiedTime");
-    assignIfProvided("authorName");
+    // Article-like
+    this.assignIfProvided(existing, fields, "publishedTime");
+    this.assignIfProvided(existing, fields, "modifiedTime");
+    this.assignIfProvided(existing, fields, "authorName");
 
+    // Tags (به دلیل آرایه‌بودن جداگانه هندل می‌کنیم)
     if (Object.prototype.hasOwnProperty.call(fields, "tags")) {
       existing.tags = fields.tags ?? null;
     }
@@ -216,20 +144,49 @@ export class SeoMetaService {
     return this.repo.save(existing);
   }
 
-  private async deleteGeneric(
+  async updateForArticle(articleId: string, fields: SeoFields, locale: string = ""): Promise<SeoMeta> {
+    return this.updateGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
+  }
+
+  async updateForCategory(categoryId: string, fields: SeoFields, locale: string = ""): Promise<SeoMeta> {
+    return this.updateGeneric(SeoEntityType.CATEGORY, categoryId, fields, locale);
+  }
+
+  /* ------------------------ UPSERT ----------------------- */
+  async upsertGeneric(
     entityType: SeoEntityType,
     entityId: string,
-    locale: string
-  ): Promise<void> {
-    const res: DeleteResult = await this.repo.delete({
-      entityType,
-      entityId,
-      locale,
-    });
-    if (!res.affected) {
-      throw new Error(
-        `Nothing to delete for ${entityType}(${entityId}) locale="${locale}".`
-      );
+    fields: SeoFields,
+    locale: string = ""
+  ): Promise<SeoMeta> {
+    const existing = await this.repo.findOne({ where: { entityType, entityId, locale } });
+    if (existing) {
+      return this.updateGeneric(entityType, entityId, fields, locale);
     }
+    return this.createGeneric(entityType, entityId, fields, locale);
+  }
+
+  async upsertForArticle(articleId: string, fields: SeoFields, locale: string = ""): Promise<SeoMeta> {
+    return this.upsertGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
+  }
+
+  async upsertForCategory(categoryId: string, fields: SeoFields, locale: string = ""): Promise<SeoMeta> {
+    return this.upsertGeneric(SeoEntityType.CATEGORY, categoryId, fields, locale);
+  }
+
+  /* ------------------------ DELETE ----------------------- */
+  async deleteBy(entityType: SeoEntityType, entityId: string, locale: string = ""): Promise<void> {
+    const res: DeleteResult = await this.repo.delete({ entityType, entityId, locale });
+    if (!res.affected) {
+      throw new Error(`Nothing to delete for ${entityType}(${entityId}) locale="${locale}".`);
+    }
+  }
+
+  async deleteForArticle(articleId: string, locale: string = ""): Promise<void> {
+    return this.deleteBy(SeoEntityType.ARTICLE, articleId, locale);
+  }
+
+  async deleteForCategory(categoryId: string, locale: string = ""): Promise<void> {
+    return this.deleteBy(SeoEntityType.CATEGORY, categoryId, locale);
   }
 }

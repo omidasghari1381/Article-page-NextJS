@@ -92,7 +92,7 @@ export default function SeoSettingsForm({
           locale,
         }).toString();
 
-        const res = await fetch(`/api/seo/meta?${qs}`, { cache: "no-store" });
+        const res = await fetch(`/api/seo/?${qs}`, { cache: "no-store" });
         if (res.status === 404) {
           if (!active) return;
           setExists(false);
@@ -206,7 +206,7 @@ export default function SeoSettingsForm({
         locale,
       }).toString();
 
-      const res = await fetch(`/api/seo/meta?${qs}`, { method: "DELETE" });
+      const res = await fetch(`/api/seo/?${qs}`, { method: "DELETE" });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
         throw new Error(t || "حذف تنظیمات ناموفق بود");

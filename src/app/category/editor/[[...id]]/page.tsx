@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import CategorySeoSettingsForm from "./CategorySeoSettingsForm";
 
@@ -40,7 +40,14 @@ export default function Page() {
 
 /** ---------------- Tabs Wrapper ---------------- */
 function CategoryEditWithTabs() {
-  const [tab, setTab] = useState<"category" | "seo">("category");
+  const searchParams = useSearchParams();
+  const initialTab =
+    (searchParams.get("tab") as "category" | "seo" | null) === "seo"
+      ? "seo"
+      : "category";
+
+  const [tab, setTab] = useState<"category" | "seo">(initialTab);
+
   return (
     <section className="w-full" dir="rtl">
       <div className="flex items-center gap-2 mb-4">
@@ -72,17 +79,19 @@ function CategoryEditWithTabs() {
 }
 
 function CategorySeoTab() {
-  const params = useParams<{ id?: string }>();
-  const id = params?.id?.[0] ?? null; // اگر صفحه new است، id ندارد
-  <CategorySeoSettingsForm categoryId={id || null} />;
+  const params = useParams<{ id?: string | string[] }>();
+  const raw = params?.id;
+  const id = Array.isArray(raw) ? raw[0] : raw ?? null;
+  return <CategorySeoSettingsForm categoryId={id || null} />;
 }
 
 /** ---------------- Original Form (kept, minimal tweaks) ---------------- */
 function CategoryForm() {
-  const params = useParams<{ id?: string }>();
+  const params = useParams<{ id?: string | string[] }>();
   const router = useRouter();
 
-  const id = params?.id?.[0] ?? null;
+  const raw = params?.id;
+  const id = Array.isArray(raw) ? raw[0] : raw ?? null;
   const isEdit = !!id;
 
   const [form, setForm] = useState<{
@@ -272,8 +281,7 @@ function CategoryForm() {
       setSaving(true);
       setError(null);
 
-      // طبق صفحه‌ی شما بدون تغییر:
-      const url = isEdit ? `/api/categories/${id}` : `/api/articles/categories`;
+      const url = isEdit ? `/api/categories/${id}` : `/api/categories`;
       const method = isEdit ? "PATCH" : "POST";
 
       const res = await fetch(url, {
@@ -281,14 +289,21 @@ function CategoryForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       if (!res.ok) {
         const t = await res.text().catch(() => "");
         throw new Error(t || "خطا در ذخیره دسته");
       }
 
+      if (!isEdit) {
+        const json = await res.json().catch(() => null);
+        const newId = json?.created.id;
+        if (newId) {
+          router.push(`editor/${newId}?tab=seo`);
+          return;
+        }
+      }
+
       alert(isEdit ? "تغییرات ثبت شد ✅" : "دسته با موفقیت ایجاد شد ✅");
-      // router.push("/articles");
       router.refresh();
     } catch (err: any) {
       setError(err?.message || "خطایی رخ داد");

@@ -29,7 +29,7 @@ export type SeoMetaPayload = {
 
   // Article-like meta
   publishedTime: string | null; // ISO
-  modifiedTime: string | null;  // ISO
+  modifiedTime: string | null; // ISO
   authorName: string | null;
 
   // Tags
@@ -37,12 +37,12 @@ export type SeoMetaPayload = {
 };
 
 type Props = {
-  categoryId: string | null; // اگر null باشد (هنوز دسته ذخیره نشده)، فرم غیرفعال می‌شود
-  locale?: string; // پیش‌فرض: ""
+  categoryId: string | null;
+  locale?: string;
 };
 
 // مسیر API را اگر لازم بود تغییر بده
-const API_BASE = "/api/seo/meta";
+const API_BASE = "/api/seo/";
 
 export default function CategorySeoSettingsForm({
   categoryId,
@@ -154,7 +154,10 @@ export default function CategorySeoSettingsForm({
   const tagsText = useMemo(() => (form.tags ?? []).join(", "), [form.tags]);
 
   const setTagsText = (txt: string) => {
-    const arr = txt.split(",").map((s) => s.trim()).filter(Boolean);
+    const arr = txt
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     setForm((f) => ({ ...f, tags: arr.length ? arr : null }));
   };
 
@@ -242,7 +245,8 @@ export default function CategorySeoSettingsForm({
     <div className="bg-white rounded-2xl shadow-sm border p-6 md:p-8" dir="rtl">
       {!categoryId && (
         <div className="mb-4 rounded border border-amber-300 bg-amber-50 p-3 text-amber-800">
-          برای تنظیم سئو، ابتدا <b>دسته</b> را ذخیره کنید تا شناسه (ID) داشته باشد.
+          برای تنظیم سئو، ابتدا <b>دسته</b> را ذخیره کنید تا شناسه (ID) داشته
+          باشد.
         </div>
       )}
 
@@ -348,7 +352,10 @@ export default function CategorySeoSettingsForm({
                   value={form.twitterCard ?? "summary_large_image"}
                   onChange={handleChange("twitterCard")}
                   options={[
-                    { label: "summary_large_image", value: "summary_large_image" },
+                    {
+                      label: "summary_large_image",
+                      value: "summary_large_image",
+                    },
                     { label: "summary", value: "summary" },
                   ]}
                   disabled={disabled || isFieldsDisabled}
@@ -441,7 +448,9 @@ export default function CategorySeoSettingsForm({
 
               {/* SERP Preview */}
               <fieldset className="space-y-3">
-                <legend className="font-medium text-black">پیش‌نمایش SERP</legend>
+                <legend className="font-medium text-black">
+                  پیش‌نمایش SERP
+                </legend>
                 <div className="rounded-xl border border-gray-200 p-4">
                   <div className="text-[#1a0dab] text-[18px] leading-6 truncate">
                     {form.seoTitle || "عنوان دسته (نمونه)"}
