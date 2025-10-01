@@ -5,10 +5,11 @@ import { SimpleMediaType } from "../enums/media.enums";
 
 export const CreateMediaInput = z.object({
   name: z.string().min(1).max(255),
-  url: z.string().url().max(1000),
+  url: z.string().min(1).max(1000),
   type: z.enum(SimpleMediaType),
   description: z.string().nullable().optional(),
 });
+
 export type CreateMediaInputType = z.infer<typeof CreateMediaInput>;
 
 export const UpdateMediaInput = z.object({
@@ -23,8 +24,8 @@ export class MediaService {
   constructor(private ds: DataSource) {}
 
   async listMedia(params?: {
-    q?: string; // سرچ روی name/description
-    type?: "image" | "video"; // فیلتر نوع
+    q?: string; 
+    type?: SimpleMediaType; 
     limit?: number;
     offset?: number;
   }) {
