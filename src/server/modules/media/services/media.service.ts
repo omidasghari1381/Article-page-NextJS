@@ -19,37 +19,116 @@ export const UpdateMediaInput = z.object({
   description: z.string().nullable().optional(),
 });
 export type UpdateMediaInputType = z.infer<typeof UpdateMediaInput>;
+type SortOption = "newest" | "oldest" | "name_asc" | "name_desc";
 
 export class MediaService {
   constructor(private ds: DataSource) {}
 
-  async listMedia(params?: {
-    q?: string; 
-    type?: SimpleMediaType; 
+ async listMedia(params?: {
+    /** جستجو در name/description. واژه‌ها با فاصله جدا شوند (AND). */
+    q?: string;
+    /** فیلتر تک‌تایی نوع مدیا، برای سازگاری قدیمی */
+    type?: SimpleMediaType;
+    /** فیلتر چندتایی نوع مدیا (ارجح بر type) */
+    types?: SimpleMediaType[];
+    /** سورت نتایج */
+    sort?: SortOption;
+    /** فیلتر از تاریخ ساخت (inclusive) */
+    createdFrom?: Date | string;
+    /** فیلتر تا تاریخ ساخت (inclusive) */
+    createdTo?: Date | string;
+    /** صفحه‌بندی */
     limit?: number;
     offset?: number;
   }) {
     const repo = this.ds.getRepository(MediaItem);
-    const limit = Math.min(Math.max(params?.limit ?? 50, 1), 100);
+
+    const limit = Math.min(Math.max(params?.limit ?? 24, 1), 100);
     const offset = Math.max(params?.offset ?? 0, 0);
 
     const qb = repo.createQueryBuilder("m");
 
-    if (params?.q) {
-      const q = `%${params.q}%`;
-      qb.andWhere("(m.name LIKE :q OR m.description LIKE :q)", { q });
-      // اگر از MySQL با collation غیر حساس به حروف استفاده می‌کنی، همین بس است
-      // اگر Postgres بودی می‌توانستی از ILike استفاده کنی
+    // --- Search (q) ---
+    if (params?.q && params.q.trim().length > 0) {
+      const words = params.q
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
+      // هر واژه باید در name یا description وجود داشته باشد (AND)
+      words.forEach((w, i) => {
+        const key = `q${i}`;
+        const like = `%${w}%`;
+        // اگر Postgres دارید و می‌خواهید case-insensitive دقیق: از ILIKE استفاده کنید
+        // qb.andWhere(`(m.name ILIKE :${key} OR m.description ILIKE :${key})`, { [key]: like });
+        qb.andWhere(`(m.name LIKE :${key} OR m.description LIKE :${key})`, {
+          [key]: like,
+        });
+      });
     }
 
-    if (params?.type) {
+    // --- Type filter ---
+    if (params?.types && params.types.length > 0) {
+      qb.andWhere("m.type IN (:...types)", { types: params.types });
+    } else if (params?.type) {
       qb.andWhere("m.type = :type", { type: params.type });
     }
 
-    qb.orderBy("m.createdAt", "DESC").skip(offset).take(limit);
+    // --- Date range ---
+    if (params?.createdFrom) {
+      qb.andWhere("m.createdAt >= :from", {
+        from:
+          params.createdFrom instanceof Date
+            ? params.createdFrom.toISOString()
+            : params.createdFrom,
+      });
+    }
+    if (params?.createdTo) {
+      qb.andWhere("m.createdAt <= :to", {
+        to:
+          params.createdTo instanceof Date
+            ? params.createdTo.toISOString()
+            : params.createdTo,
+      });
+    }
+
+    // --- Sort ---
+    const sort: SortOption = params?.sort ?? "newest";
+    switch (sort) {
+      case "oldest":
+        qb.orderBy("m.createdAt", "ASC");
+        break;
+      case "name_asc":
+        qb.orderBy("m.name", "ASC").addOrderBy("m.createdAt", "DESC");
+        break;
+      case "name_desc":
+        qb.orderBy("m.name", "DESC").addOrderBy("m.createdAt", "DESC");
+        break;
+      case "newest":
+      default:
+        qb.orderBy("m.createdAt", "DESC");
+        break;
+    }
+
+    qb.skip(offset).take(limit);
 
     const [items, total] = await qb.getManyAndCount();
-    return { items, total, limit, offset };
+    return {
+      items,
+      total,
+      limit,
+      offset,
+      page: Math.floor(offset / limit) + 1,
+      hasMore: offset + items.length < total,
+      sort,
+      applied: {
+        q: params?.q ?? null,
+        type: params?.type ?? null,
+        types: params?.types ?? null,
+        createdFrom: params?.createdFrom ?? null,
+        createdTo: params?.createdTo ?? null,
+      },
+    };
   }
 
   /** دریافت یک مدیا با id */

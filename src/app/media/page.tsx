@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { MediaGrid } from "./mediaCart";
+import { Suspense } from "react";
 import type { SimpleMediaType } from "@/server/modules/media/enums/media.enums";
+import { MediaGrid } from "./mediaCart";
+import { MediaFilters } from "./MediaFilter";
 
+/** ---- Types ---- */
 type MediaDTO = {
   id: string;
   name: string;
@@ -12,14 +15,48 @@ type MediaDTO = {
   updatedAt: string;
 };
 
-async function fetchMedia() {
-  const res = await fetch(`http://localhost:3000/api/media?limit=100`, { cache: "no-store" });
+type ListRes = { items: MediaDTO[]; total: number };
+
+/** ---- Data fetcher ---- */
+async function fetchMedia(searchParams: {
+  q?: string;
+  type?: string;
+  sort?: string;
+  limit?: string;
+  offset?: string;
+}) {
+  const qs = new URLSearchParams();
+
+  if (searchParams.q) qs.set("q", searchParams.q);
+  if (searchParams.type && searchParams.type !== "all")
+    qs.set("type", searchParams.type);
+  if (searchParams.sort) qs.set("sort", searchParams.sort);
+  qs.set("limit", searchParams.limit ?? "100");
+  if (searchParams.offset) qs.set("offset", searchParams.offset);
+
+  const res = await fetch(`http://localhost:3000/api/media?${qs.toString()}`, {
+    cache: "no-store",
+  });
   if (!res.ok) throw new Error("Failed to load media");
-  return res.json() as Promise<{ items: MediaDTO[]; total: number }>;
+  return (await res.json()) as ListRes;
 }
 
-export default async function MediaListPage() {
-  const { items } = await fetchMedia();
+/** ---- Page ---- */
+export default async function MediaListPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  // نرمال‌سازی searchParams (تک‌ارزشی)
+  const sp = {
+    q: typeof searchParams.q === "string" ? searchParams.q : undefined,
+    type: typeof searchParams.type === "string" ? searchParams.type : "all",
+    sort: typeof searchParams.sort === "string" ? searchParams.sort : "newest",
+    limit: typeof searchParams.limit === "string" ? searchParams.limit : "100",
+    offset: typeof searchParams.offset === "string" ? searchParams.offset : "0",
+  };
+
+  const dataPromise = fetchMedia(sp);
 
   return (
     <main className="p-6 md:p-8" dir="rtl">
@@ -35,7 +72,31 @@ export default async function MediaListPage() {
         </div>
       </div>
 
-      <MediaGrid items={items} />
+      <MediaFilters
+        initial={{ q: sp.q ?? "", type: sp.type!, sort: sp.sort! }}
+      />
+
+      <Suspense fallback={<div className="mt-6">در حال بارگذاری...</div>}>
+        <MediaResults dataPromise={dataPromise} />
+      </Suspense>
     </main>
+  );
+}
+
+/** ---- Server component to render results ---- */
+async function MediaResults({
+  dataPromise,
+}: {
+  dataPromise: Promise<ListRes>;
+}) {
+  const { items, total } = await dataPromise;
+
+  return (
+    <>
+      <div className="text-sm text-gray-500 mt-4 mb-2">
+        مجموع نتایج: <b>{total}</b>
+      </div>
+      <MediaGrid items={items} />
+    </>
   );
 }
