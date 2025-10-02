@@ -1,7 +1,5 @@
-// src/server/redirects/redirect.service.ts
 import { DataSource, type FindOptionsWhere, ILike, Repository } from "typeorm";
 import { RedirectStatus } from "../enums/RedirectStatus.enum";
-// import type { Redirect } from "next";
 import { Redirect } from "../entities/redirect.entity";
 import type { getRedirectEnum } from "../enums/getRedirect.enum";
 

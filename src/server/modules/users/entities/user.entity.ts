@@ -10,7 +10,7 @@ export class User extends AbstractEntity {
   @Column({ type: "varchar", length: 80, nullable: false })
   lastName!: string;
 
-  @Column({ type: "varchar", length: 64, default:userRoleEnum.ADMIN })
+  @Column({ type: "varchar", length: 64, default:userRoleEnum.CLIENT })
   role!: userRoleEnum;
 
   @Index({ unique: true })

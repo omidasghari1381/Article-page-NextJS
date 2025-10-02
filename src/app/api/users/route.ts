@@ -1,0 +1,71 @@
+// src/app/api/users/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getDataSource } from "@/server/db/typeorm.datasource";
+import type { getUserEnum } from "@/server/modules/users/enums/sortUserBy.enum";
+import type { userRoleEnum } from "@/server/modules/users/enums/userRoleEnum";
+import { UserService, type ListUserQuery } from "@/server/modules/users/services/users.service";
+
+// ستون‌های مجاز برای sortBy
+const sortableColumns = ["createdAt", "firstName", "lastName", "phone", "role", "updatedAt"] as const;
+type Sortable = typeof sortableColumns[number];
+
+const SortDirEnum = z.enum(["ASC", "DESC"]);
+
+function parseDateOrUndefined(v: string | null) {
+  if (!v) return undefined;
+  const d = new Date(v);
+  return isNaN(+d) ? undefined : d;
+}
+
+function parseRoleParam(sp: URLSearchParams): userRoleEnum | userRoleEnum[] | undefined {
+  const all = sp.getAll("role").flatMap((r) => r.split(",").map((s) => s.trim()).filter(Boolean));
+  if (all.length === 0) return undefined;
+  const mapped = all.map((v) => {
+    const n = Number(v);
+    return Number.isFinite(n) && v !== "" ? (n as unknown as userRoleEnum) : (v as unknown as userRoleEnum);
+  });
+  return mapped.length === 1 ? mapped[0] : mapped;
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const sp = req.nextUrl.searchParams;
+
+    const q = sp.get("q") ?? undefined;
+    const role = parseRoleParam(sp);
+    const createdFrom = parseDateOrUndefined(sp.get("createdFrom"));
+    const createdTo = parseDateOrUndefined(sp.get("createdTo"));
+
+    const sortByRaw = (sp.get("sortBy") ?? "createdAt") as getUserEnum;
+    const sortBy: Sortable = (sortableColumns as readonly string[]).includes(sortByRaw as string)
+      ? (sortByRaw as Sortable)
+      : "createdAt";
+
+    const sortDirRaw = (sp.get("sortDir") ?? "DESC").toUpperCase();
+    const sortDir = SortDirEnum.safeParse(sortDirRaw).success ? (sortDirRaw as "ASC" | "DESC") : "DESC";
+
+    const page = Math.max(1, Number(sp.get("page") ?? "1"));
+    const pageSize = Math.min(100, Math.max(1, Number(sp.get("pageSize") ?? "20")));
+
+    const ds = await getDataSource();
+    const svc = new UserService(ds);
+
+    const payload: ListUserQuery = {
+      q,
+      role,
+      createdFrom,
+      createdTo,
+      sortBy: sortBy as getUserEnum,
+      sortDir,
+      page,
+      pageSize,
+    };
+
+    const result = await svc.list(payload);
+    return NextResponse.json(result);
+  } catch (err: any) {
+    console.error("❌ users list error:", err);
+    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
+  }
+}
