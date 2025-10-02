@@ -64,7 +64,7 @@ export default function RedirectCard({
   };
 
   return (
-    <div className="rounded-2xl border shadow-sm bg-white p-4">
+    <div className="rounded-2xl border shadow-sm bg-white p-4 text-black">
       <div className="flex items-center justify-between gap-4">
         <div className="flex gap-10 flex-1 min-w-0">
           <div className="min-w-0">
