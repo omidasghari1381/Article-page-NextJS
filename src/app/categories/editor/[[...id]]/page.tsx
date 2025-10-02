@@ -27,7 +27,7 @@ export default function Page() {
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
-          { label: "مقالات", href: "/articles" },
+          { label: "دسته", href: "/categories" },
           { label: "افزودن/ویرایش دسته", href: "/article/new-category" },
         ]}
       />

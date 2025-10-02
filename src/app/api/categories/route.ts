@@ -16,6 +16,7 @@ export async function GET(_req: NextRequest) {
     const ds = await getDataSource();
     const service = new CategoryService(ds);
     const items = await service.listCategories();
+    console.log(items)
     return NextResponse.json(items, { status: 200 });
   } catch (err: any) {
     console.error("❌ Category list error:", err);

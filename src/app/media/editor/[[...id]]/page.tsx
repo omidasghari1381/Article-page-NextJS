@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Breadcrumb from "@/components/Breadcrumb";
 
 type MediaType = "image" | "video";
 
@@ -16,9 +17,9 @@ type MediaDTO = {
 };
 
 type TempUpload = {
-  tempId: string; 
-  url: string; 
-  path: string; 
+  tempId: string;
+  url: string;
+  path: string;
   mime?: string;
   size?: number;
 };
@@ -293,20 +294,21 @@ export default function MediaEditorPage() {
   }
 
   return (
-    <main className="pb-24 pt-6 px-20" dir="rtl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold">
-          {isEdit ? "ویرایش مدیا" : "افزودن مدیا"}
-        </h1>
-      </div>
-
+    <main className="pb-24 pt-10 px-20 " dir="rtl">
+      {" "}
+      <Breadcrumb
+        items={[
+          { label: "مای پراپ", href: "/" },
+          { label: "مدیا", href: "/media" },
+          { label: "افزودن/ویرایش مدیا", href: "/media/editor" },
+        ]}
+      />
       {error && (
         <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
           {error}
         </div>
       )}
-
-      <section className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <section className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-10">
         {/* ستون آپلود/پیش‌نمایش */}
         <div className="md:col-span-5 space-y-4">
           <div
@@ -371,7 +373,7 @@ export default function MediaEditorPage() {
                 <button
                   type="button"
                   onClick={handlePickFile}
-                  className="px-3 py-2 rounded-lg border hover:bg-gray-100"
+                  className="px-3 py-2 rounded-lg border hover:bg-gray-100 text-gray-700"
                 >
                   انتخاب فایل…
                 </button>
