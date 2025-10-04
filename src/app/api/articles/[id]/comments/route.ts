@@ -1,120 +1,99 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getDataSource } from "@/server/db/typeorm.datasource";
-import { Article } from "@/server/modules/articles/entities/article.entity";
-import { CommentArticle } from "@/server/modules/articles/entities/comment.entity";
-import { ReplyComment } from "@/server/modules/articles/entities/reply.entity";
-import { User } from "@/server/modules/users/entities/user.entity";
+import { ArticleService } from "@/server/modules/articles/services/article.service";
 
 export const runtime = "nodejs";
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(
-  req: NextRequest,
-  ctx: { params: Promise<{ id: string }> }
-) {
+/** ---------- Schemas ---------- */
+const IdSchema = z.object({ id: z.string().uuid("Invalid article id") });
+
+const ListQuerySchema = z.object({
+  skip: z.coerce.number().int().min(0).default(0),
+  take: z.coerce.number().int().min(1).max(50).default(10),
+  withReplies: z
+    .union([z.literal("1"), z.literal("0"), z.boolean()])
+    .optional()
+    .transform((v) => (v === "1" ? true : v === "0" ? false : Boolean(v))),
+});
+
+const CreateCommentSchema = z.object({
+  userId: z.string().uuid(),
+  text: z.string().trim().min(1),
+});
+
+/** ---------- Handlers ---------- */
+
+export async function GET(req: NextRequest, ctx: Ctx) {
   try {
-    const { id } = await ctx.params;
-    const ds = await getDataSource();
-    const commentRepo = ds.getRepository(CommentArticle);
-    const articleRepo = ds.getRepository(Article);
-    const replyRepo = ds.getRepository(ReplyComment);
+    const raw = await ctx.params;
+    const idParsed = IdSchema.safeParse(raw);
+    if (!idParsed.success) {
+      return NextResponse.json({ error: "ValidationError" }, { status: 400 });
+    }
 
-    // بررسی وجود آرتیکل
-    const articleExists = await articleRepo.exist({ where: { id } });
-    if (!articleExists) {
+    const sp = new URL(req.url).searchParams;
+    const qp = {
+      skip: sp.get("skip") ?? undefined,
+      take: sp.get("take") ?? undefined,
+      withReplies: sp.get("withReplies") ?? undefined,
+    };
+    const parsed = ListQuerySchema.safeParse(qp);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "ValidationError", details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const ds = await getDataSource();
+    const svc = new ArticleService(ds);
+
+    const out = await svc.listComments(idParsed.data.id, parsed.data);
+    return NextResponse.json(out, { status: 200 });
+  } catch (err: any) {
+    if (err?.message === "ArticleNotFound") {
       return NextResponse.json({ error: "ArticleNotFound" }, { status: 404 });
     }
-
-    const { searchParams } = new URL(req.url);
-    const skip = Number(searchParams.get("skip") ?? 0);
-    const take = Math.min(Number(searchParams.get("take") ?? 10), 50);
-    const withReplies = searchParams.get("withReplies") === "1";
-
-    const [comments, total] = await commentRepo.findAndCount({
-      where: { article: { id } },
-      relations: ["user"],
-      order: { createdAt: "DESC" },
-      skip,
-      take,
-    });
-
-    if (withReplies) {
-      if (comments.length === 0) {
-        return NextResponse.json({ data: [], total, skip, take });
-      }
-
-      const commentIds = comments.map((c) => c.id);
-      const replies = await replyRepo
-        .createQueryBuilder("reply")
-        .leftJoinAndSelect("reply.user", "user")
-        .leftJoinAndSelect("reply.comment", "comment")
-        .where("comment.id IN (:...ids)", { ids: commentIds })
-        .orderBy("reply.createdAt", "ASC")
-        .getMany();
-
-      const grouped = replies.reduce<Record<string, ReplyComment[]>>((acc, r) => {
-        const cid = r.comment.id;
-        (acc[cid] ??= []).push(r);
-        return acc;
-      }, {});
-
-      const payload = comments.map((c) => ({
-        ...c,
-        replies: grouped[c.id] ?? [],
-      }));
-
-      return NextResponse.json({ data: payload, total, skip, take });
-    }
-
-    return NextResponse.json({ data: comments, total, skip, take });
-  } catch (err) {
-    console.error(err);
+    console.error("GET /api/articles/[id]/comments error:", err);
     return NextResponse.json({ error: "ServerError" }, { status: 500 });
   }
 }
 
-export async function POST(
-  req: NextRequest,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, ctx: Ctx) {
   try {
-    const { id } = await ctx.params;
-    const body = await req.json();
-    const { userId, text } = body ?? {};
+    const raw = await ctx.params;
+    const idParsed = IdSchema.safeParse(raw);
+    if (!idParsed.success) {
+      return NextResponse.json({ error: "ValidationError" }, { status: 400 });
+    }
 
-    if (!userId || !text?.trim()) {
-      return NextResponse.json({ error: "InvalidBody" }, { status: 400 });
+    const body = await req.json();
+    const parsed = CreateCommentSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "InvalidBody", details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
 
     const ds = await getDataSource();
-    const articleRepo = ds.getRepository(Article);
-    const userRepo = ds.getRepository(User);
-    const commentRepo = ds.getRepository(CommentArticle);
+    const svc = new ArticleService(ds);
 
-    const [article, user] = await Promise.all([
-      articleRepo.findOne({ where: { id } }),
-      userRepo.findOne({ where: { id: userId } }),
-    ]);
+    const saved = await svc.addComment(
+      idParsed.data.id,
+      parsed.data.userId,
+      parsed.data.text
+    );
 
-    if (!article)
+    return NextResponse.json({ data: saved }, { status: 201 });
+  } catch (err: any) {
+    if (err?.message === "ArticleNotFound")
       return NextResponse.json({ error: "ArticleNotFound" }, { status: 404 });
-    if (!user)
+    if (err?.message === "UserNotFound")
       return NextResponse.json({ error: "UserNotFound" }, { status: 404 });
-
-    const comment = commentRepo.create({
-      text: String(text).trim(),
-      user,
-      article,
-    });
-    const saved = await commentRepo.save(comment);
-
-    const withUser = await commentRepo.findOne({
-      where: { id: saved.id },
-      relations: ["user"],
-    });
-
-    return NextResponse.json({ data: withUser }, { status: 201 });
-  } catch (err) {
-    console.error(err);
+    console.error("POST /api/articles/[id]/comments error:", err);
     return NextResponse.json({ error: "ServerError" }, { status: 500 });
   }
 }

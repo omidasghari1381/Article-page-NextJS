@@ -1,12 +1,8 @@
 import { AbstractEntity } from "@/server/core/abstracts/entity.base";
-import {
-  Entity, Column, ManyToOne, OneToMany,
- Index, Unique,
- JoinColumn
-} from "typeorm";
+import { Entity, Column, ManyToOne, OneToMany, Index, Unique, JoinColumn } from "typeorm";
 
 @Entity({ name: "categories" })
-@Unique("uq_categories_slug", ["slug"]) 
+@Unique("uq_categories_slug", ["slug"])
 export class ArticleCategory extends AbstractEntity {
   @Column({ type: "varchar", length: 150 })
   name!: string;
@@ -22,7 +18,8 @@ export class ArticleCategory extends AbstractEntity {
     nullable: true,
     onDelete: "SET NULL",
     onUpdate: "CASCADE",
-  })@JoinColumn({ name: "parentId" })
+  })
+  @JoinColumn({ name: "parentId" })
   parent?: ArticleCategory | null;
 
   @OneToMany(() => ArticleCategory, (c) => c.parent)
@@ -31,4 +28,3 @@ export class ArticleCategory extends AbstractEntity {
   @Column({ type: "int", unsigned: true, default: 0 })
   depth!: number;
 }
-

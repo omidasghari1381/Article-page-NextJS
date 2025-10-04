@@ -1,51 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getDataSource } from "@/server/db/typeorm.datasource";
-import { Article } from "@/server/modules/articles/entities/article.entity";
+import { ArticleService } from "@/server/modules/articles/services/article.service";
 
-export async function GET(
-  _req: NextRequest,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export const runtime = "nodejs";
+
+type Ctx = { params: Promise<{ id: string }> };
+
+const IdSchema = z.object({ id: z.string().uuid("Invalid article id") });
+
+export async function GET(_req: NextRequest, ctx: Ctx) {
   try {
-    console.log(ctx.params);
-    const { id } = await ctx.params;
-    const ds = await getDataSource();
-    const repo = ds.getRepository(Article);
-    const item = await repo.findOne({
-      where: { id },
-      relations: ["author"],
-    });
-
-    if (!item) {
-      return NextResponse.json({ error: "NotFound" }, { status: 404 });
+    const raw = await ctx.params;
+    const parsed = IdSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "ValidationError" }, { status: 400 });
     }
-    item.viewCount = (item.viewCount ?? 0) + 1;
-    await repo.save(item);
 
-    return NextResponse.json({
-      id: item.id,
-      title: item.title,
-      subject: item.subject,
-      category: item.category,
-      readingPeriod: item.readingPeriod,
-      viewCount: item.viewCount,
-      thumbnail: item.thumbnail,
-      Introduction: item.Introduction,
-      quotes: item.quotes,
-      summery: item.summery,
-      mainText: item.mainText,
-      secondryText: item.secondryText,
-      author: item.author
-        ? {
-            id: (item.author as any).id,
-            firstName: (item.author as any).firstName,
-            lastName: (item.author as any).lastName,
-          }
-        : null,
-      createdAt: item.createdAt,
-    });
+    const ds = await getDataSource();
+    const svc = new ArticleService(ds);
+
+    const dto = await svc.getByIdAndIncrementView(parsed.data.id);
+    if (!dto) return NextResponse.json({ error: "NotFound" }, { status: 404 });
+
+    return NextResponse.json(dto, { status: 200 });
   } catch (e) {
-    console.error(e);
+    console.error("GET /api/articles/[id] error:", e);
     return NextResponse.json({ error: "ServerError" }, { status: 500 });
   }
 }

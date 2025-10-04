@@ -53,7 +53,6 @@ function TagForm() {
   const [deleting, setDeleting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // کنترل اتوماتیک‌سازی اسلاگ
   const [slugTouched, setSlugTouched] = useState<boolean>(false);
 
   // ---- Helpers ----
@@ -62,7 +61,7 @@ function TagForm() {
       .toString()
       .trim()
       .toLowerCase()
-      .replace(/[\u0600-\u06FF]/g, "") // حذف حروف فارسی (دلخواه)
+      .replace(/[\u0600-\u06FF]/g, "") 
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-]/g, "")
       .replace(/\-+/g, "-")

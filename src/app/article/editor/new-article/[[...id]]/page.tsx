@@ -1,25 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
-import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
 import SeoSettingsForm from "./SeoSettingsForm";
 
-type ArticleCreatePayload = {
+/** ---------- Types ---------- */
+type CategoryDTO = { id: string; name: string; slug: string };
+type TagDTO = { id: string; name: string; slug: string };
+type MediaDTO = { id: string; name: string; url: string };
+
+type ArticleDTO = {
+  id: string;
   title: string;
-  subject: string;
-  authorId?: string;
-  category: articleCategoryEnum;
-  Introduction: string | null;
+  slug: string | null;
+  subject: string | null;
+  readingPeriod: number;
+  viewCount: number;
+  thumbnail: MediaDTO | null;
+  introduction: string | null;
   quotes: string | null;
+  summary: string[] | null;
   mainText: string;
-  secondryText: string;
-  thumbnail: string | null;
-  readingPeriod: string;
-  summery: string[];
+  secondaryText: string | null;
+  author: { id: string; firstName: string; lastName: string } | null;
+  categories: CategoryDTO[];
+  tags: TagDTO[];
+  createdAt: string;
 };
 
+type FormState = {
+  title: string;
+  subject: string;
+  authorId: string; // اختیاری؛ در بک‌اند از session هم پر می‌شود
+
+  readingPeriod: string; // ورودی متنی؛ قبل از ارسال به number تبدیل می‌کنیم
+
+  thumbnailId: string; // می‌تونه UUID یا URL باشد (برای preview هندل می‌کنیم)
+  introduction: string;
+  quotes: string;
+  mainText: string;
+  secondaryText: string;
+
+  categoryId: string;
+  tagIds: string[];
+  slug: string;
+};
+
+/** ---------- Page ---------- */
 export default function Page() {
   return (
     <main className="pb-24 pt-6 px-20">
@@ -27,7 +55,7 @@ export default function Page() {
         items={[
           { label: "مای پراپ", href: "/" },
           { label: "مقالات", href: "/articles" },
-          { label: "افزودن/ویرایش مقاله", href: "/article/new-article" },
+          { label: "افزودن/ویرایش مقاله", href: "/article/editor" },
         ]}
       />
       <div className="mt-5">
@@ -38,126 +66,180 @@ export default function Page() {
 }
 
 function ArticleEditWithTabs() {
+  const params = useParams<{ id?: string[] }>();
+  const id = params?.id?.[0] ?? null; // [[...id]]
   const [tab, setTab] = useState<"article" | "seo">("article");
+
   return (
     <section className="w-full" dir="rtl">
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-4">
         <button
-          className={`px-4 py-2 rounded-lg border ${tab === "article" ? "bg-black text-white" : "bg-white text-gray-800 hover:bg-gray-50"}`}
+          className={`px-4 py-2 rounded-lg border ${
+            tab === "article"
+              ? "bg-black text-white"
+              : "bg-white text-gray-800 hover:bg-gray-50"
+          }`}
           onClick={() => setTab("article")}
         >
           اطلاعات مقاله
         </button>
         <button
-          className={`px-4 py-2 rounded-lg border ${tab === "seo" ? "bg-black text-white" : "bg-white text-gray-800 hover:bg-gray-50"}`}
+          className={`px-4 py-2 rounded-lg border ${
+            tab === "seo"
+              ? "bg-black text-white"
+              : "bg-white text-gray-800 hover:bg-gray-50"
+          }`}
           onClick={() => setTab("seo")}
+          disabled={!id} // فقط وقتی مقاله ساخته شده باشد
         >
           SEO
         </button>
       </div>
 
-      {tab === "article" ? <ArticleForm /> : <ArticleSeoTab />}
+      {tab === "article" ? <ArticleForm id={id} /> : <ArticleSeoTab id={id} />}
     </section>
   );
 }
 
-function ArticleSeoTab() {
-  const params = useParams<{ id?: string }>();
-  const id = params?.id?.[0] ?? null; // اگر صفحه‌ی /article/new-article است، id ندارد
-  return (
-    <SeoSettingsForm entityType="article" entityId={id || null} />
-  );
+function ArticleSeoTab({ id }: { id: string | null }) {
+  return <SeoSettingsForm entityType="article" entityId={id || null} />;
 }
 
-function ArticleForm() {
-  const params = useParams<{ id?: string }>();
+/** ---------- Article Form ---------- */
+function ArticleForm({ id }: { id: string | null }) {
   const router = useRouter();
-  const id = params?.id?.[0] ?? null;
   const isEdit = !!id;
 
-  const [form, setForm] = useState<{
-    title: string;
-    subject: string;
-    authorId: string;
-    category: "" | articleCategoryEnum;
-    Introduction: string;
-    quotes: string;
-    mainText: string;
-    secondryText: string;
-    thumbnail: string;
-    readingPeriod: string;
-  }>({
+  const [form, setForm] = useState<FormState>({
     title: "",
     subject: "",
     authorId: "",
-    category: "",
-    Introduction: "",
+    slug: "",
+    readingPeriod: "",
+
+    thumbnailId: "",
+    introduction: "",
     quotes: "",
     mainText: "",
-    secondryText: "",
-    thumbnail: "",
-    readingPeriod: "",
+    secondaryText: "",
+
+    categoryId: "",
+    tagIds: [],
   });
 
-  const [summeryList, setSummeryList] = useState<string[]>([]);
-  const [summeryInput, setSummeryInput] = useState<string>("");
-  const [previewThumb, setPreviewThumb] = useState<string>("");
+  const [summaryList, setSummaryList] = useState<string[]>([]);
+  const [summaryInput, setSummaryInput] = useState<string>("");
+
+  const [previewThumbUrl, setPreviewThumbUrl] = useState<string>("");
+  const [categories, setCategories] = useState<CategoryDTO[]>([]);
+  const [tags, setTags] = useState<TagDTO[]>([]);
 
   const [loading, setLoading] = useState<boolean>(isEdit);
   const [saving, setSaving] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- load article if in edit mode ---
+  /** --- helpers --- */
+  const isUUID = (s: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      s.trim()
+    );
+
+  async function resolveThumbPreview(input: string) {
+    const v = input.trim();
+    if (!v) {
+      setPreviewThumbUrl("");
+      return;
+    }
+
+    // اگر لینک با http شروع میشه همون رو نمایش بده
+    if (/^https?:\/\//i.test(v)) {
+      setPreviewThumbUrl(v);
+      return;
+    }
+
+    // در غیر این صورت نمایش نده (چون فقط لینک مستقیم مجازه)
+    setPreviewThumbUrl("");
+  }
+
+  /** --- load reference data (categories / tags) --- */
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const [catsRes, tagsRes] = await Promise.allSettled([
+          fetch("/api/categories?perPage=1000", { cache: "no-store" }),
+          fetch("/api/articles/tags?perPage=100", { cache: "no-store" }),
+        ]);
+        if (!active) return;
+
+        if (catsRes.status === "fulfilled" && catsRes.value.ok) {
+          const catsData = await catsRes.value.json();
+          setCategories(
+            Array.isArray(catsData?.items) ? catsData.items : catsData ?? []
+          );
+        }
+        if (tagsRes.status === "fulfilled" && tagsRes.value.ok) {
+          const tagsData = await tagsRes.value.json();
+          setTags(
+            Array.isArray(tagsData?.items) ? tagsData.items : tagsData ?? []
+          );
+        }
+      } catch {
+        // optional
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  /** --- load article if edit --- */
   useEffect(() => {
     let active = true;
     if (!isEdit) return;
-
     (async () => {
       try {
         setLoading(true);
         setError(null);
 
-        let data: any | null = null;
-        try {
-          const res = await fetch(`/api/articles/${id}`, { cache: "no-store" });
-          if (res.status === 404) {
-            if (!active) return;
-            setError("مقاله پیدا نشد");
-            setLoading(false);
-            return;
-          }
-          if (!res.ok) {
-            throw new Error("خطا در دریافت مقاله");
-          }
-          data = await res.json();
-          if (!data || !data.id) {
-            if (!active) return;
-            setError("مقاله پیدا نشد");
-            setLoading(false);
-            return;
-          }
-        } catch {
-          // ignore (در صورت آماده نبودن API)
+        const res = await fetch(`/api/articles/${id}`, { cache: "no-store" });
+        if (res.status === 404) {
+          if (!active) return;
+          setError("مقاله پیدا نشد");
+          setLoading(false);
+          return;
         }
+        if (!res.ok) throw new Error("خطا در دریافت مقاله");
+
+        const data = (await res.json()) as ArticleDTO;
 
         if (!active) return;
 
         setForm({
-          title: data?.title ?? "",
-          subject: data?.subject ?? "",
-          authorId: data?.authorId ?? "",
-          category: (data?.category as articleCategoryEnum) ?? "",
-          Introduction: data?.Introduction ?? "",
-          quotes: data?.quotes ?? "",
-          mainText: data?.mainText ?? "",
-          secondryText: data?.secondryText ?? "",
-          thumbnail: data?.thumbnail ?? "",
-          readingPeriod: data?.readingPeriod ?? "",
+          title: data.title ?? "",
+          subject: data.subject ?? "",
+          authorId: data.author?.id ?? "",
+          slug: data.slug ?? "",
+
+          readingPeriod:
+            typeof data.readingPeriod === "number"
+              ? String(data.readingPeriod)
+              : "",
+
+          thumbnailId: data.thumbnail?.id ?? data.thumbnail?.url ?? "",
+          introduction: data.introduction ?? "",
+          quotes: data.quotes ?? "",
+          mainText: data.mainText ?? "",
+          secondaryText: data.secondaryText ?? "",
+
+          categoryId: data.categories?.[0]?.id ?? "",
+          tagIds: (data.tags ?? []).map((t) => t.id),
         });
-        setSummeryList(Array.isArray(data?.summery) ? data.summery : []);
-        setPreviewThumb(data?.thumbnail ?? "");
+
+        setSummaryList(Array.isArray(data.summary) ? data.summary : []);
+        setPreviewThumbUrl(data.thumbnail?.url ?? "");
       } catch (e: any) {
         if (active) setError(e?.message || "خطا در دریافت مقاله");
       } finally {
@@ -170,20 +252,55 @@ function ArticleForm() {
     };
   }, [id, isEdit]);
 
-  const addSummery = () => {
-    const v = summeryInput.trim();
+  /** --- handlers --- */
+  const handleChange =
+    (field: keyof FormState) =>
+    (
+      e:
+        | React.ChangeEvent<
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+          >
+        | string[]
+    ) => {
+      if (Array.isArray(e)) {
+        setForm((f) => ({ ...f, [field]: e }));
+        return;
+      }
+      setForm((f) => ({ ...f, [field]: e.target.value }));
+    };
+
+  const handleThumbnailInput = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const v = e.target.value;
+    setForm((f) => ({ ...f, thumbnailId: v }));
+    resolveThumbPreview(v);
+  };
+
+  const toggleIdInArray = (arr: string[], id: string) =>
+    arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id];
+
+  // const onToggleCategory = (cid: string) =>
+  //   setForm((f) => ({
+  //     ...f,
+  //     categoryIds: toggleIdInArray(f.categoryIds, cid),
+  //   }));
+
+  const onToggleTag = (tid: string) =>
+    setForm((f) => ({ ...f, tagIds: toggleIdInArray(f.tagIds, tid) }));
+
+  const addSummary = () => {
+    const v = summaryInput.trim();
     if (!v) return;
-    setSummeryList((prev) => [...prev, v]);
-    setSummeryInput("");
+    setSummaryList((prev) => [...prev, v]);
+    setSummaryInput("");
   };
 
-  const removeSummery = (idx: number) => {
-    setSummeryList((prev) => prev.filter((_, i) => i !== idx));
-  };
+  const removeSummary = (idx: number) =>
+    setSummaryList((prev) => prev.filter((_, i) => i !== idx));
 
-  const editSummery = (idx: number, val: string) => {
-    setSummeryList((prev) => prev.map((s, i) => (i === idx ? val : s)));
-  };
+  const editSummary = (idx: number, val: string) =>
+    setSummaryList((prev) => prev.map((s, i) => (i === idx ? val : s)));
 
   const handleDelete = async () => {
     if (!isEdit) return;
@@ -194,53 +311,19 @@ function ArticleForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        console.error("خطا در حذف:", err);
         alert(err?.message || "حذف مقاله ناموفق بود.");
         return;
       }
-
       alert("مقاله با موفقیت حذف شد.");
-      // مثلا:
-      // router.push("/articles");
-      // router.refresh();
+      router.push("/articles");
+      router.refresh();
     } catch (err) {
-      console.error("خطای شبکه در حذف:", err);
       alert("مشکل در ارتباط با سرور");
     } finally {
       setDeleting(false);
     }
-  };
-
-  const handleChange =
-    (field: keyof typeof form) =>
-    (
-      e:
-        | React.ChangeEvent<
-            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-          >
-        | boolean
-    ) => {
-      if (typeof e === "boolean") {
-        setForm((f) => ({ ...f, [field]: e }));
-      } else {
-        if (field === "category") {
-          setForm((f) => ({
-            ...f,
-            category: (e.target.value as articleCategoryEnum) || "",
-          }));
-        } else {
-          setForm((f) => ({ ...f, [field]: e.target.value }));
-        }
-      }
-    };
-
-  const handleThumbnailInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value.trim();
-    setForm((f) => ({ ...f, thumbnail: v }));
-    setPreviewThumb(v);
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -248,31 +331,34 @@ function ArticleForm() {
 
     const errs: Record<string, string> = {};
     if (!form.title.trim()) errs.title = "عنوان الزامی است.";
-    if (!form.subject.trim()) errs.subject = "موضوع مقاله الزامی است.";
-    if (!form.category) errs.category = "دسته‌بندی را انتخاب کنید.";
-    if (!form.readingPeriod.trim())
-      errs.readingPeriod = "مدت زمان مطالعه الزامی است.";
     if (!form.mainText.trim()) errs.mainText = "متن اصلی مقاله الزامی است.";
-    if (!form.secondryText.trim())
-      errs.secondryText = "متن ثانویه مقاله الزامی است.";
+    if (!form.secondaryText.trim())
+      errs.secondaryText = "متن ثانویه مقاله الزامی است.";
+    if (!String(form.readingPeriod).trim())
+      errs.readingPeriod = "مدت زمان مطالعه الزامی است.";
+    if (!form.categoryId) errs.categoryId = "انتخاب دسته‌بندی الزامی است.";
 
     if (Object.keys(errs).length) {
       alert(Object.values(errs).join("\n"));
       return;
     }
 
-    const payload: ArticleCreatePayload = {
+    const payload = {
+      // مدل جدید سرویس
       title: form.title,
-      subject: form.subject,
-      authorId: form.authorId || undefined,
-      category: form.category as articleCategoryEnum,
-      Introduction: form.Introduction || null,
-      quotes: form.quotes || null,
+      subject: form.subject || null,
       mainText: form.mainText,
-      secondryText: form.secondryText,
-      thumbnail: form.thumbnail || null,
-      readingPeriod: form.readingPeriod,
-      summery: summeryList,
+      secondaryText: form.secondaryText || null,
+      introduction: form.introduction || null,
+      quotes: form.quotes || null,
+      readingPeriod: Number(form.readingPeriod) || 0,
+      categoryIds: form.categoryId ? [form.categoryId] : [],
+      tagIds: form.tagIds,
+      thumbnailId: form.thumbnailId || null,
+      summary: summaryList.length ? summaryList : null,
+      slug: form.slug?.trim() || null,
+      // همچنان اگر بک‌اند authorId بخواهد
+      authorId: form.authorId || undefined,
     };
 
     try {
@@ -293,12 +379,19 @@ function ArticleForm() {
         throw new Error(t || "خطا در ذخیره مقاله");
       }
 
+      const j = await res.json().catch(() => ({} as any));
+      const newId = j?.id || id;
+
       alert(
         isEdit ? "تغییرات با موفقیت ثبت شد ✅" : "مقاله با موفقیت ایجاد شد ✅"
       );
-      // پس از ذخیره، اگر تازه ایجاد شد می‌تونی ریدایرکت کنی تا تب SEO فعال شود
-      // router.push(`/article/editor/${newId}`);
-      // router.refresh();
+
+      // اگر تازه ساختیم، برو روی مسیر ادیت تا تب SEO هم فعال بشه
+      if (!isEdit && newId) {
+        router.push(`/article/editor/${newId}`);
+      } else {
+        router.refresh();
+      }
     } catch (err: any) {
       setError(err?.message || "خطایی رخ داد");
     } finally {
@@ -339,27 +432,64 @@ function ArticleForm() {
             <label className="block text-sm text-black mb-2">دسته‌بندی</label>
             <select
               className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              value={form.category}
-              onChange={handleChange("category")}
+              value={form.categoryId}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, categoryId: e.target.value }))
+              }
             >
               <option value="">انتخاب کنید...</option>
-              {Object.values(articleCategoryEnum).map((val) => (
-                <option value={val} key={val}>
-                  {val}
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
             <p className="text-xs text-gray-400 mt-1">
-              مقدار انتخابی باید دقیقاً یکی از مقادیر <code>articleCategoryEnum</code> باشد.
+              فقط یک دسته‌بندی قابل انتخاب است.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm text-black mb-2">مدت زمان مطالعه</label>
+            <label className="block text-sm text-black mb-2">برچسب‌ها</label>
+            <div className="rounded-lg border border-gray-200 p-2 max-h-48 overflow-auto">
+              {tags.length ? (
+                <ul className="space-y-1">
+                  {tags.map((t) => {
+                    const checked = form.tagIds.includes(t.id);
+                    return (
+                      <li key={t.id} className="flex items-center gap-2">
+                        <input
+                          id={`tag-${t.id}`}
+                          type="checkbox"
+                          className="accent-black"
+                          checked={checked}
+                          onChange={() => onToggleTag(t.id)}
+                        />
+                        <label
+                          htmlFor={`tag-${t.id}`}
+                          className="text-sm text-black"
+                        >
+                          {t.name}
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="text-xs text-gray-400">هیچ برچسبی یافت نشد.</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-black mb-2">
+              مدت زمان مطالعه (دقیقه)
+            </label>
             <input
-              type="text"
+              type="number"
+              min={0}
               className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              placeholder="مثلاً: ۷ دقیقه"
+              placeholder="مثلاً: 7"
               value={form.readingPeriod}
               onChange={handleChange("readingPeriod")}
             />
@@ -380,37 +510,59 @@ function ArticleForm() {
               در عمل، از session کاربر لاگین‌شده پر می‌کنیم.
             </p>
           </div>
+
+          <div>
+            <label className="block text-sm text-black mb-2">
+              Slug (اختیاری)
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              placeholder="مثلاً: how-not-to-lose-in-forex"
+              value={form.slug}
+              onChange={handleChange("slug")}
+            />
+          </div>
         </div>
 
         <div className="md:col-span-8 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-7">
               <label className="block text-sm text-black mb-2">
-                لینک تصویر بندانگشتی
+                شناسه بندانگشتی یا URL
               </label>
               <input
                 type="text"
                 className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                placeholder="https://..."
-                value={form.thumbnail}
+                placeholder="UUID یا https://..."
+                value={form.thumbnailId}
                 onChange={handleThumbnailInput}
               />
+              <button
+                type="button"
+                onClick={() => window.open("/media", "_blank")}
+                className="px-3 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 text-sm mt-3"
+              >
+                انتخاب از مدیا
+              </button>
               <p className="text-xs text-gray-400 mt-1">
-                اگر آپلود داخلی دارید، این فیلد را بعداً با آپلودر جایگزین می‌کنیم.
+                اگر UUID مدیا را بدهید، پیش‌نمایش از /api/media/[id] خوانده
+                می‌شود؛ اگر URL بدهید، مستقیم نمایش می‌دهیم.
               </p>
             </div>
 
             <div className="lg:col-span-5">
               <div className="rounded-xl border border-gray-200 overflow-hidden h-[160px] flex items-center justify-center bg-gray-50">
-                {previewThumb ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+                {previewThumbUrl ? (
                   <img
-                    src={previewThumb}
+                    src={previewThumbUrl}
                     alt="thumbnail preview"
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="text-xs text-gray-400">پیش‌نمایش بندانگشتی</div>
+                  <div className="text-xs text-gray-400">
+                    پیش‌نمایش بندانگشتی
+                  </div>
                 )}
               </div>
             </div>
@@ -425,21 +577,18 @@ function ArticleForm() {
               value={form.subject}
               onChange={handleChange("subject")}
             />
-            <p className="text-xs text-gray-400 mt-1">
-              این فیلد به‌صورت اجباری ذخیره می‌شود.
-            </p>
           </div>
 
           <div>
             <div className="flex items-center justify-between">
               <label className="block text-sm text-black mb-2">مقدمه</label>
-              <CharCounter value={form.Introduction} max={600} />
+              <CharCounter value={form.introduction} max={600} />
             </div>
             <textarea
               className="w-full min-h-[120px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
               placeholder="چند خط مقدمه برای شروع مقاله..."
-              value={form.Introduction}
-              onChange={handleChange("Introduction")}
+              value={form.introduction}
+              onChange={handleChange("introduction")}
               maxLength={600}
             />
           </div>
@@ -451,7 +600,7 @@ function ArticleForm() {
             </div>
             <textarea
               className="w-full min-h-[120px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              placeholder="متن نقل قول رو بنویسید"
+              placeholder="متن نقل قول را بنویسید"
               value={form.quotes}
               onChange={handleChange("quotes")}
               maxLength={600}
@@ -460,7 +609,7 @@ function ArticleForm() {
 
           <div>
             <label className="block text-sm text-black mb-2">
-              خلاصه‌ها (آنچه در مقاله می‌خوانید)
+              خلاصه‌ها (summary)
             </label>
 
             <div className="flex items-center gap-2">
@@ -468,27 +617,27 @@ function ArticleForm() {
                 type="text"
                 className="flex-1 rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder="مثلاً: مدیریت ریسک چیست؟"
-                value={summeryInput}
-                onChange={(e) => setSummeryInput(e.target.value)}
+                value={summaryInput}
+                onChange={(e) => setSummaryInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    addSummery();
+                    addSummary();
                   }
                 }}
               />
               <button
                 type="button"
-                onClick={addSummery}
+                onClick={addSummary}
                 className="px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
               >
                 افزودن
               </button>
             </div>
 
-            {summeryList.length > 0 ? (
+            {summaryList.length > 0 ? (
               <ul className="mt-3 space-y-2">
-                {summeryList.map((s, idx) => (
+                {summaryList.map((s, idx) => (
                   <li
                     key={idx}
                     className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2"
@@ -496,11 +645,11 @@ function ArticleForm() {
                     <input
                       className="flex-1 bg-transparent text-black focus:outline-none"
                       value={s}
-                      onChange={(e) => editSummery(idx, e.target.value)}
+                      onChange={(e) => editSummary(idx, e.target.value)}
                     />
                     <button
                       type="button"
-                      onClick={() => removeSummery(idx)}
+                      onClick={() => removeSummary(idx)}
                       className="px-2 py-1 rounded-md border hover:bg-gray-50"
                       aria-label="remove"
                     >
@@ -532,14 +681,16 @@ function ArticleForm() {
 
           <div>
             <div className="flex items-center justify-between">
-              <label className="block text-sm text-black mb-2">متن ثانویه</label>
-              <CharCounter value={form.secondryText} max={20000} />
+              <label className="block text-sm text-black mb-2">
+                متن ثانویه
+              </label>
+              <CharCounter value={form.secondaryText} max={20000} />
             </div>
             <textarea
               className="w-full min-h-[300px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 leading-7"
               placeholder="متن ثانویه مقاله را اینجا وارد کنید..."
-              value={form.secondryText}
-              onChange={handleChange("secondryText")}
+              value={form.secondaryText}
+              onChange={handleChange("secondaryText")}
               maxLength={20000}
             />
           </div>
@@ -551,20 +702,23 @@ function ArticleForm() {
               onClick={() => {
                 setForm({
                   title: "",
+                  subject: "",
                   authorId: "",
-                  category: "",
-                  Introduction: "",
+                  slug: "",
+                  readingPeriod: "",
+                  thumbnailId: "",
+                  introduction: "",
                   quotes: "",
                   mainText: "",
-                  secondryText: "",
-                  thumbnail: "",
-                  readingPeriod: "",
-                  subject: "",
+                  secondaryText: "",
+                  categoryId: "",
+                  tagIds: [],
                 });
-                setSummeryList([]);
-                setSummeryInput("");
-                setPreviewThumb("");
+                setSummaryList([]);
+                setSummaryInput("");
+                setPreviewThumbUrl("");
               }}
+              disabled={saving}
             >
               پاک‌سازی
             </button>
@@ -582,6 +736,7 @@ function ArticleForm() {
               onClick={handleDelete}
               className="px-5 py-2 rounded-lg bg-red-700 text-white hover:bg-red-800 disabled:opacity-50"
               disabled={deleting || !isEdit}
+              title={!isEdit ? "ابتدا مقاله را بسازید" : "حذف مقاله"}
             >
               {deleting ? "در حال حذف..." : "حذف مقاله"}
             </button>
@@ -592,6 +747,7 @@ function ArticleForm() {
   );
 }
 
+/** ---------- Utils ---------- */
 function CharCounter({ value, max }: { value: string; max: number }) {
   const len = value?.length || 0;
   const danger = len > max * 0.9;

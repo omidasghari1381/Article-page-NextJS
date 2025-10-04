@@ -3,41 +3,137 @@ import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getDataSource } from "@/server/db/typeorm.datasource";
+import {
+  ArticleService,
+  type CreateArticleInput,
+} from "@/server/modules/articles/services/article.service";
 
-import { Article } from "@/server/modules/articles/entities/article.entity";
-import { User } from "@/server/modules/users/entities/user.entity";
-import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
+export const runtime = "nodejs";
 
-const CreateArticleSchema = z.object({
+/** ---------------- Zod Schemas (هماهنگ با سرویس جدید) ---------------- */
+
+const UuidStr = z.string().uuid();
+
+const CreateArticleNewSchema = z.object({
   title: z.string().min(2).max(200),
-  authorId: z.string().uuid().optional(),
-  subject: z.string().min(1),
+  subject: z.string().trim().optional().nullable(),
   mainText: z.string().min(1),
-  secondryText: z.string().min(1),
-  thumbnail: z
-    .string()
-    .max(2000)
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
-  Introduction: z.string().max(5000).optional(),
-  quotes: z.string().max(5000).optional(),
-  category: z.nativeEnum(articleCategoryEnum),
-  readingPeriod: z.string().min(1).max(256),
-  summery: z.array(z.string().min(1)),
+
+  secondaryText: z.string().optional().nullable(),
+  introduction: z.string().optional().nullable(),
+  quotes: z.string().optional().nullable(),
+
+  /** روابط (جدید و هماهنگ با سرویس) */
+  categoryId: UuidStr, // ✅ اجباری و تکی
+  tagIds: z.array(UuidStr).optional(), // اختیاری (چندتایی)
+
+  /** Thumbnail فقط URL */
+  thumbnail: z.string().url().optional().nullable(),
+
+  /** سایر */
+  readingPeriod: z.coerce.number().int().min(0),
+  summary: z.array(z.string().min(1)).optional().nullable(),
+  slug: z.string().trim().max(220).optional().nullable(),
 });
 
+/** لیست: فیلترها */
 const ListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   perPage: z.coerce.number().int().min(1).max(100).default(10),
-  category: z.nativeEnum(articleCategoryEnum).optional(),
+  categoryId: UuidStr.optional(),
+  tagId: UuidStr.optional(),
   q: z.string().trim().optional(),
 });
+
+/** ---------------- Helpers ---------------- */
+
+/** تبدیل ورودی‌های قدیمی -> مدل جدید سرویس */
+function normalizeLegacyCreatePayload(raw: any): CreateArticleInput {
+  // تعیین categoryId:
+  // - اگر raw.categoryId بود (UUID) همونو بردار
+  // - اگر raw.categoryIds آرایه بود، اولین عضو رو بردار
+  // - در غیر این صورت undefined می‌مونه و Zod ارور می‌ده
+  const legacyCatId =
+    typeof raw?.categoryId === "string"
+      ? raw.categoryId
+      : Array.isArray(raw?.categoryIds) &&
+        typeof raw.categoryIds[0] === "string"
+      ? raw.categoryIds[0]
+      : undefined;
+
+  // تعیین thumbnail (فقط URL):
+  // - اگر raw.thumbnail رشته بوده، همونو بذار
+  // - اگر raw.thumbnailId قبلاً استفاده می‌شد، دیگه نذاریم (سرویس URL می‌خواد)
+  const thumbUrl =
+    typeof raw?.thumbnail === "string" && raw.thumbnail.trim().length
+      ? raw.thumbnail.trim()
+      : null;
+
+  return {
+    title: String(raw?.title ?? "").trim(),
+    subject: typeof raw?.subject === "string" ? raw.subject : null,
+    mainText: String(raw?.mainText ?? ""),
+
+    // پشتیبانی از secondaryText / secondryText
+    secondaryText:
+      typeof raw?.secondaryText === "string"
+        ? raw.secondaryText
+        : typeof raw?.secondryText === "string"
+        ? raw.secondryText
+        : null,
+
+    // پشتیبانی از introduction / Introduction
+    introduction:
+      typeof raw?.introduction === "string"
+        ? raw.introduction
+        : typeof raw?.Introduction === "string"
+        ? raw.Introduction
+        : null,
+
+    quotes: typeof raw?.quotes === "string" ? raw.quotes : null,
+
+    /** روابط (جدید) */
+    categoryId: legacyCatId as any, // می‌ذاریم Zod تایید نهایی کنه
+    tagIds: Array.isArray(raw?.tagIds) ? raw.tagIds : undefined,
+
+    /** Thumbnail: URL یا null */
+    thumbnail: thumbUrl,
+
+    /** سایر */
+    readingPeriod:
+      typeof raw?.readingPeriod === "number"
+        ? raw.readingPeriod
+        : Number(raw?.readingPeriod ?? 0) || 0,
+
+    // summary: پشتیبانی از summary و summery
+    summary: Array.isArray(raw?.summary)
+      ? raw.summary
+      : Array.isArray(raw?.summery)
+      ? raw.summery
+      : null,
+
+    // اختیاری برای SEO/Route
+    slug:
+      typeof raw?.slug === "string" && raw.slug.trim().length
+        ? raw.slug.trim()
+        : null,
+  };
+}
+
+/** ---------------- Handlers ---------------- */
 
 export async function POST(req: NextRequest) {
   try {
     const ds = await getDataSource();
-    const body = await req.json();
-    const parsed = CreateArticleSchema.safeParse(body);
+    const svc = new ArticleService(ds);
+
+    const raw = await req.json();
+
+    // 1) نرمالایز legacy -> new
+    const normalized = normalizeLegacyCreatePayload(raw);
+
+    // 2) اعتبارسنجی طبق مدل جدید (الزام categoryId + thumbnail URL)
+    const parsed = CreateArticleNewSchema.safeParse(normalized);
     if (!parsed.success) {
       return NextResponse.json(
         { error: "ValidationError", details: parsed.error.flatten() },
@@ -45,9 +141,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 3) authorId از سشن یا از بدنه (fallback)
     const session = await getServerSession(authOptions);
-    const authorId = (session?.user as any)?.id || parsed.data.authorId;
-
+    const authorId =
+      (session?.user as any)?.id ||
+      (typeof raw?.authorId === "string" ? raw.authorId : "");
     if (!authorId) {
       return NextResponse.json(
         {
@@ -58,33 +156,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userRepo = ds.getRepository(User);
-    const author = await userRepo.findOne({ where: { id: authorId } });
-    if (!author) {
-      return NextResponse.json(
-        { error: "NotFound", message: "کاربر نویسنده یافت نشد." },
-        { status: 404 }
-      );
-    }
-    
-    const articleRepo = ds.getRepository(Article);
-
-    const article = articleRepo.create({
-      title: parsed.data.title,
-      subject: parsed.data.subject,
-      author,
-      mainText: parsed.data.mainText,
-      summery: parsed.data.summery,
-      secondryText: parsed.data.secondryText,
-      thumbnail: parsed.data.thumbnail || null,
-      Introduction: parsed.data.Introduction || null,
-      quotes: parsed.data.quotes || null,
-      category: parsed.data.category,
-      readingPeriod: parsed.data.readingPeriod,
-    });
-
-    const saved = await articleRepo.save(article);
-
+    const saved = await svc.create(parsed.data, authorId);
     return NextResponse.json({ success: true, id: saved.id }, { status: 201 });
   } catch (err: any) {
     console.error("POST /api/articles error:", err);
@@ -98,15 +170,17 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const ds = await getDataSource();
-    const { searchParams } = new URL(req.url);
+    const service = new ArticleService(ds);
+
+    const sp = new URL(req.url).searchParams;
 
     const parsed = ListQuerySchema.safeParse({
-      page: searchParams.get("page") ?? undefined,
-      perPage: searchParams.get("perPage") ?? undefined,
-      category: searchParams.get("category") ?? undefined,
-      q: searchParams.get("q") ?? undefined,
+      page: sp.get("page") ?? undefined,
+      perPage: sp.get("perPage") ?? undefined,
+      categoryId: sp.get("categoryId") ?? undefined,
+      tagId: sp.get("tagId") ?? undefined,
+      q: sp.get("q") ?? undefined,
     });
-
     if (!parsed.success) {
       return NextResponse.json(
         { error: "ValidationError", details: parsed.error.flatten() },
@@ -114,51 +188,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { page, perPage, category, q } = parsed.data;
-    const skip = (page - 1) * perPage;
-
-    const articleRepo = ds.getRepository(Article);
-
-    const where: any = {};
-    if (category) where.category = category;
-
-    const qb = articleRepo
-      .createQueryBuilder("a")
-      .leftJoinAndSelect("a.author", "author")
-      .where(where);
-
-    if (q) {
-      qb.andWhere("(a.title LIKE :q )", {
-        q: `%${q}%`,
-      });
-    }
-
-    qb.orderBy("a.createdAt", "DESC").skip(skip).take(perPage);
-
-    const [items, total] = await qb.getManyAndCount();
-    return NextResponse.json({
-      page,
-      perPage,
-      total,
-      items: items.map((it) => ({
-        id: it.id,
-        subject: it.subject,
-        title: it.title,
-        category: it.category,
-        readingPeriod: it.readingPeriod,
-        mainText: it.mainText,
-        viewCount: it.viewCount,
-        summery: it.summery,
-        thumbnail: it.thumbnail,
-        quotes: it.quotes,
-        author: {
-          id: (it.author as any)?.id,
-          firstName: (it.author as any)?.firstName,
-          lastName: (it.author as any)?.lastName,
-        },
-        createdAt: it.createdAt,
-      })),
-    });
+    const list = await service.list(parsed.data);
+    return NextResponse.json(list);
   } catch (err: any) {
     console.error("GET /api/articles error:", err);
     return NextResponse.json(
@@ -171,27 +202,27 @@ export async function GET(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const ds = await getDataSource();
-    const body = await req.json();
-    const { id } = body as { id: string };
+    const svc = new ArticleService(ds);
 
+    const body = await req.json();
+    const id = (body as { id?: string })?.id;
     if (!id) {
       return NextResponse.json(
         { error: "ValidationError", message: "شناسه (id) الزامی است." },
         { status: 400 }
       );
     }
-    const articleRepo = ds.getRepository(Article);
-    const found = await articleRepo.findOne({ where: { id } });
-    if (!found) {
+
+    const ok = await svc.delete(id);
+    if (!ok) {
       return NextResponse.json(
         { error: "NotFound", message: "مقاله پیدا نشد." },
         { status: 404 }
       );
     }
-    await articleRepo.remove(found);
-    return NextResponse.json({ success: true, id }, { status: 200 });
+    return NextResponse.json({ success: true, id });
   } catch (err: any) {
-    console.error("DELETE /api/articles/inner-article error:", err);
+    console.error("DELETE /api/articles error:", err);
     return NextResponse.json(
       { error: "ServerError", message: "مشکل داخلی سرور" },
       { status: 500 }
