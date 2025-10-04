@@ -24,6 +24,7 @@ type UserDTO = {
   phone: string;
   createdAt?: string;
   updatedAt?: string;
+  isDeleted?: number;
 };
 
 // ---- helpers ----
@@ -69,6 +70,8 @@ async function fetchUsers(sp: SearchParams) {
     typeof sp?.createdFrom === "string" ? sp.createdFrom : undefined;
   const createdTo =
     typeof sp?.createdTo === "string" ? sp.createdTo : undefined;
+  const withDeleted = typeof sp?.withDeleted === "string" ? sp.withDeleted : "1";
+  const deletedOnly = typeof sp?.deletedOnly === "string" ? sp.deletedOnly : undefined;
 
   const qs = toQS({
     q,
@@ -78,6 +81,8 @@ async function fetchUsers(sp: SearchParams) {
     pageSize,
     createdFrom,
     createdTo,
+    withDeleted,   // 👈 اضافه شد
+    ...(deletedOnly ? { deletedOnly } : {}), // 👈 اختیاری
     ...(roleParams ? { role: roleParams } : {}),
   });
 

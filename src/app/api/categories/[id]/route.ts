@@ -49,15 +49,3 @@ export async function PATCH(req: NextRequest, ctx: { params: ParamsPromise }) {
   }
 }
 
-export async function DELETE(_req: NextRequest, ctx: { params: ParamsPromise }) {
-  const { id } = await ctx.params;
-  try {
-    const ds = await getDataSource();
-    const service = new CategoryService(ds);
-    const ok = await service.deleteCategory(id);
-    return NextResponse.json(ok, { status: 200 });
-  } catch (err: any) {
-    console.error("❌ Category delete error:", err);
-    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
-  }
-}

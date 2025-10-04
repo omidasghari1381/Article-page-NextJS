@@ -232,6 +232,7 @@ function CategoryForm() {
     if (!confirm("آیا از حذف این دسته مطمئن هستید؟")) return;
 
     try {
+      console.log("delete")
       setDeleting(true);
       const res = await fetch("/api/categories", {
         method: "DELETE",
@@ -246,7 +247,7 @@ function CategoryForm() {
       }
 
       alert("دسته با موفقیت حذف شد.");
-      router.push("/articles");
+      router.push("/categories");
     } catch {
       alert("مشکل در ارتباط با سرور");
     } finally {

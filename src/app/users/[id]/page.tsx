@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 
 type UserRole = "ADMIN" | "EDITOR" | "CLIENT" | number;
+
 type UserDTO = {
   id: string;
   firstName: string;
@@ -13,6 +14,7 @@ type UserDTO = {
   phone: string;
   createdAt?: string;
   updatedAt?: string;
+  isDeleted?: number;
 };
 
 type UserUpdatePayload = Partial<{
@@ -23,12 +25,14 @@ type UserUpdatePayload = Partial<{
   passwordHash: string;
 }>;
 
+/** ---------- Constants ---------- */
 const ROLE_OPTIONS: { label: string; value: UserRole }[] = [
   { label: "ADMIN", value: "ADMIN" },
   { label: "EDITOR", value: "EDITOR" },
   { label: "CLIENT", value: "CLIENT" },
 ];
 
+/** ---------- Page ---------- */
 export default function Page() {
   return (
     <main className="pb-24 pt-6 px-20">
@@ -46,6 +50,7 @@ export default function Page() {
   );
 }
 
+/** ---------- Form ---------- */
 function UserEditForm() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -58,12 +63,14 @@ function UserEditForm() {
     role: UserRole | "";
     phone: string;
     password: string;
+    isDeleted: number; // 0 | 1
   }>({
     firstName: "",
     lastName: "",
     role: "",
     phone: "",
     password: "",
+    isDeleted: 0,
   });
 
   const [loading, setLoading] = useState<boolean>(hasId);
@@ -90,7 +97,9 @@ function UserEditForm() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`/api/users/${id}`, { cache: "no-store" });
+        const res = await fetch(`/api/users/${id}?withDeleted=1`, {
+          cache: "no-store",
+        });
         if (res.status === 404) {
           if (!active) return;
           setError("کاربر پیدا نشد");
@@ -108,6 +117,7 @@ function UserEditForm() {
           role: (data.role as any) ?? "",
           phone: data.phone ?? "",
           password: "",
+          isDeleted: typeof data.isDeleted === "number" ? data.isDeleted : 0,
         });
       } catch (e: any) {
         if (active) setError(e?.message || "خطا در دریافت اطلاعات کاربر");
@@ -153,9 +163,7 @@ function UserEditForm() {
       lastName: form.lastName.trim(),
       role: form.role as UserRole,
       phone: form.phone.trim(),
-      ...(form.password.trim()
-        ? { passwordHash: form.password.trim() }
-        : {}),
+      ...(form.password.trim() ? { passwordHash: form.password.trim() } : {}),
     };
 
     try {
@@ -198,7 +206,8 @@ function UserEditForm() {
       }
 
       alert("کاربر حذف شد ✅");
-      router.push("/users");
+      // چون soft delete انجام می‌شود، فلگ را ست کن تا دکمه‌ها درست شوند
+      setForm((f) => ({ ...f, isDeleted: 1 }));
       router.refresh();
     } catch (err: any) {
       setError(err?.message || "خطا در حذف کاربر");
@@ -206,6 +215,26 @@ function UserEditForm() {
       setDeleting(false);
     }
   };
+
+  async function handleRestore() {
+    if (!hasId) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/users/${id}/restore`, {
+        method: "PATCH",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "خطا در بازگردانی کاربر");
+      alert("کاربر با موفقیت بازیابی شد ✅");
+      // به‌روزرسانی فرم برای غیرفعال شدن دکمه
+      setForm((f) => ({ ...f, isDeleted: 0 }));
+      router.refresh();
+    } catch (err: any) {
+      alert(err.message ?? "خطای ناشناخته");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   if (!hasId) {
     return (
@@ -246,7 +275,9 @@ function UserEditForm() {
             </div>
 
             <div>
-              <label className="block text-sm text-black mb-2">نام‌خانوادگی</label>
+              <label className="block text-sm text-black mb-2">
+                نام‌خانوادگی
+              </label>
               <input
                 type="text"
                 className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
@@ -277,7 +308,9 @@ function UserEditForm() {
           {/* ستون راست */}
           <div className="md:col-span-6 space-y-6">
             <div>
-              <label className="block text-sm text-black mb-2">شماره تلفن</label>
+              <label className="block text-sm text-black mb-2">
+                شماره تلفن
+              </label>
               <input
                 type="tel"
                 className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 ltr"
@@ -287,7 +320,9 @@ function UserEditForm() {
             </div>
 
             <div>
-              <label className="block text-sm text-black mb-2">پسورد (اختیاری)</label>
+              <label className="block text-sm text-black mb-2">
+                پسورد (اختیاری)
+              </label>
               <input
                 type="password"
                 className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 ltr"
@@ -298,7 +333,7 @@ function UserEditForm() {
             </div>
 
             {/* اکشن‌ها */}
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
@@ -318,11 +353,38 @@ function UserEditForm() {
               <button
                 type="button"
                 onClick={handleDelete}
-                className="px-5 py-2 rounded-lg bg-red-700 text-white hover:bg-red-800 disabled:opacity-50"
-                disabled={deleting}
+                className={`px-5 py-2 rounded-lg text-white disabled:opacity-50 ${
+                  form.isDeleted === 1
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-red-700 hover:bg-red-800"
+                }`}
+                disabled={deleting || form.isDeleted === 1}
+                title={
+                  form.isDeleted === 1 ? "این کاربر قبلاً حذف شده است" : ""
+                }
               >
                 {deleting ? "در حال حذف…" : "حذف کاربر"}
               </button>
+
+              {form.isDeleted === 1 ? (
+                <button
+                  type="button"
+                  onClick={handleRestore}
+                  disabled={loading}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
+                  {loading ? "در حال بازگردانی..." : "بازیابی کاربر"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg cursor-not-allowed"
+                  title="این کاربر حذف نشده است"
+                >
+                  بازیابی کاربر
+                </button>
+              )}
             </div>
 
             {problems.length > 0 && (

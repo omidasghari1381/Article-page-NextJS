@@ -1,4 +1,4 @@
-// src/app/api/users/route.ts
+// ✅ src/app/api/users/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDataSource } from "@/server/db/typeorm.datasource";
@@ -6,10 +6,8 @@ import type { getUserEnum } from "@/server/modules/users/enums/sortUserBy.enum";
 import type { userRoleEnum } from "@/server/modules/users/enums/userRoleEnum";
 import { UserService, type ListUserQuery } from "@/server/modules/users/services/users.service";
 
-// ستون‌های مجاز برای sortBy
 const sortableColumns = ["createdAt", "firstName", "lastName", "phone", "role", "updatedAt"] as const;
 type Sortable = typeof sortableColumns[number];
-
 const SortDirEnum = z.enum(["ASC", "DESC"]);
 
 function parseDateOrUndefined(v: string | null) {
@@ -27,6 +25,9 @@ function parseRoleParam(sp: URLSearchParams): userRoleEnum | userRoleEnum[] | un
   });
   return mapped.length === 1 ? mapped[0] : mapped;
 }
+
+// 👇 helper برای پارس بولین
+const truthy = (v?: string | null) => ["1", "true", "yes"].includes((v ?? "").toLowerCase());
 
 export async function GET(req: NextRequest) {
   try {
@@ -48,6 +49,12 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, Number(sp.get("page") ?? "1"));
     const pageSize = Math.min(100, Math.max(1, Number(sp.get("pageSize") ?? "20")));
 
+    // 👇 کنترل نمایش رکوردهای Soft-deleted
+    const withDeleted = truthy(sp.get("withDeleted"));
+    const deletedOnly = truthy(sp.get("deletedOnly")) || sp.get("deleted") === "only";
+    // اگر فقط حذف‌شده‌ها خواسته شده، با withDeleted هم true می‌کنیم
+    const finalWithDeleted = withDeleted || deletedOnly;
+
     const ds = await getDataSource();
     const svc = new UserService(ds);
 
@@ -60,6 +67,8 @@ export async function GET(req: NextRequest) {
       sortDir,
       page,
       pageSize,
+      withDeleted: finalWithDeleted,
+      deletedOnly,
     };
 
     const result = await svc.list(payload);

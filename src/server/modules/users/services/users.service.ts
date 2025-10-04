@@ -20,6 +20,8 @@ export type ListUserQuery = {
   sortDir?: "ASC" | "DESC";
   page?: number;
   pageSize?: number;
+  withDeleted?: boolean; // 👈 اضافه شد
+  deletedOnly?: boolean; // 👈 اضافه شد
 };
 
 export class UserService {
@@ -28,8 +30,11 @@ export class UserService {
     this.repo = this.ds.getRepository(User);
   }
 
-  async getOneById(id: string) {
-    return await this.repo.findOne({ where: { id } });
+  async getOneById(id: string, opts?: { withDeleted?: boolean }) {
+    return this.repo.findOne({
+      where: { id },
+      withDeleted: !!opts?.withDeleted, // 👈 اگر لازم شد
+    });
   }
 
   async list(query: ListUserQuery = {}) {
@@ -42,60 +47,48 @@ export class UserService {
       sortDir = "DESC",
       page = 1,
       pageSize = 20,
+      withDeleted = false,
+      deletedOnly = false,
     } = query;
 
-    // فقط ستون‌های مجاز برای مرتب‌سازی
-    const sortableColumns = new Set([
-      "createdAt",
-      "firstName",
-      "lastName",
-      "phone",
-      "role",
-      "updatedAt",
-    ]);
-    const sortColumn = sortableColumns.has(String(sortBy))
-      ? String(sortBy)
-      : "createdAt";
+    const qb = this.repo.createQueryBuilder("u");
 
-    const qb = this.repo
-      .createQueryBuilder("u")
-      .orderBy(`u.${sortColumn}`, sortDir)
-      .skip((page - 1) * pageSize)
-      .take(pageSize);
+    // 👇 کنترل soft delete
+    if (withDeleted || deletedOnly) qb.withDeleted();
 
-    // فیلتر نقش (تکی یا آرایه)
-    if (Array.isArray(role) && role.length > 0) {
-      qb.andWhere("u.role IN (:...roles)", { roles: role });
-    } else if (typeof role !== "undefined") {
-      qb.andWhere("u.role = :role", { role });
-    }
-
-    // جست‌وجوی متنی روی firstName / lastName / phone
-    if (q && q.trim()) {
-      const like = `%${q.trim()}%`;
-      // ILIKE برای Postgres؛ در سایر درایورها LIKE رفتار حروف‌کوچک/بزرگ متفاوت دارد
+    if (deletedOnly) {
+      // اگر از فلگ isDeleted استفاده می‌کنی:
+      qb.andWhere("(u.deletedAt IS NOT NULL OR u.isDeleted = 1)");
+    } else if (!withDeleted) {
+      // فقط اکتیوها
       qb.andWhere(
-        "(u.firstName ILIKE :like OR u.lastName ILIKE :like OR u.phone ILIKE :like)",
-        { like }
+        "(u.deletedAt IS NULL AND (u.isDeleted = 0 OR u.isDeleted IS NULL))"
       );
     }
 
-    // محدوده‌ی تاریخ ایجاد
-    if (createdFrom)
-      qb.andWhere("u.createdAt >= :createdFrom", { createdFrom });
-    if (createdTo) qb.andWhere("u.createdAt < :createdTo", { createdTo });
+    if (q) {
+      qb.andWhere(
+        "(u.firstName LIKE :qq OR u.lastName LIKE :qq OR u.phone LIKE :qq)",
+        { qq: `%${q}%` }
+      );
+    }
+
+    if (role) {
+      if (Array.isArray(role))
+        qb.andWhere("u.role IN (:...roles)", { roles: role });
+      else qb.andWhere("u.role = :role", { role });
+    }
+
+    if (createdFrom) qb.andWhere("u.createdAt >= :from", { from: createdFrom });
+    if (createdTo) qb.andWhere("u.createdAt <= :to", { to: createdTo });
+
+    qb.orderBy(`u.${sortBy}`, sortDir)
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
 
     const [items, total] = await qb.getManyAndCount();
-
-    return {
-      items,
-      total,
-      page,
-      pageSize,
-      pages: Math.ceil(total / pageSize),
-    };
+    return { items, total, page, pageSize, pages: Math.ceil(total / pageSize) };
   }
-
   async update(id: string, dto: UpdateUserDto) {
     const entity = await this.repo.findOne({ where: { id } });
     if (!entity) return null;
@@ -110,7 +103,17 @@ export class UserService {
   }
 
   async remove(id: string) {
-    const result = await this.repo.delete(id);
-    return result.affected === 1;
+    await this.repo.update(id, { isDeleted: 1 as 1 });
+    const res = await this.repo.softDelete(id);
+    return res.affected === 1;
+  }
+
+  async restore(id: string) {
+    const res = await this.repo.restore(id);
+    if (res.affected === 1) {
+      await this.repo.update(id, { isDeleted: 0 as 0 });
+      return true;
+    }
+    return false;
   }
 }

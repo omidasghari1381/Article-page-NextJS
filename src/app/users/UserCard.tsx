@@ -11,19 +11,14 @@ export type UserDTO = {
   phone: string;
   createdAt?: string;
   updatedAt?: string;
+  isDeleted?: number; 
 };
 
 type Props = {
   item: UserDTO;
-
-  /** لینک صفحه‌ی ویرایش یا فانکشن کلیک */
   editHref?: string | ((id: string) => string);
   onEditClick?: (id: string) => void;
-
-  /** اکشن‌های اختیاری اضافه */
   onDeleteClick?: (id: string) => void;
-
-  /** نمایش زمان‌ها */
   showDates?: boolean;
 };
 
@@ -34,17 +29,11 @@ export default function UserListItem({
   onDeleteClick,
   showDates = true,
 }: Props) {
-  const { id, firstName, lastName, role, phone, createdAt, updatedAt } = item;
+  const { id, firstName, lastName, role, phone, createdAt, updatedAt, isDeleted } = item;
 
-  // 1) اگر editHref تابع بود، بسازش
-  // 2) اگر رشته بود، همونو بگیر
-  // 3) در غیر این صورت پیش‌فرض: /users/${id}
   const providedEditLink =
-    typeof editHref === "function"
-      ? editHref(id)
-      : typeof editHref === "string"
-      ? editHref
-      : null;
+    typeof editHref === "function" ? editHref(id) :
+    typeof editHref === "string"   ? editHref    : null;
 
   const finalEditHref = providedEditLink ?? `/users/${id}`;
 
@@ -52,9 +41,8 @@ export default function UserListItem({
 
   const copyPhone = async (text: string) => {
     try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
+      if (navigator?.clipboard?.writeText) await navigator.clipboard.writeText(text);
+      else {
         const ta = document.createElement("textarea");
         ta.value = text;
         document.body.appendChild(ta);
@@ -67,25 +55,31 @@ export default function UserListItem({
     } catch {}
   };
 
+  const canDelete = typeof onDeleteClick === "function" && isDeleted !== 1;
+
   return (
-    <div className="rounded-2xl border shadow-sm bg-white p-4 text-black border-gray-300">
+    <div className={`rounded-2xl border shadow-sm bg-white p-4 text-black border-gray-300 ${isDeleted === 1 ? "opacity-75" : ""}`}>
       <div className="flex items-center justify-between gap-4">
-        {/* اطلاعات اصلی - استایل لیستی */}
         <div className="flex gap-10 flex-1 min-w-0">
-          {/* نام و نقش */}
+          {/* نام و نقش + وضعیت */}
           <div className="min-w-0">
             <div className="text-[13px] text-gray-500 mb-1">نام و نقش</div>
             <div className="flex items-center flex-wrap gap-2 min-w-0">
               <div className="text-base md:text-lg font-semibold truncate max-w-[30ch]">
                 {firstName} {lastName}
               </div>
-              <span className="inline-flex items-center gap-1 px-2 py-1  text-gray-700 ">
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-gray-700">
                 نقش: <strong className="font-semibold">{String(role)}</strong>
               </span>
+              {isDeleted === 1 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px]">
+                  حذف‌شده
+                </span>
+              )}
             </div>
           </div>
 
-          {/* تلفن (کلیک = کپی) */}
+          {/* تلفن */}
           <div className="min-w-0">
             <div className="text-[13px] text-gray-500 mb-1">تلفن</div>
             <div className="flex items-center gap-2 min-w-0">
@@ -126,7 +120,7 @@ export default function UserListItem({
 
         {/* اکشن‌ها */}
         <div className="flex items-center md:gap-4 gap-3">
-          {/* دکمه ویرایش: همیشه نمایش داده می‌شود */}
+          {/* ویرایش */}
           {typeof onEditClick === "function" ? (
             <button
               className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50"
@@ -143,11 +137,15 @@ export default function UserListItem({
             </Link>
           )}
 
-          {/* دکمه حذف اختیاری */}
+          {/* حذف (غیرفعال اگر حذف‌شده باشد) */}
           {typeof onDeleteClick === "function" && (
             <button
-              className="px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800"
-              onClick={() => onDeleteClick(id)}
+              className={`px-3 py-1.5 rounded-lg text-white ${
+                canDelete ? "bg-red-700 hover:bg-red-800" : "bg-gray-300 cursor-not-allowed"
+              }`}
+              onClick={() => canDelete && onDeleteClick(id)}
+              disabled={!canDelete}
+              title={isDeleted === 1 ? "این کاربر قبلاً حذف شده است" : ""}
             >
               حذف
             </button>
@@ -158,15 +156,12 @@ export default function UserListItem({
   );
 }
 
-/* ===== Helpers ===== */
+/* Helpers */
 function formatDateTime(iso?: string) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
-    return new Intl.DateTimeFormat("fa-IR", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(d);
+    return new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(d);
   } catch {
     return iso!;
   }

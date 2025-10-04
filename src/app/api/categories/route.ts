@@ -78,3 +78,19 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const ds = await getDataSource();
+    const service = new CategoryService(ds);
+    const ok = await service.deleteCategory(body.id);
+    return NextResponse.json(ok, { status: 200 });
+  } catch (err: any) {
+    console.error("❌ Category delete error:", err);
+    return NextResponse.json(
+      { error: err?.message ?? "Server Error" },
+      { status: 500 }
+    );
+  }
+}

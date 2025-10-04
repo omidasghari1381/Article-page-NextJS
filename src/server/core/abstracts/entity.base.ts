@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   BaseEntity,
+  DeleteDateColumn,
 } from "typeorm";
 
 export abstract class AbstractEntity extends BaseEntity {
@@ -14,4 +15,7 @@ export abstract class AbstractEntity extends BaseEntity {
 
   @UpdateDateColumn({ type: "datetime", precision: 6 })
   updatedAt!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt!: Date | null; // برای soft delete
 }
