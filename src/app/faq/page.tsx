@@ -56,7 +56,9 @@ function Page() {
           { label: "سوالات متداول", href: "/" },
         ]}
       />
-
+      <div className="mt-6 flex items-center justify-between text-gray-800">
+        <h1 className="text-2xl font-semibold">لیست سوالات</h1>
+      </div>
       <BannerWithBox setCategory={setCategory} />
 
       <div className="space-y-7 mt-24 mb-14">

@@ -3,38 +3,25 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const ROLE_OPTIONS = [
-  // با enum واقعی سینک کن
-  { label: "ADMIN", value: "ADMIN" },
-  { label: "EDITOR", value: "EDITOR" },
-  { label: "CLIENT", value: "CLIENT" },
-];
-
+/** گزینه‌های مرتب‌سازی */
 const SORT_BY = [
   { label: "تاریخ ایجاد", value: "createdAt" },
-  { label: "نام", value: "firstName" },
-  { label: "نام‌خانوادگی", value: "lastName" },
-  { label: "تلفن", value: "phone" },
-  { label: "نقش", value: "role" },
   { label: "تاریخ بروزرسانی", value: "updatedAt" },
+  { label: "نام", value: "name" },
+  { label: "اسلاگ", value: "slug" },
 ];
 
-export function UsersFilter() {
+export function CategoryFilters() {
   const router = useRouter();
   const sp = useSearchParams();
 
   const initial = useMemo(() => {
     const get = (k: string, d = "") => sp.get(k) ?? d;
 
-    const selectedRoles = sp.getAll("role").length
-      ? sp.getAll("role")
-      : get("role")
-      ? get("role")!.split(",").filter(Boolean)
-      : [];
-
     return {
       q: get("q"),
-      roles: selectedRoles as string[],
+      parentId: get("parentId"),
+      hasParent: get("hasParent"), // "yes" | "no" | ""
       createdFrom: get("createdFrom"),
       createdTo: get("createdTo"),
       sortBy: get("sortBy", "createdAt"),
@@ -43,8 +30,9 @@ export function UsersFilter() {
     };
   }, [sp]);
 
-  // --- لوکال استیت برای دکمه‌های نقش ---
-  const [roles, setRoles] = useState<string[]>(initial.roles);
+  const [hasParent, setHasParent] = useState<"" | "yes" | "no">(
+    (initial.hasParent as "" | "yes" | "no") || ""
+  );
 
   const updateQuery = (
     patch: Record<string, string | string[] | undefined>
@@ -58,8 +46,7 @@ export function UsersFilter() {
         usp.set(k, v);
       }
     });
-    // همیشه صفحه ۱
-    usp.set("page", "1");
+    usp.set("page", "1"); // هر بار فیلتر، برگرد صفحه ۱
     router.push(`?${usp.toString()}`);
   };
 
@@ -68,6 +55,7 @@ export function UsersFilter() {
     const fd = new FormData(e.currentTarget);
 
     const q = String(fd.get("q") || "");
+    const parentId = String(fd.get("parentId") || "");
     const createdFrom = String(fd.get("createdFrom") || "");
     const createdTo = String(fd.get("createdTo") || "");
     const sortBy = String(fd.get("sortBy") || "createdAt");
@@ -76,7 +64,8 @@ export function UsersFilter() {
 
     updateQuery({
       q: q || undefined,
-      role: roles.length ? roles : undefined,
+      parentId: parentId || undefined,
+      hasParent: hasParent || undefined, // فقط وقتی انتخاب شده
       createdFrom: createdFrom || undefined,
       createdTo: createdTo || undefined,
       sortBy,
@@ -85,18 +74,10 @@ export function UsersFilter() {
     });
   };
 
-  const onClear = () => {
-    setRoles([]);
+  const onReset = () => {
+    setHasParent("");
     router.push(`?`);
   };
-
-  const toggleRole = (value: string) => {
-    setRoles((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-    );
-  };
-
-  const clearRoles = () => setRoles([]);
 
   return (
     <form onSubmit={onSubmit} className=" p-4 grid gap-4 md:grid-cols-12">
@@ -106,10 +87,22 @@ export function UsersFilter() {
         <input
           name="q"
           defaultValue={initial.q}
-          placeholder="نام / نام‌خانوادگی / تلفن"
+          placeholder="نام / اسلاگ / توضیحات"
           className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
         />
       </div>
+
+      {/* parentId */}
+      <div className="md:col-span-3">
+        <label className="block text-sm text-gray-600 mb-1">شناسه والد</label>
+        <input
+          name="parentId"
+          defaultValue={initial.parentId}
+          placeholder="UUID والد (اختیاری)"
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+        />
+      </div>
+
       {/* createdFrom */}
       <div className="md:col-span-3">
         <label className="block text-sm text-gray-600 mb-1">از تاریخ</label>
@@ -119,7 +112,8 @@ export function UsersFilter() {
           defaultValue={initial.createdFrom}
           className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
         />
-      </div>{" "}
+      </div>
+
       {/* createdTo */}
       <div className="md:col-span-3">
         <label className="block text-sm text-gray-600 mb-1">تا تاریخ</label>
@@ -130,7 +124,34 @@ export function UsersFilter() {
           className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
         />
       </div>
-      {/* Roles as toggle buttons */}
+      {/* hasParent */}
+      <div className="md:col-span-3">
+        <label className="block text-sm text-gray-600 mb-1">نوع گره</label>
+        <div className="flex gap-2">
+          {[
+            { label: "همه", value: "" },
+            { label: "فقط ریشه", value: "no" },
+            { label: "فقط زیرشاخه", value: "yes" },
+          ].map((opt) => {
+            const active = hasParent === (opt.value as "" | "yes" | "no");
+            return (
+              <button
+                key={opt.value || "all"}
+                type="button"
+                onClick={() => setHasParent(opt.value as "" | "yes" | "no")}
+                className={`px-3 py-1.5 rounded-lg border ${
+                  active
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-gray-800 border-gray-200"
+                }`}
+                aria-pressed={active}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       {/* sortBy */}
       <div className="md:col-span-3">
         <label className="block text-sm text-gray-600 mb-1">مرتب‌سازی</label>
@@ -145,33 +166,8 @@ export function UsersFilter() {
             </option>
           ))}
         </select>
-      </div>{" "}
-      <div className="md:col-span-6">
-        <label className="block text-sm text-gray-600 mb-2">نقش</label>
-
-        <div className="flex flex-wrap gap-3">
-          {ROLE_OPTIONS.map((o) => {
-            const active = roles.includes(o.value);
-            return (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => toggleRole(o.value)}
-                className={`px-3 py-1.5 rounded-lg border ${
-                  active
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-gray-800 border-gray-200"
-                }`}
-                aria-pressed={active}
-                data-active={active}
-                title={o.label}
-              >
-                {o.label}
-              </button>
-            );
-          })}
-        </div>
       </div>
+
       {/* sortDir */}
       <div className="md:col-span-3">
         <label className="block text-sm text-gray-600 mb-1">جهت</label>
@@ -184,6 +180,7 @@ export function UsersFilter() {
           <option value="ASC">صعودی</option>
         </select>
       </div>
+
       {/* pageSize */}
       <div className="md:col-span-3">
         <label className="block text-sm text-gray-600 mb-1">در صفحه</label>
@@ -198,22 +195,23 @@ export function UsersFilter() {
           <option value="80">80</option>
           <option value="100">100</option>
         </select>
-      </div>{" "}
+      </div>
+
       {/* Actions */}
-      <div className="md:col-span-12 flex items-center gap-2 justify-end mt-4">
+      <div className="md:col-span-12 flex items-center gap-2 justify-end">
         {" "}
         <button
           type="button"
-          onClick={onClear}
+          onClick={onReset}
           className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
         >
-          پاکسازی{" "}
+          پاکسازی
         </button>
         <button
           type="submit"
-          className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+          className="px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-black transition"
         >
-          اعمال فیلتر
+          اعمال فیلتر ها{" "}
         </button>
       </div>
     </form>

@@ -1,13 +1,31 @@
 // src/server/modules/categories/CategoryService.ts
-import { DataSource } from "typeorm";
+import { DataSource, SelectQueryBuilder } from "typeorm";
 import { ArticleCategory } from "../entities/articleCategory.entity";
 import z from "zod";
 
-
-
+export type CategoryListFilters = {
+  q?: string;
+  parentId?: string;
+  hasParent?: "yes" | "no"; // yes=فقط زیرشاخه، no=فقط ریشه
+  depthMin?: number;
+  depthMax?: number;
+  createdFrom?: string; // ISO (YYYY-MM-DD)
+  createdTo?: string; // ISO
+  sortBy?: "createdAt" | "updatedAt" | "name" | "slug" | "depth";
+  sortDir?: "ASC" | "DESC";
+  page?: number;
+  pageSize?: number;
+};
 
 export class CategoryService {
   constructor(private ds: DataSource) {}
+
+  private baseQB(): SelectQueryBuilder<ArticleCategory> {
+    return this.ds
+      .getRepository(ArticleCategory)
+      .createQueryBuilder("c")
+      .leftJoinAndSelect("c.parent", "p");
+  }
 
   private async getAncestorsChain(catId: string): Promise<ArticleCategory[]> {
     const repo = this.ds.getRepository(ArticleCategory);
@@ -24,6 +42,84 @@ export class CategoryService {
       });
     }
     return chain;
+  }
+
+  async listWithFilters(f: CategoryListFilters) {
+    const {
+      q,
+      parentId,
+      hasParent,
+      depthMin,
+      depthMax,
+      createdFrom,
+      createdTo,
+      sortBy = "createdAt",
+      sortDir = "DESC",
+      page = 1,
+      pageSize = 20,
+    } = f;
+
+    const qb = this.baseQB();
+
+    if (q) {
+      qb.andWhere(
+        "(c.name LIKE :q OR c.slug LIKE :q OR c.description LIKE :q)",
+        { q: `%${q}%` }
+      );
+    }
+
+    if (parentId) {
+      qb.andWhere("p.id = :parentId", { parentId });
+    }
+
+    if (hasParent === "yes") {
+      qb.andWhere("c.parentId IS NOT NULL");
+    } else if (hasParent === "no") {
+      qb.andWhere("c.parentId IS NULL");
+    }
+
+    if (typeof depthMin === "number") {
+      qb.andWhere("c.depth >= :depthMin", { depthMin });
+    }
+    if (typeof depthMax === "number") {
+      qb.andWhere("c.depth <= :depthMax", { depthMax });
+    }
+
+    if (createdFrom) {
+      qb.andWhere("DATE(c.createdAt) >= :createdFrom", { createdFrom });
+    }
+    if (createdTo) {
+      qb.andWhere("DATE(c.createdAt) <= :createdTo", { createdTo });
+    }
+
+    // مرتب‌سازی امن بر اساس allowlist
+    const sortColumnMap: Record<string, string> = {
+      createdAt: "c.createdAt",
+      updatedAt: "c.updatedAt",
+      name: "c.name",
+      slug: "c.slug",
+      depth: "c.depth",
+    };
+    qb.orderBy(
+      sortColumnMap[sortBy] ?? "c.createdAt",
+      sortDir === "ASC" ? "ASC" : "DESC"
+    );
+
+    // صفحه‌بندی
+    const take = Math.max(1, Math.min(100, pageSize));
+    const skip = Math.max(0, (Math.max(1, page) - 1) * take);
+
+    qb.take(take).skip(skip);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    return {
+      items,
+      total,
+      page: Math.max(1, page),
+      pageSize: take,
+      pages: Math.ceil(total / take),
+    };
   }
 
   async listCategories() {
@@ -53,7 +149,9 @@ export class CategoryService {
   }) {
     const repo = this.ds.getRepository(ArticleCategory);
 
-    const slugExists = await repo.exists({ where: { slug: input.slug.trim().toLowerCase() } });
+    const slugExists = await repo.exists({
+      where: { slug: input.slug.trim().toLowerCase() },
+    });
     if (slugExists) throw new Error("این اسلاگ قبلاً استفاده شده است");
 
     const parent = input.parentId
@@ -98,15 +196,20 @@ export class CategoryService {
     }
 
     if (updates.name !== undefined) cat.name = updates.name.trim();
-    if (updates.description !== undefined) cat.description = updates.description;
+    if (updates.description !== undefined)
+      cat.description = updates.description;
 
     if (updates.parentId !== undefined) {
       const newParent = updates.parentId
-        ? await repo.findOne({ where: { id: updates.parentId }, relations: ["parent"] })
+        ? await repo.findOne({
+            where: { id: updates.parentId },
+            relations: ["parent"],
+          })
         : null;
 
       if (newParent) {
-        if (newParent.id === cat.id) throw new Error("نمی‌توانید والد را خود دسته قرار دهید");
+        if (newParent.id === cat.id)
+          throw new Error("نمی‌توانید والد را خود دسته قرار دهید");
 
         const ancestorsOfNewParent = await this.getAncestorsChain(newParent.id);
         if (ancestorsOfNewParent.some((a) => a.id === cat.id)) {

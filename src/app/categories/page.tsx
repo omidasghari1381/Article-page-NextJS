@@ -1,6 +1,8 @@
 // app/categories/Page.tsx
+import Breadcrumb from "@/components/Breadcrumb";
 import CategoryRow from "./CategoryCart";
 import CategoryCard, { type CategoryNode } from "./CategoryCart"; // مسیر را با پروژه خودت تنظیم کن
+import { CategoryFilters } from "./CategoryFilters";
 
 type MaybeWrapped<T> =
   | T[]
@@ -69,8 +71,21 @@ export default async function Page() {
   const { items: categories, total } = await fetchCategories();
 
   return (
-    <main>
-      <div className="mx-20 py-4 my-10" dir="rtl">
+    <main className="pb-24 pt-6 px-20">
+      {" "}
+      <Breadcrumb
+        items={[
+          { label: "مای پراپ", href: "/" },
+          { label: "دسته ها", href: "/categories" },
+        ]}
+      />{" "}
+      <div className="mt-6 flex items-center justify-between text-gray-800">
+        <h1 className="text-2xl font-semibold">لیست دسته ها</h1>
+      </div>
+      <section className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8">
+        <CategoryFilters />{" "}
+      </section>
+      <div className=" py-4 my-10">
         <div className="text-black text-2xl">
           <span>تعداد دسته‌ها </span>
           <span>({total})</span>

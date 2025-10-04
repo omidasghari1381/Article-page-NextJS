@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { UsersFilter } from "./UsersFilter";
 import UserListItem from "./UserCard";
+import Breadcrumb from "@/components/Breadcrumb";
 
 type SearchParams = Record<string, string | string[] | undefined> | undefined;
 
@@ -106,31 +107,24 @@ export default async function UsersListPage({
   const data = await fetchUsers(sp);
 
   return (
-    <main className="pb-24 pt-6 px-20 text-black">
-      {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500">
-        <ol className="flex gap-2">
-          <li>
-            <Link href="/" className="hover:underline">
-              مای پراپ
-            </Link>
-          </li>
-          <li>/</li>
-          <li className="text-gray-900 font-medium">کاربران</li>
-        </ol>
-      </nav>
-
+    <main className="pb-24 pt-6 px-20 ">
+      <Breadcrumb
+        items={[
+          { label: "مای پراپ", href: "/" },
+          { label: "کاربران", href: "/users" },
+        ]}
+      />
       {/* Header */}
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-6 flex items-center justify-between text-gray-800">
         <h1 className="text-2xl font-semibold">لیست کاربران</h1>
       </div>
 
       {/* Filters */}
-      <div className="mt-6">
+      <section className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8">
         <Suspense fallback={null}>
           <UsersFilter />
         </Suspense>
-      </div>
+      </section>
 
       {/* Stats */}
       <div className="mt-4 text-sm text-gray-500">

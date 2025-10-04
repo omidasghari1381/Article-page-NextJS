@@ -71,7 +71,7 @@ export function MediaFilters(props: {
   return (
     <form
       onSubmit={onSubmit}
-      className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8"
+      className="mt-6 bg-white p-2 "
       dir="rtl"
     >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -117,8 +117,15 @@ export function MediaFilters(props: {
           </select>
         </div>
 
-        {/* Actions */}
         <div className="md:col-span-12 flex items-center gap-3 justify-end">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/media/editor"
+              className="px-5 py-2 rounded-lg bg-white text-black border-black border hover:bg-gray-100 "
+            >
+              + افزودن مدیا
+            </Link>
+          </div>{" "}
           <button
             type="button"
             onClick={onClear}
@@ -133,14 +140,6 @@ export function MediaFilters(props: {
           >
             {isPending ? "در حال به‌روزرسانی…" : "اعمال فیلترها"}
           </button>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/media/editor"
-              className="px-5 py-2 rounded-lg bg-white text-black border-black border hover:bg-gray-100 "
-            >
-              + افزودن مدیا
-            </Link>
-          </div>
         </div>
       </div>
     </form>

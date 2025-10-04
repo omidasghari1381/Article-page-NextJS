@@ -41,8 +41,6 @@ async function fetchMedia(searchParams: {
   return (await res.json()) as ListRes;
 }
 
-/** ---- Page ---- */
-// نکته مهم: در Next جدید، searchParams یک Promise است و باید await شود
 export default async function MediaListPage({
   searchParams,
 }: {
@@ -60,21 +58,24 @@ export default async function MediaListPage({
   const dataPromise = fetchMedia(sp);
 
   return (
-    <main className="p-6 md:p-8" dir="rtl">
+    <main className="pb-24 pt-6 px-20" dir="rtl">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
           { label: "مدیا", href: "/media" },
         ]}
-      />
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-black">مدیا</h1>
+      />{" "}
+      <div className="mt-6 flex items-center justify-between text-gray-800">
+        <h1 className="text-2xl font-semibold">لیست مدیا</h1>
       </div>
-
-      <MediaFilters
-        initial={{ q: sp.q ?? "", type: sp.type!, sort: sp.sort! }}
-      />
-
+      <section
+        className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8"
+        dir="rtl"
+      >
+        <MediaFilters
+          initial={{ q: sp.q ?? "", type: sp.type!, sort: sp.sort! }}
+        />{" "}
+      </section>
       <Suspense fallback={<div className="mt-6">در حال بارگذاری...</div>}>
         <MediaResults dataPromise={dataPromise} />
       </Suspense>

@@ -11,15 +11,44 @@ const CreateCategorySchema = z.object({
   parentId: z.string().uuid().optional().nullable(),
 });
 
-export async function GET(_req: NextRequest) {
+const ListQuerySchema = z.object({
+  q: z.string().trim().optional(),
+  parentId: z.string().uuid().optional(),
+  hasParent: z.enum(["yes", "no"]).optional(),
+  depthMin: z.coerce.number().int().min(0).optional(),
+  depthMax: z.coerce.number().int().min(0).optional(),
+  createdFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  createdTo: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  sortBy: z
+    .enum(["createdAt", "updatedAt", "name", "slug", "depth"])
+    .optional(),
+  sortDir: z.enum(["ASC", "DESC"]).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export async function GET(req: NextRequest) {
   try {
+    const url = new URL(req.url);
+    const parsed = ListQuerySchema.parse(Object.fromEntries(url.searchParams));
+
     const ds = await getDataSource();
-    const service = new CategoryService(ds);
-    const items = await service.listCategories();
-    console.log(items)
-    return NextResponse.json(items, { status: 200 });
+    const svc = new CategoryService(ds);
+
+    const data = await svc.listWithFilters(parsed);
+
+    return NextResponse.json(data, { status: 200 });
   } catch (err: any) {
-    console.error("❌ Category list error:", err);
+    if (err.name === "ZodError") {
+      return NextResponse.json({ error: err.errors }, { status: 400 });
+    }
+    console.error("❌ categories list error:", err);
     return NextResponse.json(
       { error: err?.message ?? "Server Error" },
       { status: 500 }

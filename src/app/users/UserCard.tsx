@@ -79,7 +79,7 @@ export default function UserListItem({
               <div className="text-base md:text-lg font-semibold truncate max-w-[30ch]">
                 {firstName} {lastName}
               </div>
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700 border">
+              <span className="inline-flex items-center gap-1 px-2 py-1  text-gray-700 ">
                 نقش: <strong className="font-semibold">{String(role)}</strong>
               </span>
             </div>
@@ -92,7 +92,7 @@ export default function UserListItem({
               <button
                 type="button"
                 title={phone}
-                className="font-mono text-xs md:text-sm text-black ltr truncate max-w-[24ch] text-left cursor-pointer hover:underline"
+                className="font-mono text-xs md:text-sm text-black truncate max-w-[24ch] text-left cursor-pointer hover:underline mt-1"
                 onClick={() => copyPhone(phone)}
               >
                 {phone}
