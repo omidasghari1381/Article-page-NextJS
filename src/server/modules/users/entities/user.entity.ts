@@ -24,4 +24,5 @@ export class User extends AbstractEntity {
   // فلگ کمکی برای یونیک بودن phone بین رکوردهای زنده
   @Column({ type: "tinyint", width: 1, default: 0 })
   isDeleted!: 0 | 1;
+  email: null;
 }

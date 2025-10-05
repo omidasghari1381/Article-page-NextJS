@@ -1,16 +1,29 @@
+// next.config.ts
 import type { NextConfig } from "next";
 import webpack from "webpack";
 
 const nextConfig: NextConfig = {
-  // Next.js 15.5+ تغییر کرده
-  serverExternalPackages: [
-    "typeorm",
-    "mysql2", // یا "pg" اگر Postgres استفاده می‌کنی
-  ],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3000",
+        pathname: "/uploads/**",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "3000",
+        pathname: "/uploads/**",
+      },
+    ],
+  },
+
+  serverExternalPackages: ["typeorm", "mysql2"],
 
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // درایورهای غیرضروری رو external کن
       config.externals = [
         ...(config.externals || []),
         "react-native-sqlite-storage",
@@ -20,18 +33,16 @@ const nextConfig: NextConfig = {
         "better-sqlite3",
         "sqlite3",
         "mssql",
-        "mysql", // TypeORM با mysql2 کار می‌کنه
+        "mysql",
       ];
     }
 
-    // alias برای React Native Driver
     config.resolve = config.resolve || {};
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
       "typeorm/driver/react-native/ReactNativeDriver": false,
     };
 
-    // IgnorePlugin برای requireهای داینامیک
     config.plugins?.push(
       new webpack.IgnorePlugin({
         resourceRegExp:

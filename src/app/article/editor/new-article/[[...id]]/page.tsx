@@ -36,7 +36,7 @@ type FormState = {
 
   readingPeriod: string; // ورودی متنی؛ قبل از ارسال به number تبدیل می‌کنیم
 
-  thumbnailId: string; // می‌تونه UUID یا URL باشد (برای preview هندل می‌کنیم)
+  thumbnail: string; // می‌تونه UUID یا URL باشد (برای preview هندل می‌کنیم)
   introduction: string;
   quotes: string;
   mainText: string;
@@ -91,7 +91,7 @@ function ArticleEditWithTabs() {
               : "bg-white text-gray-800 hover:bg-gray-50"
           }`}
           onClick={() => setTab("seo")}
-          disabled={!id} // فقط وقتی مقاله ساخته شده باشد
+          disabled={!id}
         >
           SEO
         </button>
@@ -118,7 +118,7 @@ function ArticleForm({ id }: { id: string | null }) {
     slug: "",
     readingPeriod: "",
 
-    thumbnailId: "",
+    thumbnail: "",
     introduction: "",
     quotes: "",
     mainText: "",
@@ -228,7 +228,7 @@ function ArticleForm({ id }: { id: string | null }) {
               ? String(data.readingPeriod)
               : "",
 
-          thumbnailId: data.thumbnail?.id ?? data.thumbnail?.url ?? "",
+          thumbnail: data.thumbnail?.id ?? data.thumbnail?.url ?? "",
           introduction: data.introduction ?? "",
           quotes: data.quotes ?? "",
           mainText: data.mainText ?? "",
@@ -273,7 +273,7 @@ function ArticleForm({ id }: { id: string | null }) {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const v = e.target.value;
-    setForm((f) => ({ ...f, thumbnailId: v }));
+    setForm((f) => ({ ...f, thumbnail: v }));
     resolveThumbPreview(v);
   };
 
@@ -354,7 +354,7 @@ function ArticleForm({ id }: { id: string | null }) {
       readingPeriod: Number(form.readingPeriod) || 0,
       categoryIds: form.categoryId ? [form.categoryId] : [],
       tagIds: form.tagIds,
-      thumbnailId: form.thumbnailId || null,
+      thumbnail: form.thumbnail || null,
       summary: summaryList.length ? summaryList : null,
       slug: form.slug?.trim() || null,
       // همچنان اگر بک‌اند authorId بخواهد
@@ -535,7 +535,7 @@ function ArticleForm({ id }: { id: string | null }) {
                 type="text"
                 className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder="UUID یا https://..."
-                value={form.thumbnailId}
+                value={form.thumbnail}
                 onChange={handleThumbnailInput}
               />
               <button
@@ -706,7 +706,7 @@ function ArticleForm({ id }: { id: string | null }) {
                   authorId: "",
                   slug: "",
                   readingPeriod: "",
-                  thumbnailId: "",
+                  thumbnail: "",
                   introduction: "",
                   quotes: "",
                   mainText: "",

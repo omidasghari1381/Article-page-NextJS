@@ -10,9 +10,17 @@ import {
 
 export const runtime = "nodejs";
 
-/** ---------------- Zod Schemas (هماهنگ با سرویس جدید) ---------------- */
+/** ---------------- Schemas ---------------- */
 
 const UuidStr = z.string().uuid();
+
+// فقط URL مجازه (اختیاری)
+const Thumbnail = z
+  .string()
+  .trim()
+  .url({ message: "thumbnail باید URL معتبر باشد" })
+  .optional()
+  .nullable();
 
 const CreateArticleNewSchema = z.object({
   title: z.string().min(2).max(200),
@@ -23,12 +31,12 @@ const CreateArticleNewSchema = z.object({
   introduction: z.string().optional().nullable(),
   quotes: z.string().optional().nullable(),
 
-  /** روابط (جدید و هماهنگ با سرویس) */
-  categoryId: UuidStr, // ✅ اجباری و تکی
-  tagIds: z.array(UuidStr).optional(), // اختیاری (چندتایی)
+  /** روابط */
+  categoryId: UuidStr, // اجباری و تکی
+  tagIds: z.array(UuidStr).optional(), // اختیاری
 
-  /** Thumbnail فقط URL */
-  thumbnail: z.string().url().optional().nullable(),
+  /** فقط URL (نه UUID) */
+  thumbnail: Thumbnail,
 
   /** سایر */
   readingPeriod: z.coerce.number().int().min(0),
@@ -36,7 +44,6 @@ const CreateArticleNewSchema = z.object({
   slug: z.string().trim().max(220).optional().nullable(),
 });
 
-/** لیست: فیلترها */
 const ListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   perPage: z.coerce.number().int().min(1).max(100).default(10),
@@ -47,34 +54,29 @@ const ListQuerySchema = z.object({
 
 /** ---------------- Helpers ---------------- */
 
-/** تبدیل ورودی‌های قدیمی -> مدل جدید سرویس */
+function isHttpUrl(v: unknown): v is string {
+  return typeof v === "string" && /^https?:\/\//i.test(v.trim());
+}
+
+/** ورودی‌های قدیمی → مدل جدید؛ فقط URL برای thumbnail نگه می‌داریم */
 function normalizeLegacyCreatePayload(raw: any): CreateArticleInput {
-  // تعیین categoryId:
-  // - اگر raw.categoryId بود (UUID) همونو بردار
-  // - اگر raw.categoryIds آرایه بود، اولین عضو رو بردار
-  // - در غیر این صورت undefined می‌مونه و Zod ارور می‌ده
-  const legacyCatId =
+  // categoryId: اگر قبلاً categoryIds آرایه بود، اولین عضو
+  const catId =
     typeof raw?.categoryId === "string"
       ? raw.categoryId
-      : Array.isArray(raw?.categoryIds) &&
-        typeof raw.categoryIds[0] === "string"
+      : Array.isArray(raw?.categoryIds) && typeof raw.categoryIds[0] === "string"
       ? raw.categoryIds[0]
       : undefined;
 
-  // تعیین thumbnail (فقط URL):
-  // - اگر raw.thumbnail رشته بوده، همونو بذار
-  // - اگر raw.thumbnailId قبلاً استفاده می‌شد، دیگه نذاریم (سرویس URL می‌خواد)
-  const thumbUrl =
-    typeof raw?.thumbnail === "string" && raw.thumbnail.trim().length
-      ? raw.thumbnail.trim()
-      : null;
+  // فقط URL معتبر را قبول کن؛ هر چیز دیگر (از جمله thumbnailId) نادیده
+  const thumbnailUrl = isHttpUrl(raw?.thumbnail) ? raw.thumbnail.trim() : null;
 
   return {
     title: String(raw?.title ?? "").trim(),
     subject: typeof raw?.subject === "string" ? raw.subject : null,
     mainText: String(raw?.mainText ?? ""),
 
-    // پشتیبانی از secondaryText / secondryText
+    // secondaryText / secondryText
     secondaryText:
       typeof raw?.secondaryText === "string"
         ? raw.secondaryText
@@ -82,7 +84,7 @@ function normalizeLegacyCreatePayload(raw: any): CreateArticleInput {
         ? raw.secondryText
         : null,
 
-    // پشتیبانی از introduction / Introduction
+    // introduction / Introduction
     introduction:
       typeof raw?.introduction === "string"
         ? raw.introduction
@@ -92,27 +94,24 @@ function normalizeLegacyCreatePayload(raw: any): CreateArticleInput {
 
     quotes: typeof raw?.quotes === "string" ? raw.quotes : null,
 
-    /** روابط (جدید) */
-    categoryId: legacyCatId as any, // می‌ذاریم Zod تایید نهایی کنه
+    categoryId: catId as any, // تأیید نهایی با Zod
     tagIds: Array.isArray(raw?.tagIds) ? raw.tagIds : undefined,
 
-    /** Thumbnail: URL یا null */
-    thumbnail: thumbUrl,
+    // فقط URL یا null
+    thumbnail: thumbnailUrl,
 
-    /** سایر */
     readingPeriod:
       typeof raw?.readingPeriod === "number"
         ? raw.readingPeriod
         : Number(raw?.readingPeriod ?? 0) || 0,
 
-    // summary: پشتیبانی از summary و summery
+    // summary / summery
     summary: Array.isArray(raw?.summary)
       ? raw.summary
       : Array.isArray(raw?.summery)
       ? raw.summery
       : null,
 
-    // اختیاری برای SEO/Route
     slug:
       typeof raw?.slug === "string" && raw.slug.trim().length
         ? raw.slug.trim()
@@ -125,14 +124,14 @@ function normalizeLegacyCreatePayload(raw: any): CreateArticleInput {
 export async function POST(req: NextRequest) {
   try {
     const ds = await getDataSource();
-    const svc = new ArticleService(ds);
+    const service = new ArticleService(ds);
 
     const raw = await req.json();
 
-    // 1) نرمالایز legacy -> new
+    // 1) نرمالایز (فقط URL برای thumbnail)
     const normalized = normalizeLegacyCreatePayload(raw);
 
-    // 2) اعتبارسنجی طبق مدل جدید (الزام categoryId + thumbnail URL)
+    // 2) اعتبارسنجی
     const parsed = CreateArticleNewSchema.safeParse(normalized);
     if (!parsed.success) {
       return NextResponse.json(
@@ -141,7 +140,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3) authorId از سشن یا از بدنه (fallback)
+    // 3) authorId از سشن (یا بدنه به عنوان fallback)
     const session = await getServerSession(authOptions);
     const authorId =
       (session?.user as any)?.id ||
@@ -156,7 +155,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const saved = await svc.create(parsed.data, authorId);
+    const saved = await service.create(parsed.data, authorId);
     return NextResponse.json({ success: true, id: saved.id }, { status: 201 });
   } catch (err: any) {
     console.error("POST /api/articles error:", err);
@@ -224,8 +223,8 @@ export async function DELETE(req: NextRequest) {
   } catch (err: any) {
     console.error("DELETE /api/articles error:", err);
     return NextResponse.json(
-      { error: "ServerError", message: "مشکل داخلی سرور" },
-      { status: 500 }
+        { error: "ServerError", message: "مشکل داخلی سرور" },
+        { status: 500 }
     );
   }
 }

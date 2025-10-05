@@ -4,7 +4,7 @@ import { User } from "@/server/modules/users/entities/user.entity";
 import { CommentArticle } from "@/server/modules/articles/entities/comment.entity";
 import { ReplyComment } from "@/server/modules/articles/entities/reply.entity";
 import { ArticleCategory } from "@/server/modules/articles/entities/articleCategory.entity";
-import { ArticleTag } from "../entities/articleTages.entity";
+import { ArticleTag } from "@/server/modules/articles/entities/articleTages.entity";
 
 /** ---------- Types ---------- */
 
@@ -17,7 +17,7 @@ export type CreateArticleInput = {
   quotes?: string | null;
 
   /** روابط */
-  categoryId: string;        // ✅ الزامی و تک‌انتخابی
+  categoryId: string;        // الزامی و تکی
   tagIds?: string[];         // اختیاری (چندتایی)
 
   /** سایر */
@@ -26,7 +26,7 @@ export type CreateArticleInput = {
   slug?: string | null;
 
   /** Thumbnail: فقط URL */
-  thumbnail?: string | null; // ✅ URL یا null
+  thumbnail?: string | null; // URL یا null (هیچ idای پذیرفته نمی‌شود)
 };
 
 export type UpdateArticleInput = Partial<CreateArticleInput>;
@@ -55,7 +55,7 @@ export type ArticleDTO = {
   readingPeriod: number;
   viewCount: number;
 
-  thumbnail: string | null;
+  thumbnail: string | null; // فقط URL
 
   introduction: string | null;
   quotes: string | null;
@@ -107,7 +107,7 @@ export class ArticleService {
       readingPeriod: it.readingPeriod ?? 0,
       viewCount: it.viewCount ?? 0,
 
-      thumbnail: (it as any).thumbnail ?? null,
+      thumbnail: it.thumbnail ?? null, // ✅ مستقیم از entity
 
       introduction: it.introduction ?? null,
       quotes: it.quotes ?? null,
@@ -136,7 +136,7 @@ export class ArticleService {
   async getByIdAndIncrementView(id: string): Promise<ArticleDTO | null> {
     const item = await this.articleRepo.findOne({
       where: { id },
-      relations: ["author", "category", "tags"], // ✅ category تکی
+      relations: ["author", "category", "tags"],
     });
     if (!item) return null;
 
@@ -150,11 +150,11 @@ export class ArticleService {
   async create(input: CreateArticleInput, authorId: string): Promise<{ id: string }> {
     if (!input.categoryId) throw new Error("CategoryRequired");
 
-  const [author, category, tags] = await Promise.all([
-    this.userRepo.findOne({ where: { id: authorId } }),
-    this.categoryRepo.findOne({ where: { id: input.categoryId } }),
-    input.tagIds?.length ? this.tagRepo.findBy({ id: In(input.tagIds) }) : Promise.resolve([]),
-  ]);
+    const [author, category, tags] = await Promise.all([
+      this.userRepo.findOne({ where: { id: authorId } }),
+      this.categoryRepo.findOne({ where: { id: input.categoryId } }),
+      input.tagIds?.length ? this.tagRepo.findBy({ id: In(input.tagIds) }) : Promise.resolve([]),
+    ]);
 
     if (!author) throw new Error("AuthorNotFound");
     if (!category) throw new Error("CategoryNotFound");
@@ -175,7 +175,8 @@ export class ArticleService {
       category,
       tags,
 
-      thumbnail: input.thumbnail?.trim() || null, // ✅ URL
+      // ✅ فقط URL (یا null)
+      thumbnail: input.thumbnail?.trim() || null,
 
       readingPeriod: Number(input.readingPeriod ?? 0) || 0,
       summary: Array.isArray(input.summary) ? input.summary : null,
@@ -204,7 +205,7 @@ export class ArticleService {
     if (typeof input.readingPeriod !== "undefined") article.readingPeriod = Number(input.readingPeriod ?? 0) || 0;
     if (typeof input.summary !== "undefined") article.summary = Array.isArray(input.summary) ? input.summary : null;
 
-    // thumbnail URL
+    // ✅ thumbnail URL (فقط URL یا null)
     if (typeof input.thumbnail !== "undefined") {
       article.thumbnail = input.thumbnail?.trim() || null;
     }
@@ -241,7 +242,7 @@ export class ArticleService {
     const qb = this.articleRepo
       .createQueryBuilder("a")
       .leftJoinAndSelect("a.author", "author")
-      .leftJoinAndSelect("a.category", "cat") // ✅ تکی
+      .leftJoinAndSelect("a.category", "cat")
       .leftJoinAndSelect("a.tags", "tag");
 
     if (query.categoryId) qb.andWhere("cat.id = :cid", { cid: query.categoryId });

@@ -30,9 +30,13 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const { getDataSource } = await import("@/server/db/typeorm.datasource");
+        const { getDataSource } = await import(
+          "@/server/db/typeorm.datasource"
+        );
         const ds = await getDataSource();
-        const { User } = await import("@/server/modules/users/entities/user.entity");
+        const { User } = await import(
+          "@/server/modules/users/entities/user.entity"
+        );
         const repo = ds.getRepository(User);
 
         const user = await repo.findOne({ where: { phone } });
@@ -41,33 +45,42 @@ export const authOptions: NextAuthOptions = {
         const ok = await compare(credentials.password, user.passwordHash);
         if (!ok) return null;
 
-        return { id: String(user.id), name: user.firstName, phone: user.phone} as any;
+        // ⚠️ حتماً role و email را هم برگردان
+        return {
+          id: String(user.id),
+          name: user.firstName ?? null,
+          email: user.email ?? null, // اگر ندارید، می‌تونه null باشد
+          phone: user.phone ?? null,
+          role: (user as any).role ?? null, // enum/string
+        } as any;
       },
     }),
   ],
   pages: {
     signIn: "/login",
   },
-callbacks: {
-  async jwt({ token, user }) {
-    if (user) {
-      token.uid = (user as any).id;
-      token.role = (user as any).role; 
-    }
-    return token;
-  },
-  async session({ session, token }) {
-    if (session.user) {
-      if (token?.uid) {
-        (session.user as any).id = token.uid as string;
+  callbacks: {
+    async jwt({ token, user }) {
+      // بار اول لاگین: user ست می‌شود
+      if (user) {
+        token.id = (user as any).id; // ✅ استاندارد: token.id
+        token.role = (user as any).role ?? null;
+        token.email = (user as any).email ?? token.email ?? null;
+        (token as any).phone =
+          (user as any).phone ?? (token as any).phone ?? null;
       }
-      if (token?.role) {
-        (session.user as any).role = token.role as string;
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).id = (token as any).id ?? null;
+        (session.user as any).role = (token as any).role ?? null;
+        session.user.email = (token as any).email ?? session.user.email ?? null;
+        (session.user as any).phone = (token as any).phone ?? null;
       }
-    }
-    return session;
+      return session;
+    },
   },
-}
 };
 
 const handler = NextAuth(authOptions);
