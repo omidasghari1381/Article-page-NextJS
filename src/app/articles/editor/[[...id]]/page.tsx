@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 import SeoSettingsForm from "./SeoSettingsForm";
@@ -17,10 +17,10 @@ type ArticleDTO = {
   subject: string | null;
   readingPeriod: number;
   viewCount: number;
-  thumbnail: MediaDTO | null;
+  thumbnail: string | MediaDTO | null; // ← ممکنه استرینگ یا آبجکت باشه
   introduction: string | null;
   quotes: string | null;
-  summary: string[] | null;
+  summery: string[] | null;
   mainText: string;
   secondaryText: string | null;
   author: { id: string; firstName: string; lastName: string } | null;
@@ -33,19 +33,29 @@ type FormState = {
   title: string;
   subject: string;
   authorId: string; // اختیاری؛ در بک‌اند از session هم پر می‌شود
-
   readingPeriod: string; // ورودی متنی؛ قبل از ارسال به number تبدیل می‌کنیم
-
-  thumbnail: string; // می‌تونه UUID یا URL باشد (برای preview هندل می‌کنیم)
+  thumbnail: string; // مقدار خام (ممکنه مسیر نسبی یا URL کامل)
   introduction: string;
   quotes: string;
   mainText: string;
   secondaryText: string;
-
   categoryId: string;
   tagIds: string[];
   slug: string;
 };
+
+/** ---------- Config & Helpers ---------- */
+const MEDIA_BASE = (process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "").replace(
+  /\/$/,
+  ""
+);
+
+function toAbsUrl(v: string): string {
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  const path = v.replace(/^\//, "");
+  return MEDIA_BASE ? `${MEDIA_BASE}/${path}` : `/${path}`;
+}
 
 /** ---------- Page ---------- */
 export default function Page() {
@@ -117,19 +127,17 @@ function ArticleForm({ id }: { id: string | null }) {
     authorId: "",
     slug: "",
     readingPeriod: "",
-
     thumbnail: "",
     introduction: "",
     quotes: "",
     mainText: "",
     secondaryText: "",
-
     categoryId: "",
     tagIds: [],
   });
 
-  const [summaryList, setSummaryList] = useState<string[]>([]);
-  const [summaryInput, setSummaryInput] = useState<string>("");
+  const [summeryList, setsummeryList] = useState<string[]>([]);
+  const [summeryInput, setsummeryInput] = useState<string>("");
 
   const [previewThumbUrl, setPreviewThumbUrl] = useState<string>("");
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
@@ -140,37 +148,14 @@ function ArticleForm({ id }: { id: string | null }) {
   const [deleting, setDeleting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** --- helpers --- */
-  const isUUID = (s: string) =>
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      s.trim()
-    );
-
-  async function resolveThumbPreview(input: string) {
-    const v = input.trim();
-    if (!v) {
-      setPreviewThumbUrl("");
-      return;
-    }
-
-    // اگر لینک با http شروع میشه همون رو نمایش بده
-    if (/^https?:\/\//i.test(v)) {
-      setPreviewThumbUrl(v);
-      return;
-    }
-
-    // در غیر این صورت نمایش نده (چون فقط لینک مستقیم مجازه)
-    setPreviewThumbUrl("");
-  }
-
   /** --- load reference data (categories / tags) --- */
   useEffect(() => {
     let active = true;
     (async () => {
       try {
         const [catsRes, tagsRes] = await Promise.allSettled([
-          fetch("/api/categories?perPage=1000", { cache: "no-store" }),
-          fetch("/api/articles/tags?perPage=100", { cache: "no-store" }),
+          fetch("/api/categories?perPage=100", { cache: "no-store" }),
+          fetch("/api/tags?perPage=50", { cache: "no-store" }),
         ]);
         if (!active) return;
 
@@ -214,32 +199,34 @@ function ArticleForm({ id }: { id: string | null }) {
         if (!res.ok) throw new Error("خطا در دریافت مقاله");
 
         const data = (await res.json()) as ArticleDTO;
-
         if (!active) return;
+
+        // thumbnail می‌تواند استرینگ یا آبجکت باشد؛ به رشته خام تبدیل می‌کنیم
+        const thumbStr =
+          typeof data.thumbnail === "string"
+            ? data.thumbnail
+            : data.thumbnail?.url || "";
 
         setForm({
           title: data.title ?? "",
           subject: data.subject ?? "",
           authorId: data.author?.id ?? "",
           slug: data.slug ?? "",
-
           readingPeriod:
             typeof data.readingPeriod === "number"
               ? String(data.readingPeriod)
               : "",
-
-          thumbnail: data.thumbnail?.id ?? data.thumbnail?.url ?? "",
+          thumbnail: thumbStr, // ← مقدار خام
           introduction: data.introduction ?? "",
           quotes: data.quotes ?? "",
           mainText: data.mainText ?? "",
           secondaryText: data.secondaryText ?? "",
-
           categoryId: data.categories?.[0]?.id ?? "",
           tagIds: (data.tags ?? []).map((t) => t.id),
         });
 
-        setSummaryList(Array.isArray(data.summary) ? data.summary : []);
-        setPreviewThumbUrl(data.thumbnail?.url ?? "");
+        setsummeryList(Array.isArray(data.summery) ? data.summery : []);
+        setPreviewThumbUrl(toAbsUrl(thumbStr)); // ← برای نمایش مطلقش می‌کنیم
       } catch (e: any) {
         if (active) setError(e?.message || "خطا در دریافت مقاله");
       } finally {
@@ -269,38 +256,30 @@ function ArticleForm({ id }: { id: string | null }) {
       setForm((f) => ({ ...f, [field]: e.target.value }));
     };
 
-  const handleThumbnailInput = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleThumbnailInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
     setForm((f) => ({ ...f, thumbnail: v }));
-    resolveThumbPreview(v);
+    setPreviewThumbUrl(toAbsUrl(v)); // ← این خط باید باشه
   };
 
   const toggleIdInArray = (arr: string[], id: string) =>
     arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id];
 
-  // const onToggleCategory = (cid: string) =>
-  //   setForm((f) => ({
-  //     ...f,
-  //     categoryIds: toggleIdInArray(f.categoryIds, cid),
-  //   }));
-
   const onToggleTag = (tid: string) =>
     setForm((f) => ({ ...f, tagIds: toggleIdInArray(f.tagIds, tid) }));
 
-  const addSummary = () => {
-    const v = summaryInput.trim();
+  const addsummery = () => {
+    const v = summeryInput.trim();
     if (!v) return;
-    setSummaryList((prev) => [...prev, v]);
-    setSummaryInput("");
+    setsummeryList((prev) => [...prev, v]);
+    setsummeryInput("");
   };
 
-  const removeSummary = (idx: number) =>
-    setSummaryList((prev) => prev.filter((_, i) => i !== idx));
+  const removesummery = (idx: number) =>
+    setsummeryList((prev) => prev.filter((_, i) => i !== idx));
 
-  const editSummary = (idx: number, val: string) =>
-    setSummaryList((prev) => prev.map((s, i) => (i === idx ? val : s)));
+  const editsummery = (idx: number, val: string) =>
+    setsummeryList((prev) => prev.map((s, i) => (i === idx ? val : s)));
 
   const handleDelete = async () => {
     if (!isEdit) return;
@@ -319,7 +298,7 @@ function ArticleForm({ id }: { id: string | null }) {
       alert("مقاله با موفقیت حذف شد.");
       router.push("/articles");
       router.refresh();
-    } catch (err) {
+    } catch {
       alert("مشکل در ارتباط با سرور");
     } finally {
       setDeleting(false);
@@ -344,7 +323,6 @@ function ArticleForm({ id }: { id: string | null }) {
     }
 
     const payload = {
-      // مدل جدید سرویس
       title: form.title,
       subject: form.subject || null,
       mainText: form.mainText,
@@ -354,11 +332,10 @@ function ArticleForm({ id }: { id: string | null }) {
       readingPeriod: Number(form.readingPeriod) || 0,
       categoryIds: form.categoryId ? [form.categoryId] : [],
       tagIds: form.tagIds,
-      thumbnail: form.thumbnail || null,
-      summary: summaryList.length ? summaryList : null,
+      thumbnail: form.thumbnail || null, // ← مقدار خام همان‌طور که هست
+      summery: summeryList.length ? summeryList : null,
       slug: form.slug?.trim() || null,
-      // همچنان اگر بک‌اند authorId بخواهد
-      authorId: form.authorId || undefined,
+      authorId: form.authorId || undefined, // اگر بک‌اند بخواد
     };
 
     try {
@@ -379,14 +356,13 @@ function ArticleForm({ id }: { id: string | null }) {
         throw new Error(t || "خطا در ذخیره مقاله");
       }
 
-      const j = await res.json().catch(() => ({} as any));
+      const j = (await res.json().catch(() => ({}))) as any;
       const newId = j?.id || id;
 
       alert(
         isEdit ? "تغییرات با موفقیت ثبت شد ✅" : "مقاله با موفقیت ایجاد شد ✅"
       );
 
-      // اگر تازه ساختیم، برو روی مسیر ادیت تا تب SEO هم فعال بشه
       if (!isEdit && newId) {
         router.push(`/article/editor/${newId}`);
       } else {
@@ -534,7 +510,7 @@ function ArticleForm({ id }: { id: string | null }) {
               <input
                 type="text"
                 className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                placeholder="UUID یا https://..."
+                placeholder="UUID یا /uploads/... یا https://..."
                 value={form.thumbnail}
                 onChange={handleThumbnailInput}
               />
@@ -546,14 +522,15 @@ function ArticleForm({ id }: { id: string | null }) {
                 انتخاب از مدیا
               </button>
               <p className="text-xs text-gray-400 mt-1">
-                اگر UUID مدیا را بدهید، پیش‌نمایش از /api/media/[id] خوانده
-                می‌شود؛ اگر URL بدهید، مستقیم نمایش می‌دهیم.
+                اگر مسیر نسبی وارد کنید (مثل /uploads/...) در پیش‌نمایش، خودکار
+                با بیس&nbsp;URL ترکیب می‌شود.
               </p>
             </div>
 
             <div className="lg:col-span-5">
               <div className="rounded-xl border border-gray-200 overflow-hidden h-[160px] flex items-center justify-center bg-gray-50">
                 {previewThumbUrl ? (
+                  // اگر next/image می‌خوای، به تنظیمات images.remotePatterns توجه کن
                   <img
                     src={previewThumbUrl}
                     alt="thumbnail preview"
@@ -609,7 +586,7 @@ function ArticleForm({ id }: { id: string | null }) {
 
           <div>
             <label className="block text-sm text-black mb-2">
-              خلاصه‌ها (summary)
+              خلاصه‌ها (summery)
             </label>
 
             <div className="flex items-center gap-2">
@@ -617,27 +594,27 @@ function ArticleForm({ id }: { id: string | null }) {
                 type="text"
                 className="flex-1 rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 placeholder="مثلاً: مدیریت ریسک چیست؟"
-                value={summaryInput}
-                onChange={(e) => setSummaryInput(e.target.value)}
+                value={summeryInput}
+                onChange={(e) => setsummeryInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    addSummary();
+                    addsummery();
                   }
                 }}
               />
               <button
                 type="button"
-                onClick={addSummary}
+                onClick={addsummery}
                 className="px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
               >
                 افزودن
               </button>
             </div>
 
-            {summaryList.length > 0 ? (
+            {summeryList.length > 0 ? (
               <ul className="mt-3 space-y-2">
-                {summaryList.map((s, idx) => (
+                {summeryList.map((s, idx) => (
                   <li
                     key={idx}
                     className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2"
@@ -645,11 +622,11 @@ function ArticleForm({ id }: { id: string | null }) {
                     <input
                       className="flex-1 bg-transparent text-black focus:outline-none"
                       value={s}
-                      onChange={(e) => editSummary(idx, e.target.value)}
+                      onChange={(e) => editsummery(idx, e.target.value)}
                     />
                     <button
                       type="button"
-                      onClick={() => removeSummary(idx)}
+                      onClick={() => removesummery(idx)}
                       className="px-2 py-1 rounded-md border hover:bg-gray-50"
                       aria-label="remove"
                     >
@@ -714,8 +691,8 @@ function ArticleForm({ id }: { id: string | null }) {
                   categoryId: "",
                   tagIds: [],
                 });
-                setSummaryList([]);
-                setSummaryInput("");
+                setsummeryList([]);
+                setsummeryInput("");
                 setPreviewThumbUrl("");
               }}
               disabled={saving}

@@ -123,8 +123,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 export async function DELETE(_req: NextRequest, { params }: Ctx) {
   try {
     const ds = await getDataSource();
-    const svc = new MediaService(ds);
-    await svc.deleteMedia((await params).id);
+    const service = new MediaService(ds);
+    await service.deleteMedia((await params).id);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     const msg = e.message ?? "Bad Request";

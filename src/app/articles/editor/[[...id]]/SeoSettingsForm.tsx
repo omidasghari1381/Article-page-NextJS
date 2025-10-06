@@ -8,7 +8,7 @@ type RobotsSetting =
   | "noindex,follow"
   | "index,nofollow"
   | "noindex,nofollow";
-type TwitterCardType = "summary" | "summary_large_image";
+type TwitterCardType = "summery" | "summery_large_image";
 
 export type SeoMetaPayload = {
   useAuto: boolean;
@@ -67,7 +67,7 @@ export default function SeoSettingsForm({
     ogDescription: null,
     ogImageUrl: null,
 
-    twitterCard: "summary_large_image",
+    twitterCard: "summery_large_image",
 
     publishedTime: null,
     modifiedTime: null,
@@ -114,7 +114,7 @@ export default function SeoSettingsForm({
           ogTitle: data.ogTitle ?? null,
           ogDescription: data.ogDescription ?? null,
           ogImageUrl: data.ogImageUrl ?? null,
-          twitterCard: data.twitterCard ?? "summary_large_image",
+          twitterCard: data.twitterCard ?? "summery_large_image",
           publishedTime: data.publishedTime ?? null,
           modifiedTime: data.modifiedTime ?? null,
           authorName: data.authorName ?? null,
@@ -223,7 +223,7 @@ export default function SeoSettingsForm({
         ogTitle: null,
         ogDescription: null,
         ogImageUrl: null,
-        twitterCard: "summary_large_image",
+        twitterCard: "summery_large_image",
         publishedTime: null,
         modifiedTime: null,
         authorName: null,
@@ -344,11 +344,11 @@ export default function SeoSettingsForm({
                 <legend className="font-medium text-black">Twitter</legend>
                 <LabeledSelect
                   label="Twitter Card"
-                  value={form.twitterCard ?? "summary_large_image"}
+                  value={form.twitterCard ?? "summery_large_image"}
                   onChange={handleChange("twitterCard")}
                   options={[
-                    { label: "summary_large_image", value: "summary_large_image" },
-                    { label: "summary", value: "summary" },
+                    { label: "summery_large_image", value: "summery_large_image" },
+                    { label: "summery", value: "summery" },
                   ]}
                   disabled={disabled || isFieldsDisabled}
                 />

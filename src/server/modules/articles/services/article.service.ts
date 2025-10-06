@@ -22,7 +22,7 @@ export type CreateArticleInput = {
 
   /** سایر */
   readingPeriod: number;     // دقیقه (الزامی)
-  summary?: string[] | null;
+  summery?: string[] | null;
   slug?: string | null;
 
   /** Thumbnail: فقط URL */
@@ -37,6 +37,16 @@ export type ListArticlesQuery = {
   categoryId?: string;
   tagId?: string;
   q?: string;
+};
+
+/** ✅ افزوده: کوئری پیشرفته مطابق UI */
+export type ExtendedListArticlesQuery = ListArticlesQuery & {
+  authorId?: string;
+  createdFrom?: string; // "YYYY-MM-DD"
+  createdTo?: string;   // "YYYY-MM-DD"
+  sortBy?: "createdAt" | "updatedAt" | "viewCount" | "readingPeriod" | "title" | "slug";
+  sortDir?: "ASC" | "DESC";
+  pageSize?: number; // alias برای perPage
 };
 
 export type ListResult<T> = {
@@ -59,7 +69,7 @@ export type ArticleDTO = {
 
   introduction: string | null;
   quotes: string | null;
-  summary: string[] | null;
+  summery: string[] | null;
 
   mainText: string;
   secondaryText: string | null;
@@ -71,6 +81,9 @@ export type ArticleDTO = {
   tags: { id: string; name: string; slug: string }[];
 
   createdAt: Date;
+
+  /** ✅ افزوده: برای مصرف راحت‌تر در کلاینت */
+  createdAtISO?: string;
 };
 
 /** ---------- Service ---------- */
@@ -111,7 +124,7 @@ export class ArticleService {
 
       introduction: it.introduction ?? null,
       quotes: it.quotes ?? null,
-      summary: it.summary ?? null,
+      summery: it.summery ?? null,
 
       mainText: it.mainText,
       secondaryText: it.secondaryText ?? null,
@@ -129,6 +142,26 @@ export class ArticleService {
       tags: tags.map((t) => ({ id: t.id, name: t.name, slug: t.slug })),
 
       createdAt: it.createdAt!,
+      /** ✅ افزوده */
+      createdAtISO: it.createdAt ? new Date(it.createdAt).toISOString() : undefined,
+    };
+  }
+
+  /** ✅ افزوده: نگاشت Lite برای کارت‌ها */
+  private mapToLite(it: Article) {
+    const dto = this.mapArticleToDTO(it);
+    const category = dto.categories[0] ?? null;
+    return {
+      id: dto.id,
+      title: dto.title,
+      subject: dto.subject,
+      createdAt: dto.createdAtISO ?? (dto.createdAt as any),
+      category: category ? { id: category.id, name: category.name } : null,
+      author: dto.author
+        ? { id: dto.author.id, firstName: dto.author.firstName, lastName: dto.author.lastName }
+        : null,
+      thumbnail: dto.thumbnail,
+      readingPeriod: dto.readingPeriod,
     };
   }
 
@@ -144,6 +177,15 @@ export class ArticleService {
     item.viewCount = (item.viewCount ?? 0) + 1;
 
     return this.mapArticleToDTO(item);
+  }
+
+  /** ✅ افزوده: گرفتن با slug (بدون افزایش view) */
+  async getBySlug(slug: string): Promise<ArticleDTO | null> {
+    const item = await this.articleRepo.findOne({
+      where: { slug },
+      relations: ["author", "category", "tags"],
+    });
+    return item ? this.mapArticleToDTO(item) : null;
   }
 
   /** ایجاد مقاله (authorId از روت پاس داده می‌شود) */
@@ -179,7 +221,7 @@ export class ArticleService {
       thumbnail: input.thumbnail?.trim() || null,
 
       readingPeriod: Number(input.readingPeriod ?? 0) || 0,
-      summary: Array.isArray(input.summary) ? input.summary : null,
+      summery: Array.isArray(input.summery) ? input.summery : null,
     });
 
     const saved = await this.articleRepo.save(article);
@@ -203,7 +245,7 @@ export class ArticleService {
     if (typeof input.introduction !== "undefined") article.introduction = input.introduction ?? null;
     if (typeof input.quotes !== "undefined") article.quotes = input.quotes ?? null;
     if (typeof input.readingPeriod !== "undefined") article.readingPeriod = Number(input.readingPeriod ?? 0) || 0;
-    if (typeof input.summary !== "undefined") article.summary = Array.isArray(input.summary) ? input.summary : null;
+    if (typeof input.summery !== "undefined") article.summery = Array.isArray(input.summery) ? input.summery : null;
 
     // ✅ thumbnail URL (فقط URL یا null)
     if (typeof input.thumbnail !== "undefined") {
@@ -233,7 +275,7 @@ export class ArticleService {
     return this.mapArticleToDTO(saved);
   }
 
-  /** لیست با فیلترهای ساده */
+  /** لیست با فیلترهای ساده (قبلی) */
   async list(query: ListArticlesQuery): Promise<ListResult<ArticleDTO>> {
     const page = Math.max(1, query.page ?? 1);
     const perPage = Math.max(1, Math.min(100, query.perPage ?? 10));
@@ -257,6 +299,70 @@ export class ArticleService {
       perPage,
       total,
       items: items.map((it) => this.mapArticleToDTO(it)),
+    };
+  }
+
+  /** ✅ افزوده: لیست پیشرفته مطابق UI (توصیه‌شده برای /api/articles) */
+  async listWithFilters(query: ExtendedListArticlesQuery): Promise<ListResult<ArticleDTO>> {
+    const page = Math.max(1, query.page ?? 1);
+    const perPage = Math.max(1, Math.min(100, (query.pageSize ?? query.perPage) ?? 20));
+    const skip = (page - 1) * perPage;
+
+    const qb = this.articleRepo
+      .createQueryBuilder("a")
+      .leftJoinAndSelect("a.author", "author")
+      .leftJoinAndSelect("a.category", "cat")
+      .leftJoinAndSelect("a.tags", "tag");
+
+    // فیلترها
+    if (query.categoryId) qb.andWhere("cat.id = :cid", { cid: query.categoryId });
+    if (query.tagId) qb.andWhere("tag.id = :tid", { tid: query.tagId });
+    if (query.authorId) qb.andWhere("author.id = :aid", { aid: query.authorId });
+
+    if (query.q) {
+      qb.andWhere(
+        `(a.title LIKE :q OR a.subject LIKE :q OR a.slug LIKE :q OR a.introduction LIKE :q)`,
+        { q: `%${query.q}%` }
+      );
+    }
+
+    if (query.createdFrom) {
+      qb.andWhere("a.createdAt >= :from", { from: new Date(`${query.createdFrom}T00:00:00.000Z`) });
+    }
+    if (query.createdTo) {
+      qb.andWhere("a.createdAt <= :to", { to: new Date(`${query.createdTo}T23:59:59.999Z`) });
+    }
+
+    // سورت امن (whitelist)
+    const sortBy = (query.sortBy ?? "createdAt");
+    const sortDir = (query.sortDir ?? "DESC") === "ASC" ? "ASC" : "DESC";
+    const sortMap: Record<NonNullable<ExtendedListArticlesQuery["sortBy"]>, string> = {
+      createdAt: "a.createdAt",
+      updatedAt: "a.updatedAt",
+      viewCount: "a.viewCount",
+      readingPeriod: "a.readingPeriod",
+      title: "a.title",
+      slug: "a.slug",
+    };
+    qb.orderBy(sortMap[sortBy], sortDir);
+
+    qb.skip(skip).take(perPage);
+
+    const [items, total] = await qb.getManyAndCount();
+    return {
+      page,
+      perPage,
+      total,
+      items: items.map((it) => this.mapArticleToDTO(it)),
+    };
+  }
+
+  /** ✅ افزوده: خروجی Lite مخصوص صفحه‌ی کارت‌ها */
+  async listLite(query: ExtendedListArticlesQuery) {
+    const res = await this.listWithFilters(query);
+    return {
+      ...res,
+      items: res.items.map((it) => this.mapToLite(it as any)),
     };
   }
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SummeryDropdown from "./Summery";
 
 /** Types */
 export type Crumb = { label: string; href?: string };
@@ -8,7 +9,7 @@ type DisplayItem = Crumb | EllipsisItem;
 type BreadcrumbProps = {
   items: Crumb[];
   separator?: React.ReactNode;
-  maxVisible?: number;       // دسکتاپ
+  maxVisible?: number; // دسکتاپ
   mobileMaxVisible?: number; // موبایل
   className?: string;
 };
@@ -21,13 +22,25 @@ function isCrumb(x: DisplayItem): x is Crumb {
   return !isEllipsisItem(x);
 }
 
-/** Compute helpers */
-function computeDesktopItems(items: Crumb[], maxVisible: number): DisplayItem[] {
+/** Compute helpers */  
+function computeDesktopItems(
+  items: Crumb[],
+  maxVisible: number
+): DisplayItem[] {
   const total = items.length;
   if (total <= maxVisible) return items;
-  return [items[0], items[1], { ellipsis: true }, items[total - 2], items[total - 1]];
+  return [
+    items[0],
+    items[1],
+    { ellipsis: true },
+    items[total - 2],
+    items[total - 1],
+  ];
 }
-function computeMobileItems(items: Crumb[], mobileMaxVisible: number): DisplayItem[] {
+function computeMobileItems(
+  items: Crumb[],
+  mobileMaxVisible: number
+): DisplayItem[] {
   const total = items.length;
   if (total <= mobileMaxVisible) return items;
   return [items[0], { ellipsis: true }, items[total - 1]];
@@ -37,13 +50,13 @@ function computeMobileItems(items: Crumb[], mobileMaxVisible: number): DisplayIt
 function EllipsisMenu({ items }: { items: Crumb[] }) {
   return (
     <details className="relative group">
-      <summary
+      <SummeryDropdown
         aria-haspopup="menu"
         className="list-none inline-flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 text-slate-500 cursor-pointer"
         title="نمایش مسیر کامل"
       >
         …
-      </summary>
+      </SummeryDropdown>
       <div
         role="menu"
         className="absolute top-[125%] right-0 min-w-40 bg-white border border-gray-200 shadow-md rounded-md p-2 z-20
@@ -52,7 +65,11 @@ function EllipsisMenu({ items }: { items: Crumb[] }) {
         <div className="flex flex-col text-sm">
           {items.map((x, idx) =>
             x.href ? (
-              <Link key={idx} href={x.href} className="px-2 py-1.5 rounded hover:bg-gray-100 text-[#2E3232]">
+              <Link
+                key={idx}
+                href={x.href}
+                className="px-2 py-1.5 rounded hover:bg-gray-100 text-[#2E3232]"
+              >
                 {x.label}
               </Link>
             ) : (
@@ -67,7 +84,11 @@ function EllipsisMenu({ items }: { items: Crumb[] }) {
   );
 }
 
-function renderTrail(displayItems: DisplayItem[], allItems: Crumb[], separator?: React.ReactNode) {
+function renderTrail(
+  displayItems: DisplayItem[],
+  allItems: Crumb[],
+  separator?: React.ReactNode
+) {
   return (
     <ol className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
       {displayItems.map((item, i) => {
@@ -76,7 +97,9 @@ function renderTrail(displayItems: DisplayItem[], allItems: Crumb[], separator?:
         return (
           <li key={i} className="flex items-center gap-1 sm:gap-2">
             {isEllipsisItem(item) ? (
-              <EllipsisMenu items={allItems.slice(1, Math.max(1, allItems.length - 1))} />
+              <EllipsisMenu
+                items={allItems.slice(1, Math.max(1, allItems.length - 1))}
+              />
             ) : isCrumb(item) && item.href && !isLast ? (
               <Link
                 href={item.href}
@@ -85,7 +108,12 @@ function renderTrail(displayItems: DisplayItem[], allItems: Crumb[], separator?:
                 {item.label}
               </Link>
             ) : (
-              <span className={"text-[13px] sm:text-sm " + (isLast ? "text-slate-900 font-medium" : "text-[#757878]")}>
+              <span
+                className={
+                  "text-[13px] sm:text-sm " +
+                  (isLast ? "text-slate-900 font-medium" : "text-[#757878]")
+                }
+              >
                 {isCrumb(item) ? item.label : "…"}
               </span>
             )}

@@ -2,6 +2,8 @@ import { DataSource } from "typeorm";
 import z from "zod";
 import { MediaItem } from "../entities/mediaItem.entity";
 import { SimpleMediaType } from "../enums/media.enums";
+import path from "path";
+import { promises as fsp } from "node:fs";
 
 export const CreateMediaInput = z.object({
   name: z.string().min(1).max(255),
@@ -24,7 +26,7 @@ type SortOption = "newest" | "oldest" | "name_asc" | "name_desc";
 export class MediaService {
   constructor(private ds: DataSource) {}
 
- async listMedia(params?: {
+  async listMedia(params?: {
     /** جستجو در name/description. واژه‌ها با فاصله جدا شوند (AND). */
     q?: string;
     /** فیلتر تک‌تایی نوع مدیا، برای سازگاری قدیمی */
@@ -50,10 +52,7 @@ export class MediaService {
 
     // --- Search (q) ---
     if (params?.q && params.q.trim().length > 0) {
-      const words = params.q
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean);
+      const words = params.q.trim().split(/\s+/).filter(Boolean);
 
       // هر واژه باید در name یا description وجود داشته باشد (AND)
       words.forEach((w, i) => {
@@ -194,8 +193,24 @@ export class MediaService {
     const repo = this.ds.getRepository(MediaItem);
     const item = await repo.findOne({ where: { id } });
     if (!item) throw new Error("Media not found");
+    console.log(item)
+    // مسیر فایل قبل از حذف DB
+    const fileUrl = item.url;
 
-    await repo.remove(item);
+    // حذف رکورد (delete مستقیم کفایت می‌کنه)
+    await repo.delete(id);
+
+    // اگر فایل لوکالِ پروژه‌ست (نه CDN)، پاکش کن
+    if (fileUrl && fileUrl.startsWith("/uploads/")) {
+      const abs = path.join(
+        process.cwd(),
+        "public",
+        fileUrl.replace(/^\/+/, "")
+      );
+      // تلاش برای حذف فایل؛ خطاش رو ننداز بیرون
+      await fsp.unlink(abs).catch(() => {});
+    }
+
     return { ok: true };
   }
 }

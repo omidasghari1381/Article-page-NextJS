@@ -2,26 +2,33 @@
 import Image from "next/image";
 import React, { useState } from "react";
 
-type SummaryItem = {
+type summeryItem = {
   id?: string | number;
   text: string;
   href?: string;
   iconSrc?: string;
 };
 
-interface SummaryDropdownProps {
+interface SummeryDropdownProps extends React.HTMLAttributes<HTMLElement> {
   title?: string;
-  items?: SummaryItem[];
+  items?: summeryItem[];
+  children?: React.ReactNode; // ← اضافه شد
 }
 
-export default function SummaryDropdown({
+export default function SummeryDropdown({
   title = "خلاصه آنچه در مقاله می‌خوانیم",
   items = [],
-}: SummaryDropdownProps) {
+  children,
+  className,
+  ...rest
+}: SummeryDropdownProps) {
   const [open, setOpen] = useState(true);
 
   return (
-    <section className="relative rounded-sm border border-[#EBEBEB] bg-white p-5">
+    <section
+      {...rest}
+      className={`relative rounded-sm border border-[#EBEBEB] bg-white p-5 ${className ?? ""}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -32,7 +39,6 @@ export default function SummaryDropdown({
             height={32.08616638183594}
           />
           <Image src="/svg/Notes.svg" alt="thumb" width={28} height={28} />
-
           <h3 className="text-xl font-extrabold text-slate-900">{title}</h3>
         </div>
 
@@ -42,9 +48,7 @@ export default function SummaryDropdown({
           aria-label="toggle"
         >
           <svg
-            className={`transition-transform ${
-              open ? "rotate-180" : "rotate-0"
-            }`}
+            className={`transition-transform ${open ? "rotate-180" : "rotate-0"}`}
             width="16"
             height="16"
             viewBox="0 0 24 24"
@@ -66,32 +70,39 @@ export default function SummaryDropdown({
           open ? "mt-4 max-h-[480px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <ul className="space-y-3 pr-2">
-          {items.map((it, idx) => (
-            <li key={it.id ?? idx} className="flex items-center gap-6">
-              {" "}
-              <Image
-                src="/svg/Rectangle.svg"
-                alt="thumb"
-                width={5}
-                height={22}
-                className="rotate-90"
-              />
-              {it.href ? (
-                <a
-                  href={it.href}
-                  className="text-slate-800 hover:text-emerald-600 font-medium line-clamp-1"
-                >
-                  {it.text}
-                </a>
-              ) : (
-                <span className="text-slate-800 font-medium line-clamp-1">
-                  {it.text}
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
+        {/*
+          اگر children دادی، همون رو نشون می‌دیم؛
+          در غیر این صورت، لیست items رندر می‌شه.
+        */}
+        {children ? (
+          <div className="pr-2">{children}</div>
+        ) : (
+          <ul className="space-y-3 pr-2">
+            {items.map((it, idx) => (
+              <li key={it.id ?? idx} className="flex items-center gap-6">
+                <Image
+                  src="/svg/Rectangle.svg"
+                  alt="thumb"
+                  width={5}
+                  height={22}
+                  className="rotate-90"
+                />
+                {it.href ? (
+                  <a
+                    href={it.href}
+                    className="text-slate-800 hover:text-emerald-600 font-medium line-clamp-1"
+                  >
+                    {it.text}
+                  </a>
+                ) : (
+                  <span className="text-slate-800 font-medium line-clamp-1">
+                    {it.text}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );

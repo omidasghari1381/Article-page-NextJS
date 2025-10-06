@@ -2,7 +2,6 @@
 
 import Breadcrumb from "@/components/Breadcrumb";
 import RepliesAccordion from "@/components/reply";
-import SummaryDropdown from "@/components/summery";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -11,6 +10,7 @@ import { timeAgoFa } from "@/app/utils/date";
 import AddComment from "@/components/AddComment";
 import { SessionProvider, useSession } from "next-auth/react";
 import SidebarLatest from "@/components/SidebarLatest";
+import SummeryDropdown from "./Summery";
 
 type Author = { id: string; firstName: string; lastName: string };
 
@@ -29,7 +29,7 @@ type ArticleDetailDTO = {
   secondryText: string; // ← از secondaryText مپ شده
   author: Author;
   createdAt: string;
-  summery: string[]; // ← از summary مپ شده
+  summery: string[]; // ← از summery مپ شده
 };
 
 type LiteArticle = {
@@ -282,11 +282,11 @@ function mapApiArticleToClient(a: any): ArticleDetailDTO {
       : { id: "", firstName: "", lastName: "" },
 
     createdAt: a.createdAt ?? "",
-    // 👇 summary ← summery
+    // 👇 summery ← summery
     summery: Array.isArray(a.summery)
       ? a.summery
-      : Array.isArray(a.summary)
-      ? a.summary
+      : Array.isArray(a.summery)
+      ? a.summery
       : [],
   };
 }
@@ -381,7 +381,7 @@ function HeroCard({
         </div>
       ) : null}
 
-      <SummaryDropdown title="خلاصه آنچه در مقاله می‌خوانیم" items={items} />
+      <SummeryDropdown title="خلاصه آنچه در مقاله می‌خوانیم" items={items} />
     </article>
   );
 }

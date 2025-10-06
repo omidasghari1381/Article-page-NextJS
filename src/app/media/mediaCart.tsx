@@ -2,7 +2,8 @@
 
 import type { SimpleMediaType } from "@/server/modules/media/enums/media.enums";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type MediaDTO = {
   id: string;
@@ -13,14 +14,72 @@ type MediaDTO = {
   createdAt: string;
   updatedAt: string;
 };
+
+function getBaseOrigin() {
+  // اولویت با ENV اگر تعریف کردی، وگرنه origin مرورگر
+  if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/+$/, "");
+  }
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return ""; // فقط برای تایپ؛ چون کامپوننت کلاینتی است این حالت عملاً رخ نمی‌دهد
+}
+
+function toAbsoluteUrl(url: string): string {
+  try {
+    // اگر خودش absolute بود، همونو برگردون
+    const u = new URL(url);
+    return u.href;
+  } catch {
+    // relative: با base کاملش کن
+    const base = getBaseOrigin();
+    return new URL(url.replace(/^\/+/, "/"), base || "http://localhost:3000")
+      .href;
+  }
+}
+
 export function MediaGrid({ items }: { items: MediaDTO[] }) {
+  // برای اینکه بعد از حذف لیست به‌روز بشه، state داخلی نگه می‌داریم
+  const [list, setList] = useState<MediaDTO[]>(() => items?.slice?.() ?? []);
   const [selected, setSelected] = useState<MediaDTO | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
 
-  const gridItems = useMemo(
-    () => items?.slice() ?? [],
-    [items]
-  );
+  useEffect(() => {
+    setList(items?.slice?.() ?? []);
+  }, [items]);
+
+  const gridItems = useMemo(() => list, [list]);
+  console.log(gridItems);
+  const handleCopyUrl = async (m: MediaDTO) => {
+    const full = toAbsoluteUrl(m.url);
+    await navigator.clipboard.writeText(full);
+    setCopied(m.id);
+    setTimeout(() => setCopied(null), 1200);
+  };
+
+  const handleDelete = async (m: MediaDTO) => {
+    if (!confirm(`«${m.name}» حذف شود؟`)) return;
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/media/${m.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || "خطا در حذف مدیا");
+      }
+      router.refresh();
+      setList((prev) => prev.filter((x) => x.id !== m.id));
+      setSelected(null);
+    } catch (err: any) {
+      alert(err?.message ?? "خطای نامشخص در حذف");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <>
@@ -35,12 +94,21 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
             <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
               {m.type === "image" ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={m.url} alt={m.name} className="w-full h-full object-cover" />
+                <img
+                  src={m.url}
+                  alt={m.name}
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <video src={m.url} className="w-full h-full object-cover" />
+                <video
+                  src={toAbsoluteUrl(m.url)}
+                  className="w-full h-full object-cover"
+                />
               )}
             </div>
-            <div className="line-clamp-1 text-sm font-medium text-black">{m.name}</div>
+            <div className="line-clamp-1 text-sm font-medium text-black">
+              {m.name}
+            </div>
           </button>
         ))}
       </div>
@@ -71,13 +139,13 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
                   {selected.type === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={selected.url}
+                      src={toAbsoluteUrl(selected.url)}
                       alt={selected.name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <video
-                      src={selected.url}
+                      src={toAbsoluteUrl(selected.url)}
                       className="w-full h-full object-cover"
                       controls
                     />
@@ -88,7 +156,9 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
               <div className="space-y-4">
                 <div>
                   <div className="text-sm text-gray-600 mb-1">نام</div>
-                  <div className="font-medium text-black break-words">{selected.name}</div>
+                  <div className="font-medium text-black break-words">
+                    {selected.name}
+                  </div>
                 </div>
 
                 <div>
@@ -100,19 +170,18 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
 
                 <div>
                   <div className="text-sm text-gray-600 mb-1">آدرس (URL)</div>
+                  {/* نمایش لینک کامل + کپی با یک کلیک */}
                   <button
                     className="w-full text-left text-blue-700 underline break-all hover:opacity-80"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(selected.url);
-                      setCopied(selected.id);
-                      setTimeout(() => setCopied(null), 1200);
-                    }}
+                    onClick={() => handleCopyUrl(selected)}
                     title="برای کپی کلیک کنید"
                   >
-                    {selected.url}
+                    {toAbsoluteUrl(selected.url)}
                   </button>
                   {copied === selected.id && (
-                    <div className="text-xs text-green-600 mt-1">آدرس کپی شد ✓</div>
+                    <div className="text-xs text-green-600 mt-1">
+                      آدرس کامل کپی شد ✓
+                    </div>
                   )}
                 </div>
 
@@ -123,14 +192,24 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
                   >
                     ویرایش
                   </Link>
+
                   <a
-                    href={selected.url}
+                    href={toAbsoluteUrl(selected.url)}
                     target="_blank"
                     className="px-4 py-2 rounded-xl border hover:bg-gray-50"
                     rel="noreferrer"
                   >
                     باز کردن فایل
                   </a>
+
+                  <button
+                    onClick={() => handleDelete(selected)}
+                    disabled={deleting}
+                    className="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    title="حذف مدیا"
+                  >
+                    {deleting ? "در حال حذف..." : "حذف"}
+                  </button>
                 </div>
               </div>
             </div>

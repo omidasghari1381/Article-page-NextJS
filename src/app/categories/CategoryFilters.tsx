@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-/** گزینه‌های مرتب‌سازی */
 const SORT_BY = [
   { label: "تاریخ ایجاد", value: "createdAt" },
   { label: "تاریخ بروزرسانی", value: "updatedAt" },
@@ -21,7 +20,7 @@ export function CategoryFilters() {
     return {
       q: get("q"),
       parentId: get("parentId"),
-      hasParent: get("hasParent"), // "yes" | "no" | ""
+      hasParent: get("hasParent"),
       createdFrom: get("createdFrom"),
       createdTo: get("createdTo"),
       sortBy: get("sortBy", "createdAt"),

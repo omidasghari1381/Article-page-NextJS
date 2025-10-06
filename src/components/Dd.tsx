@@ -16,10 +16,10 @@ function DD({
 }) {
   return (
     <details className={`relative group ${className}`}>
-      <summary className={`${titleClassName}`}>
+      <summery className={`${titleClassName}`}>
         <span>{title}</span>
         <span className="text-xs opacity-60 pr-1">▾</span>
-      </summary>
+      </summery>
       <div
         className=""
       >

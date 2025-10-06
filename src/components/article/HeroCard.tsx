@@ -1,6 +1,6 @@
 // components/article/HeroCard.tsx
 import Image from "next/image";
-import SummaryDropdown from "@/components/summery";
+import SummeryDropdown from "../Summery";
 
 type Props = {
   title?: string;
@@ -55,7 +55,7 @@ export default function HeroCard({
         </div>
       ) : null}
 
-      <SummaryDropdown title="خلاصه آنچه در مقاله می‌خوانیم" items={items} />
+      <SummeryDropdown title="خلاصه آنچه در مقاله می‌خوانیم" items={items} />
     </article>
   );
 }

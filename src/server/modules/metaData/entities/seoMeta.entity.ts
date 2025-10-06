@@ -19,8 +19,8 @@ export enum RobotsSetting {
 }
 
 export enum TwitterCardType {
-  SUMMARY = "summary",
-  SUMMARY_LARGE_IMAGE = "summary_large_image",
+  summery = "summery",
+  summery_LARGE_IMAGE = "summery_large_image",
 }
 
 @Entity({ name: "seo_meta" })

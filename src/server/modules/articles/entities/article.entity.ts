@@ -82,5 +82,5 @@ export class Article extends AbstractEntity {
 
   /** خلاصه‌های گلوله‌ای/هایلایت‌ها */
   @Column({ type: "json", nullable: true })
-  summary!: string[] | null;
+  summery!: string[] | null;
 }

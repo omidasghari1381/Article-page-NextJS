@@ -40,7 +40,7 @@ const CreateArticleNewSchema = z.object({
 
   /** سایر */
   readingPeriod: z.coerce.number().int().min(0),
-  summary: z.array(z.string().min(1)).optional().nullable(),
+  summery: z.array(z.string().min(1)).optional().nullable(),
   slug: z.string().trim().max(220).optional().nullable(),
 });
 
@@ -105,9 +105,9 @@ function normalizeLegacyCreatePayload(raw: any): CreateArticleInput {
         ? raw.readingPeriod
         : Number(raw?.readingPeriod ?? 0) || 0,
 
-    // summary / summery
-    summary: Array.isArray(raw?.summary)
-      ? raw.summary
+    // summery / summery
+    summery: Array.isArray(raw?.summery)
+      ? raw.summery
       : Array.isArray(raw?.summery)
       ? raw.summery
       : null,

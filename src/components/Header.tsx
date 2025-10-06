@@ -11,18 +11,18 @@ const navLink =
 function DD({
   title,
   children,
-  summaryClassName = "",
+ summeryClassName = "",
   menuClassName = "",
 }: {
   title: React.ReactNode;
   children?: React.ReactNode;
-  summaryClassName?: string;
+  summeryClassName?: string;
   menuClassName?: string;
 }) {
   return (
     <details className="relative group">
       <summary
-        className={`${navLink} cursor-pointer list-none flex items-center ${summaryClassName}`}
+        className={`${navLink} cursor-pointer list-none flex items-center ${summeryClassName}`}
       >
         <span>{title}</span>
         <span className="text-xs opacity-60 pr-1">▾</span>
@@ -302,7 +302,7 @@ export default function Header() {
           <ul className="flex flex-col items-center text-center gap-2 text-base">
             <li className="w-full">
               <DD
-                summaryClassName="justify-center w-full"
+                summeryClassName="justify-center w-full"
                 menuClassName="right-1/2 translate-x-1/2 w-64"
                 title={
                   <span className="flex gap-2 items-center justify-center">
@@ -329,7 +329,7 @@ export default function Header() {
 
             <li className="w-full">
               <DD
-                summaryClassName="justify-center w-full"
+                summeryClassName="justify-center w-full"
                 menuClassName="right-1/2 translate-x-1/2 w-64"
                 title={
                   <span className="flex items-center gap-2 justify-center">
@@ -363,7 +363,7 @@ export default function Header() {
 
             <li className="w-full">
               <DD
-                summaryClassName="justify-center w-full"
+                summeryClassName="justify-center w-full"
                 menuClassName="right-1/2 translate-x-1/2 w-64"
                 title={
                   <span className="flex items-center gap-2 justify-center">

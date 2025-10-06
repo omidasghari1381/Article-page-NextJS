@@ -54,7 +54,6 @@ export default function MediaEditorPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasUnsavedTempRef = useRef<boolean>(false); // برای Cleanup
 
-  // لود رکورد در حالت ویرایش
   useEffect(() => {
     if (!isEdit || !id) return;
     let active = true;
@@ -150,11 +149,9 @@ export default function MediaEditorPage() {
     setError(null);
 
     try {
-      // آپلود موقت
       const form = new FormData();
       form.append("file", file);
 
-      // برای نمایش Progress، باید از XHR استفاده کنیم
       const xhr = new XMLHttpRequest();
       const promise = new Promise<Response>((resolve, reject) => {
         xhr.open("POST", "/api/upload-temp");
@@ -166,7 +163,6 @@ export default function MediaEditorPage() {
         };
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            // Response رو به شکل Response-like بسازیم
             resolve(
               new Response(xhr.responseText, {
                 status: xhr.status,
@@ -255,7 +251,7 @@ export default function MediaEditorPage() {
         // پیشنهاد: در بک‌اند با move/rename از temp به مقصد دائم این کار را انجام بده
         hasUnsavedTempRef.current = false; // دیگه فایل موقت نداریم
         setTemp(null);
-        router.push(`/media/editor/${saved.id}`);
+        router.push(`/media`);
         return;
       }
 

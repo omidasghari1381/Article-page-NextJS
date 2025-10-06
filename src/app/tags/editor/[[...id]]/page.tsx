@@ -42,7 +42,11 @@ function TagForm() {
   const id = params?.id?.[0] ?? null;
   const isEdit = !!id;
 
-  const [form, setForm] = useState<{ name: string; slug: string; description: string }>({
+  const [form, setForm] = useState<{
+    name: string;
+    slug: string;
+    description: string;
+  }>({
     name: "",
     slug: "",
     description: "",
@@ -61,7 +65,7 @@ function TagForm() {
       .toString()
       .trim()
       .toLowerCase()
-      .replace(/[\u0600-\u06FF]/g, "") 
+      .replace(/[\u0600-\u06FF]/g, "")
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-]/g, "")
       .replace(/\-+/g, "-")
@@ -78,7 +82,7 @@ function TagForm() {
         setError(null);
 
         // انتظار: GET /api/articles/tags/:id → TagDTO
-        const res = await fetch(`/api/articles/tags/${id}`, { cache: "no-store" });
+        const res = await fetch(`/api/tags/${id}`, { cache: "no-store" });
         if (res.status === 404) {
           if (!active) return;
           setError("تگ پیدا نشد");
@@ -147,7 +151,7 @@ function TagForm() {
     try {
       setDeleting(true);
       // انتظار: DELETE /api/articles/tags  با body: { id }
-      const res = await fetch("/api/articles/tags/", {
+      const res = await fetch("/api/tags/", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
@@ -190,7 +194,7 @@ function TagForm() {
       setSaving(true);
       setError(null);
 
-      const url = isEdit ? `/api/articles/tags/${id}` : `/api/articles/tags`;
+      const url = isEdit ? `/api/tags/${id}` : `/api/tags`;
       const method = isEdit ? "PATCH" : "POST";
 
       const res = await fetch(url, {
@@ -205,7 +209,7 @@ function TagForm() {
       }
 
       alert(isEdit ? "تغییرات ثبت شد ✅" : "تگ با موفقیت ایجاد شد ✅");
-      router.refresh();
+      isEdit ? router.refresh() : router.push("/tags");
     } catch (err: any) {
       setError(err?.message || "خطایی رخ داد");
     } finally {
