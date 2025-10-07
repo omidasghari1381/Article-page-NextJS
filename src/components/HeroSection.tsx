@@ -15,6 +15,7 @@ type Article = {
   author: { id: string; firstName: string; lastName: string };
   createdAt: string;
 };
+
 type Latest = {
   thumbnail: string | null;
   viewCount: number;
@@ -121,9 +122,9 @@ export default function HeroSection({
           "
         >
           {/* روی موبایل: اسلایدر افقی؛ از md به بالا: گرید */}
-          <div className="md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-6 md:space-y-0 space-y-4">
+          <div className="mx-auto p-6  grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6  -translate-y-20 h-[303px] w-[1280px] backdrop-blur-[100px] rounded-lg justify-center">
             <div className="md:col-span-full md:hidden">
-              <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mb-2">
+              <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mb-2 align-middle">
                 {items?.map((item, idx) => (
                   <article
                     key={`${item.createdAt}-${idx}`}
@@ -154,7 +155,6 @@ export default function HeroSection({
               </div>
             </div>
 
-            {/* از md به بالا */}
             {items?.map((item, idx) => (
               <article
                 key={`md-${item.createdAt}-${idx}`}

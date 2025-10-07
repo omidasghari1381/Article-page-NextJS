@@ -11,7 +11,6 @@ import LatestArticle from "@/components/LatestArticle";
 import Markets from "@/components/Markets";
 import Video from "@/components/Video";
 
-/** ---------- Types هم‌راستا با API تو ---------- */
 type ArticleDetail = {
   id: string;
   title: string;

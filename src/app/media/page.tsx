@@ -1,8 +1,8 @@
-import { Suspense } from "react";
-import type { SimpleMediaType } from "@/server/modules/media/enums/media.enums";
-import { MediaFilters } from "./MediaFilter";
-import { MediaGrid } from "./MediaCart";
 import Breadcrumb from "@/components/Breadcrumb";
+import type { SimpleMediaType } from "@/server/modules/media/enums/media.enums";
+import { absolute } from "@/app/utils/base-url";
+import { MediaGrid } from "@/components/media/MediaCart";
+import { MediaFilters } from "@/components/media/MediaFilter";
 
 /** ---- Types ---- */
 type MediaDTO = {
@@ -17,14 +17,14 @@ type MediaDTO = {
 
 type ListRes = { items: MediaDTO[]; total: number };
 
-/** ---- Data fetcher ---- */
+/** ---- Data fetcher (Server-side) ---- */
 async function fetchMedia(searchParams: {
   q?: string;
   type?: string;
   sort?: string;
   limit?: string;
   offset?: string;
-}) {
+}): Promise<ListRes> {
   const qs = new URLSearchParams();
 
   if (searchParams.q) qs.set("q", searchParams.q);
@@ -34,9 +34,8 @@ async function fetchMedia(searchParams: {
   qs.set("limit", searchParams.limit ?? "100");
   if (searchParams.offset) qs.set("offset", searchParams.offset);
 
-  const res = await fetch(`http://localhost:3000/api/media?${qs.toString()}`, {
-    cache: "no-store",
-  });
+  const url = absolute(`/api/media?${qs.toString()}`);
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to load media");
   return (await res.json()) as ListRes;
 }
@@ -46,6 +45,7 @@ export default async function MediaListPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  // ✅ Next.js 15+: searchParams باید await شود
   const spRaw = await searchParams;
   const sp = {
     q: typeof spRaw.q === "string" ? spRaw.q : undefined,
@@ -55,7 +55,8 @@ export default async function MediaListPage({
     offset: typeof spRaw.offset === "string" ? spRaw.offset : "0",
   };
 
-  const dataPromise = fetchMedia(sp);
+  // ✅ SSR fetch
+  const { items, total } = await fetchMedia(sp);
 
   return (
     <main className="pb-24 pt-6 px-20" dir="rtl">
@@ -64,39 +65,28 @@ export default async function MediaListPage({
           { label: "مای پراپ", href: "/" },
           { label: "مدیا", href: "/media" },
         ]}
-      />{" "}
+      />
+
       <div className="mt-6 flex items-center justify-between text-gray-800">
         <h1 className="text-2xl font-semibold">لیست مدیا</h1>
       </div>
+
       <section
         className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8"
         dir="rtl"
       >
+        {/* ⛔️ بدون تغییر استایل/رفتار؛ فقط SSR ورودی اولیه */}
         <MediaFilters
           initial={{ q: sp.q ?? "", type: sp.type!, sort: sp.sort! }}
-        />{" "}
+        />
       </section>
-      <Suspense fallback={<div className="mt-6">در حال بارگذاری...</div>}>
-        <MediaResults dataPromise={dataPromise} />
-      </Suspense>
-    </main>
-  );
-}
 
-/** ---- Server component to render results ---- */
-async function MediaResults({
-  dataPromise,
-}: {
-  dataPromise: Promise<ListRes>;
-}) {
-  const { items, total } = await dataPromise;
-
-  return (
-    <>
       <div className="text-sm text-gray-500 mt-4 mb-2">
         مجموع نتایج: <b>{total}</b>
       </div>
+
+      {/* Grid همچنان کلاینتی است (به‌دلیل state و modal) */}
       <MediaGrid items={items} />
-    </>
+    </main>
   );
 }

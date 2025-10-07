@@ -45,13 +45,9 @@ function SidebarCard({ post }: { post: LiteArticle }) {
                  33vw"
           priority={false}
         />
-
-        {/* گرادیانت خوانایی متن */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
-
-        {/* بَج دسته‌بندی */}
         {post.category && (
-          <div className="absolute top-3 right-3" dir="rtl">
+          <div className="absolute top-3 right-3">
             <div className="relative inline-block">
               <Image
                 src="/svg/arrowLeftBlack.svg"
@@ -59,6 +55,7 @@ function SidebarCard({ post }: { post: LiteArticle }) {
                 width={108}
                 height={35}
                 className="block"
+                priority
               />
               <span className="absolute inset-0 flex items-center justify-center text-white text-[10px] sm:text-xs font-semibold leading-none px-2">
                 {post.category}
@@ -66,8 +63,6 @@ function SidebarCard({ post }: { post: LiteArticle }) {
             </div>
           </div>
         )}
-
-        {/* عنوان */}
         <div className="absolute bottom-3 right-4 left-4 text-white">
           <h5 className="text-sm sm:text-base font-medium leading-7 line-clamp-2">
             {post.title || "—"}

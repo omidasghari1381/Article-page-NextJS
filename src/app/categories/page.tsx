@@ -1,7 +1,6 @@
-// app/categories/Page.tsx
 import Breadcrumb from "@/components/Breadcrumb";
 import CategoryRow from "./CategoryCart";
-import CategoryCard, { type CategoryNode } from "./CategoryCart"; // مسیر را با پروژه خودت تنظیم کن
+import CategoryCard, { type CategoryNode } from "./CategoryCart";
 import { CategoryFilters } from "./CategoryFilters";
 
 type MaybeWrapped<T> =

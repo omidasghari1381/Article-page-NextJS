@@ -1,527 +1,73 @@
-// ──────────────────────────────────────────────────────────────────────────────
-// app/redirects/page.tsx  (SERVER COMPONENT)
-// سرور-فرست: فیلترها از searchParams خوانده می‌شوند، درخواست روی سرور زده می‌شود
-// و داده‌ی اولیه به کلاینت پاس داده می‌شود. استایل/منطق UI تغییری نکرده.
-// ──────────────────────────────────────────────────────────────────────────────
-import "server-only";
-import { cookies, headers } from "next/headers";
-import { unstable_noStore as noStore } from "next/cache";
-import { cache } from "react";
-import RedirectsListClient from "@/components/redirects/RedirectsListClient";
+import Image from "next/image";
 
-// ---------- Types ----------
-export type RedirectDTO = {
-  id: string;
-  fromPath: string;
-  toPath: string;
-  statusCode: 301 | 302 | 307 | 308;
-  isActive: boolean;
-  createdAt: string; // ISO
-  updatedAt: string; // ISO
+type LiteArticle = {
+  id?: string;
+  title?: string;
+  createdAt?: string;
+  category?: string;
+  author?: { id: string; firstName: string; lastName: string };
+  thumbnail?: string | null;
+  readingPeriod?: string;
 };
 
-export type ListResponse = {
-  items: RedirectDTO[];
-  total: number;
-  page: number;
-  pageSize: number;
-  pages: number;
-};
-
-const STATUS_OPTIONS = [301, 302, 307, 308] as const;
-const SORTABLE_FIELDS = [
-  "createdAt",
-  "updatedAt",
-  "fromPath",
-  "toPath",
-  "statusCode",
-  "isActive",
-] as const;
-
-function buildQuery(sp: Record<string, string | string[] | undefined>) {
-  const p = new URLSearchParams();
-  const get = (k: string) => (Array.isArray(sp[k]) ? sp[k]?.[0] : sp[k]) || "";
-
-  const q = get("q").trim();
-  if (q) p.set("q", q);
-
-  const isActive = get("isActive");
-  if (isActive === "true" || isActive === "false") p.set("isActive", isActive);
-
-  // statusCode می‌تواند چندتایی باشد
-  const statusCode = sp["statusCode"];
-  const codes = (Array.isArray(statusCode) ? statusCode : statusCode ? [statusCode] : []).map(String);
-  for (const c of codes) p.append("statusCode", c);
-
-  const createdFrom = get("createdFrom");
-  const createdTo = get("createdTo");
-  if (createdFrom) p.set("createdFrom", new Date(createdFrom + "T00:00:00Z").toISOString());
-  if (createdTo) p.set("createdTo", new Date(createdTo + "T00:00:00Z").toISOString());
-
-  const sortBy = get("sortBy");
-  p.set("sortBy", (SORTABLE_FIELDS as readonly string[]).includes(sortBy) ? sortBy : "createdAt");
-
-  const sortDir = get("sortDir");
-  p.set("sortDir", sortDir === "ASC" ? "ASC" : "DESC");
-
-  const page = parseInt(get("page") || "1", 10) || 1;
-  const pageSize = parseInt(get("pageSize") || "20", 10) || 20;
-  p.set("page", String(Math.max(1, page)));
-  p.set("pageSize", String(pageSize));
-
-  return p.toString();
-}
-
-const getInit = async () => {
-  const hdrs = await headers();
-  const ck = await cookies();
-  return {
-    headers: {
-      cookie: ck.toString(),
-      "x-forwarded-host": hdrs.get("host") ?? undefined,
-    } as Record<string, string>,
-    cache: "no-store" as const,
-  };
-};
-
-const fetchRedirects = cache(async (qs: string): Promise<ListResponse | null> => {
-  noStore();
-  const init = await getInit();
-  const res = await fetch(`/api/redirect?${qs}`, init);
-  if (!res.ok) return null;
-  return (await res.json()) as ListResponse;
-});
-
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const sp = await searchParams;
-  const qs = buildQuery(sp);
-  const initial = (await fetchRedirects(qs)) ?? {
-    items: [],
-    total: 0,
-    page: 1,
-    pageSize: 20,
-    pages: 1,
-  } satisfies ListResponse;
-
+export default function SidebarLatest({ posts }: { posts: LiteArticle[] }) {
   return (
-    <RedirectsListClient
-      initialQueryString={qs}
-      initialData={initial}
-      statusOptions={STATUS_OPTIONS as any}
-      sortableFields={SORTABLE_FIELDS as any}
-    />
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// components/redirects/RedirectsListClient.tsx  (CLIENT)
-// منطق و استایل همان کدِ شماست؛ فقط داده اولیه از سرور می‌آید و fetch اولیه حذف می‌شود.
-// در صورت تغییر فیلترها/صفحه، همان fetch کلاینتی اجرا می‌شود.
-// ──────────────────────────────────────────────────────────────────────────────
-"use client";
-
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import Breadcrumb from "@/components/Breadcrumb";
-import RedirectCard from "@/components/redirects/RedirectCard";
-
-export type RedirectDTO = {
-  id: string;
-  fromPath: string;
-  toPath: string;
-  statusCode: 301 | 302 | 307 | 308;
-  isActive: boolean;
-  createdAt: string; // ISO
-  updatedAt: string; // ISO
-};
-
-export type ListResponse = {
-  items: RedirectDTO[];
-  total: number;
-  page: number;
-  pageSize: number;
-  pages: number;
-};
-
-type Props = {
-  initialQueryString: string;
-  initialData: ListResponse;
-  statusOptions: ReadonlyArray<301 | 302 | 307 | 308>;
-  sortableFields: ReadonlyArray<
-    "createdAt" | "updatedAt" | "fromPath" | "toPath" | "statusCode" | "isActive"
-  >;
-};
-
-export default function RedirectsListClient({ initialQueryString, initialData, statusOptions, sortableFields }: Props) {
-  // ------- فیلترها / سورت / صفحه‌بندی -------
-  const [q, setQ] = useState("");
-  const [statusCodes, setStatusCodes] = useState<RedirectDTO["statusCode"][]>([]);
-  const [isActive, setIsActive] = useState<"" | "true" | "false">("");
-  const [createdFrom, setCreatedFrom] = useState<string>("");
-  const [createdTo, setCreatedTo] = useState<string>("");
-  const [sortBy, setSortBy] = useState<(typeof sortableFields)[number]>("createdAt");
-  const [sortDir, setSortDir] = useState<"ASC" | "DESC">("DESC");
-  const [page, setPage] = useState(initialData.page || 1);
-  const [pageSize, setPageSize] = useState(initialData.pageSize || 20);
-
-  // ------- داده‌ها -------
-  const [data, setData] = useState<ListResponse | null>(initialData);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-
-  // ------- QueryString ساز -------
-  const queryString = useMemo(() => {
-    const p = new URLSearchParams();
-    if (q.trim()) p.set("q", q.trim());
-    if (isActive !== "") p.set("isActive", isActive);
-    if (statusCodes.length) statusCodes.forEach((c) => p.append("statusCode", String(c)));
-    if (createdFrom) p.set("createdFrom", new Date(createdFrom + "T00:00:00Z").toISOString());
-    if (createdTo) p.set("createdTo", new Date(createdTo + "T00:00:00Z").toISOString());
-    p.set("sortBy", sortBy);
-    p.set("sortDir", sortDir);
-    p.set("page", String(page));
-    p.set("pageSize", String(pageSize));
-    return p.toString();
-  }, [q, isActive, statusCodes, createdFrom, createdTo, sortBy, sortDir, page, pageSize]);
-
-  // روی بار اول از داده‌ی سرور استفاده می‌کنیم؛ وقتی queryString عوض شد، fetch کن
-  useEffect(() => {
-    if (queryString === initialQueryString) return; // سرور همین را لود کرده
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryString]);
-
-  // هر بار فیلتری عوض شد، برو صفحه 1
-  useEffect(() => {
-    setPage(1);
-  }, [q, isActive, statusCodes, createdFrom, createdTo, sortBy, sortDir, pageSize]);
-
-  const fetchData = async () => {
-    try {
-      abortRef.current?.abort();
-      const ctrl = new AbortController();
-      abortRef.current = ctrl;
-      setLoading(true);
-      setError(null);
-      const res = await fetch(`/api/redirect?${queryString}`, { method: "GET", cache: "no-store", signal: ctrl.signal });
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || "خطا در دریافت لیست ریدایرکت‌ها");
-      }
-      const json: ListResponse = await res.json();
-      setData(json);
-    } catch (e: any) {
-      if (e?.name === "AbortError") return;
-      setError(e?.message || "خطا در دریافت داده");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleStatus = (code: RedirectDTO["statusCode"]) => {
-    setStatusCodes((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
-  };
-
-  const resetFilters = () => {
-    setQ("");
-    setStatusCodes([]);
-    setIsActive("");
-    setCreatedFrom("");
-    setCreatedTo("");
-    setSortBy("createdAt" as any);
-    setSortDir("DESC");
-    setPage(1);
-    setPageSize(20);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("حذف شود؟")) return;
-    try {
-      const res = await fetch("/api/redirect", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || "حذف ناموفق بود");
-      }
-      await fetchData();
-    } catch (e: any) {
-      alert(e?.message || "خطای حذف");
-    }
-  };
-
-  const handleToggleActive = async (id: string, next: boolean) => {
-    try {
-      const res = await fetch(`/api/redirect/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isActive: next }) });
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || "به‌روزرسانی وضعیت ناموفق بود");
-      }
-      await fetchData();
-    } catch (e: any) {
-      alert(e?.message || "خطای به‌روزرسانی");
-    }
-  };
-
-  const redirects = data?.items ?? [];
-
-  return (
-    <main className="pb-24 pt-6 px-20">
-      <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "ریدایرکت‌ها", href: "/redirects" }]} />
-      <div className="mt-6 flex items-center justify-between text-gray-800">
-        <h1 className="text-2xl font-semibold">لیست ریدایرکت ها</h1>
+    <div>
+      <div className="flex items-center gap-3 px-4 py-8 ">
+        <Image
+          src="/svg/Rectangle.svg"
+          alt="thumb"
+          width={6.69}
+          height={36.3}
+        />
+        <h3 className="text-xl font-semibold text-[#1C2121]">
+          محبوب ترین مقالات
+        </h3>
       </div>
 
-      {/* فیلترها / سورت */}
-      <section className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8" dir="rtl">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">جستجو</label>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="روی from/to جستجو می‌کند…" className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 ltr" />
-          </div>
-
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">فعال/غیرفعال</label>
-            <select value={isActive} onChange={(e) => setIsActive(e.target.value as any)} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-              <option value="">همه</option>
-              <option value="true">فقط فعال</option>
-              <option value="false">فقط غیرفعال</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">از تاریخ (ایجاد)</label>
-            <input type="date" value={createdFrom} onChange={(e) => setCreatedFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300" />
-          </div>
-
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">تا تاریخ (ایجاد)</label>
-            <input type="date" value={createdTo} onChange={(e) => setCreatedTo(e.target.value)} className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300" />
-          </div>
-
-          <div className="md:col-span-6">
-            <label className="block text-sm text-gray-800 mb-2">کدهای وضعیت (چندانتخاب)</label>
-            <div className="flex flex-wrap gap-3">
-              {statusOptions.map((c) => {
-                const active = statusCodes.includes(c as any);
-                return (
-                  <button key={c} type="button" onClick={() => toggleStatus(c as any)} className={`px-3 py-1.5 rounded-lg border ${active ? "bg-black text-white border-black" : "bg-white text-gray-800 border-gray-200"}`}>
-                    {c}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">مرتب‌سازی بر اساس</label>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-              {sortableFields.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">جهت مرتب‌سازی</label>
-            <select value={sortDir} onChange={(e) => setSortDir(e.target.value as any)} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-              <option value="DESC">نزولی</option>
-              <option value="ASC">صعودی</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">تعداد در صفحه</label>
-            <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-              {[10, 20, 50, 100].map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="md:col-span-12 flex items-center gap-3 justify-end">
-            <Link href="/redirects/editor" className="px-4 py-2 rounded-lg border text-gray-800 hover:bg-gray-50">+افزودن ریدایرکت </Link>
-            <button type="button" onClick={resetFilters} className="px-4 py-2 rounded-lg border text-gray-800 hover:bg-gray-50 font-medium">پاکسازی </button>
-            <button type="button" onClick={fetchData} className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50" disabled={loading}>{loading ? "در حال به‌روزرسانی…" : "اعمال فیلترها"}</button>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-6" dir="rtl">
-        {error && <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">{error}</div>}
-
-        <div className="grid grid-cols-1 gap-4">
-          {loading ? (
-            <div className="px-4 py-10 text-center text-gray-800">در حال بارگذاری…</div>
-          ) : (data?.items?.length ?? 0) === 0 ? (
-            <div className="px-4 py-10 text-center text-gray-500">آیتمی یافت نشد.</div>
-          ) : (
-            (data?.items ?? []).map((r) => (
-              <RedirectCard key={r.id} item={r} editHref={(id) => `/redirects/editor/${id}`} onDeleteClick={handleDelete} onToggleActive={handleToggleActive} />
-            ))
-          )}
-        </div>
-
-        <div className="flex items-center justify-between px-0 py-6">
-          <div className="text-sm text-gray-500">
-            {data ? (
-              <>نمایش <strong>{(data.page - 1) * data.pageSize + 1}–{Math.min(data.page * data.pageSize, data.total)}</strong> از <strong>{data.total}</strong></>
-            ) : (
-              "—"
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 disabled:opacity-50" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={loading || (data?.page || 1) <= 1}>قبلی</button>
-            <span className="text-sm text-gray-800">صفحه {data?.page || 1} از {data?.pages || 1}</span>
-            <button className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 disabled:opacity-50" onClick={() => setPage((p) => (data ? Math.min(data.pages, p + 1) : p + 1))} disabled={loading || (data ? data.page >= data.pages : true)}>بعدی</button>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// components/redirects/RedirectCard.tsx  (CLIENT)
-// همان کد شما؛ بدون تغییر منطق/استایل. فقط مسیر import هماهنگ شده.
-// ──────────────────────────────────────────────────────────────────────────────
-"use client";
-
-import Link from "next/link";
-import { useState } from "react";
-
-export type RedirectDTO = {
-  id: string;
-  fromPath: string;
-  toPath: string;
-  statusCode: 301 | 302 | 307 | 308;
-  isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-type Props = {
-  item: RedirectDTO;
-  editHref?: string | ((id: string) => string);
-  onEditClick?: (id: string) => void;
-  onDeleteClick?: (id: string) => void;
-  onToggleActive?: (id: string, next: boolean) => void;
-  showDates?: boolean;
-};
-
-export default function RedirectCard({ item, editHref, onEditClick, onDeleteClick, onToggleActive, showDates = true }: Props) {
-  const { id, fromPath, toPath, statusCode, isActive, createdAt, updatedAt } = item;
-  const editLink = typeof editHref === "function" ? editHref(id) : typeof editHref === "string" ? `${editHref}` : null;
-  const [copied, setCopied] = useState<null | "from" | "to">(null);
-
-  const copyToClipboard = async (text: string, which: "from" | "to") => {
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-      }
-      setCopied(which);
-      setTimeout(() => setCopied(null), 1200);
-    } catch {}
-  };
-
-  return (
-    <div className="rounded-2xl border shadow-sm bg-white p-4 text-black">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-10 flex-1 min-w-0">
-          <div className="min-w-0">
-            <div className="text-[13px] text-gray-500 mb-1">fromPath</div>
-            <div className="flex items-center gap-2 min-w-0">
-              <button type="button" title={fromPath} className="font-mono text-xs md:text-sm text-black ltr truncate max-w-[38ch] text-left cursor-pointer hover:underline" onClick={() => copyToClipboard(fromPath, "from")}>
-                {fromPath}
-              </button>
-              {copied === "from" && (
-                <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px]">کپی شد</span>
-              )}
-            </div>
-
-            <div className="text-[13px] text-gray-500 mt-3 mb-1">toPath</div>
-            <div className="flex items-center gap-2 min-w-0">
-              <button type="button" title={toPath} className="font-mono text-xs md:text-sm text-black ltr truncate max-w-[38ch] text-left cursor-pointer hover:underline" onClick={() => copyToClipboard(toPath, "to")}>
-                {toPath}
-              </button>
-              {copied === "to" && (
-                <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px]">کپی شد</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {showDates && (createdAt || updatedAt) && (
-          <div className="gap-3 text-xs text-gray-500 flex">
-            {createdAt && (
-              <div>
-                <span className="text-gray-400">ایجاد: </span>
-                <time dateTime={createdAt}>{formatDateTime(createdAt)}</time>
-              </div>
-            )}
-            {updatedAt && (
-              <div>
-                <span className="text-gray-400">ویرایش: </span>
-                <time dateTime={updatedAt}>{formatDateTime(updatedAt)}</time>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="flex items-center md:gap-4 gap-3">
-          <div className="text-black">
-            <span className="text-[13px] mx-1">کد:</span>
-            <span className="px-2 py-1 rounded-lg border text-sm">{statusCode}</span>
-          </div>
-          <div>
-            <span className="text-[13px] text-gray-500">وضعیت:</span>{" "}
-            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${isActive ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"}`}>
-              <span className={`h-2 w-2 rounded-full ${isActive ? "bg-green-600" : "bg-gray-500"}`} />
-              {isActive ? "فعال" : "غیرفعال"}
-            </span>
-          </div>
-
-          {(editLink || onEditClick || onDeleteClick || onToggleActive) && (
-            <div className="mt-2 md:mt-0 flex items-center justify-end gap-2">
-              {typeof onToggleActive === "function" && (
-                <button className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50" onClick={() => onToggleActive(id, !isActive)}>
-                  {isActive ? "غیرفعال کن" : "فعال کن"}
-                </button>
-              )}
-
-              {editLink ? (
-                <Link href={editLink} className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50">ویرایش</Link>
-              ) : typeof onEditClick === "function" ? (
-                <button className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50" onClick={() => onEditClick(id)}>ویرایش</button>
-              ) : null}
-
-              {typeof onDeleteClick === "function" && (
-                <button className="px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800" onClick={() => onDeleteClick(id)}>حذف</button>
-              )}
-            </div>
-          )}
-        </div>
+      <div className="px-4 pb-4 space-y-8">
+        {posts.map((p) => (
+          <SidebarCard key={p.id} post={p} />
+        ))}
       </div>
     </div>
   );
 }
 
-function formatDateTime(iso?: string) {
-  if (!iso) return "—";
-  try {
-    const d = new Date(iso);
-    return new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(d);
-  } catch {
-    return iso as string;
-  }
+function SidebarCard({ post }: { post: LiteArticle }) {
+  return (
+    <article className="group">
+      <div className="w-[361.67px] h-[236.81px]">
+        <div className="relative w-[361.67px] h-[236.81px] rounded-md overflow-hidden">
+          <Image
+            src={post.thumbnail || "/image/hero1.jpg"}
+            alt="thumb"
+            fill
+            className="object-cover"
+          />
+
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+
+          <div className="absolute top-3 right-3">
+            <div className="relative inline-block">
+              <Image
+                src="/svg/arrowLeftBlack.svg"
+                alt="badge"
+                width={108}
+                height={34.66}
+                className="block"
+                priority
+              />
+              <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold leading-none px-2">
+                {post.category}
+              </span>
+            </div>
+          </div>
+          <div className="absolute bottom-3 right-4 text-white">
+            <h5 className="sm:text-base font-medium leading-7">{post.title}</h5>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
 }

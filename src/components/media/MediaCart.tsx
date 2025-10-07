@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+// اگر type اینجا لازم است دوباره تعریف شود:
 type MediaDTO = {
   id: string;
   name: string;
@@ -16,31 +17,26 @@ type MediaDTO = {
 };
 
 function getBaseOrigin() {
-  // اولویت با ENV اگر تعریف کردی، وگرنه origin مرورگر
   if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BASE_URL) {
     return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/+$/, "");
   }
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
-  return ""; // فقط برای تایپ؛ چون کامپوننت کلاینتی است این حالت عملاً رخ نمی‌دهد
+  return "";
 }
 
 function toAbsoluteUrl(url: string): string {
   try {
-    // اگر خودش absolute بود، همونو برگردون
     const u = new URL(url);
     return u.href;
   } catch {
-    // relative: با base کاملش کن
     const base = getBaseOrigin();
-    return new URL(url.replace(/^\/+/, "/"), base || "http://localhost:3000")
-      .href;
+    return new URL(url.replace(/^\/+/, "/"), base || "http://localhost:3000").href;
   }
 }
 
 export function MediaGrid({ items }: { items: MediaDTO[] }) {
-  // برای اینکه بعد از حذف لیست به‌روز بشه، state داخلی نگه می‌داریم
   const [list, setList] = useState<MediaDTO[]>(() => items?.slice?.() ?? []);
   const [selected, setSelected] = useState<MediaDTO | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -52,7 +48,7 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
   }, [items]);
 
   const gridItems = useMemo(() => list, [list]);
-  console.log(gridItems);
+
   const handleCopyUrl = async (m: MediaDTO) => {
     const full = toAbsoluteUrl(m.url);
     await navigator.clipboard.writeText(full);
@@ -64,9 +60,7 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
     if (!confirm(`«${m.name}» حذف شود؟`)) return;
     try {
       setDeleting(true);
-      const res = await fetch(`/api/media/${m.id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/media/${m.id}`, { method: "DELETE" });
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(txt || "خطا در حذف مدیا");
@@ -94,41 +88,22 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
             <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
               {m.type === "image" ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={m.url}
-                  alt={m.name}
-                  className="w-full h-full object-cover"
-                />
+                <img src={m.url} alt={m.name} className="w-full h-full object-cover" />
               ) : (
-                <video
-                  src={toAbsoluteUrl(m.url)}
-                  className="w-full h-full object-cover"
-                />
+                <video src={toAbsoluteUrl(m.url)} className="w-full h-full object-cover" />
               )}
             </div>
-            <div className="line-clamp-1 text-sm font-medium text-black">
-              {m.name}
-            </div>
+            <div className="line-clamp-1 text-sm font-medium text-black">{m.name}</div>
           </button>
         ))}
       </div>
 
-      {/* Modal */}
       {selected ? (
-        <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="bg-white w-[92vw] max-w-2xl rounded-2xl p-5 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setSelected(null)}>
+          <div className="bg-white w-[92vw] max-w-2xl rounded-2xl p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">جزییات مدیا</h2>
-              <button
-                className="px-3 py-1 rounded-lg border hover:bg-gray-50"
-                onClick={() => setSelected(null)}
-              >
+              <button className="text-black px-3 py-1 rounded-lg border hover:bg-gray-50" onClick={() => setSelected(null)}>
                 بستن
               </button>
             </div>
@@ -138,17 +113,9 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
                 <div className="aspect-square rounded-xl overflow-hidden bg-gray-100">
                   {selected.type === "image" ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={toAbsoluteUrl(selected.url)}
-                      alt={selected.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={toAbsoluteUrl(selected.url)} alt={selected.name} className="w-full h-full object-cover" />
                   ) : (
-                    <video
-                      src={toAbsoluteUrl(selected.url)}
-                      className="w-full h-full object-cover"
-                      controls
-                    />
+                    <video src={toAbsoluteUrl(selected.url)} className="w-full h-full object-cover" controls />
                   )}
                 </div>
               </div>
@@ -156,58 +123,32 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
               <div className="space-y-4">
                 <div>
                   <div className="text-sm text-gray-600 mb-1">نام</div>
-                  <div className="font-medium text-black break-words">
-                    {selected.name}
-                  </div>
+                  <div className="font-medium text-black break-words">{selected.name}</div>
                 </div>
 
                 <div>
                   <div className="text-sm text-gray-600 mb-1">توضیحات</div>
-                  <div className="text-gray-800 whitespace-pre-wrap break-words">
-                    {selected.description || "—"}
-                  </div>
+                  <div className="text-gray-800 whitespace-pre-wrap break-words">{selected.description || "—"}</div>
                 </div>
 
                 <div>
                   <div className="text-sm text-gray-600 mb-1">آدرس (URL)</div>
-                  {/* نمایش لینک کامل + کپی با یک کلیک */}
-                  <button
-                    className="w-full text-left text-blue-700 underline break-all hover:opacity-80"
-                    onClick={() => handleCopyUrl(selected)}
-                    title="برای کپی کلیک کنید"
-                  >
+                  <button className="w-full text-left text-blue-700 underline break-all hover:opacity-80" onClick={() => handleCopyUrl(selected)} title="برای کپی کلیک کنید">
                     {toAbsoluteUrl(selected.url)}
                   </button>
-                  {copied === selected.id && (
-                    <div className="text-xs text-green-600 mt-1">
-                      آدرس کامل کپی شد ✓
-                    </div>
-                  )}
+                  {copied === selected.id && <div className="text-xs text-green-600 mt-1">آدرس کامل کپی شد ✓</div>}
                 </div>
 
                 <div className="flex items-center gap-2 pt-2">
-                  <Link
-                    href={`/media/editor/${selected.id}`}
-                    className="px-4 py-2 rounded-xl bg-black text-white hover:bg-gray-800"
-                  >
+                  <Link href={`/media/editor/${selected.id}`} className="px-4 py-2 rounded-xl bg-black text-white hover:bg-gray-800">
                     ویرایش
                   </Link>
 
-                  <a
-                    href={toAbsoluteUrl(selected.url)}
-                    target="_blank"
-                    className="px-4 py-2 rounded-xl border hover:bg-gray-50"
-                    rel="noreferrer"
-                  >
+                  <a href={toAbsoluteUrl(selected.url)} target="_blank" className=" text-black px-4 py-2 rounded-xl border hover:bg-gray-50" rel="noreferrer">
                     باز کردن فایل
                   </a>
 
-                  <button
-                    onClick={() => handleDelete(selected)}
-                    disabled={deleting}
-                    className="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-60"
-                    title="حذف مدیا"
-                  >
+                  <button onClick={() => handleDelete(selected)} disabled={deleting} className="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-60" title="حذف مدیا">
                     {deleting ? "در حال حذف..." : "حذف"}
                   </button>
                 </div>
