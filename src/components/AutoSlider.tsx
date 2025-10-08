@@ -1,6 +1,7 @@
-"use client"
+"use client";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+
 export default function SignupHeroSlider() {
   const slides = [
     {
@@ -23,7 +24,7 @@ export default function SignupHeroSlider() {
 
   const [idx, setIdx] = useState(0);
   const timer = useRef<number | null>(null);
-  const DURATION = 5_000; 
+  const DURATION = 5_000;
 
   useEffect(() => {
     play();
@@ -44,21 +45,24 @@ export default function SignupHeroSlider() {
 
   return (
     <div
-      className="relative bg-gray-50"
+      className="relative bg-gray-50 w-full flex justify-center"
       dir="rtl"
       onMouseEnter={stop}
       onMouseLeave={play}
     >
-      <div className="absolute inset-0 pointer-events-none " />
+      {/* overlay */}
+      <div className="absolute inset-0 pointer-events-none" />
 
-      <div className="relative p-8 sm:p-12 lg:p-16 flex flex-col h-full">
+      {/* Centered container: always stays inside the parent card, regardless of page layout */}
+      <div className="relative w-full mx-auto max-w-3xl sm:max-w-4xl md:max-w-5xl lg:max-w-6xl 2xl:max-w-7xl p-0 flex flex-col h-full">
         <div className="flex-1 grid place-items-center">
-          <div className="w-[420px] max-w-full">
+          {/* slider viewport - responsive widths; stays centered */}
+          <div className="w-[260px] sm:w-[340px] md:w-[380px] lg:w-[390px] xl:w-[480px] max-w-full relative">
             {slides.map((s, i) => (
               <div
                 key={s.src + i}
                 className={`transition-opacity duration-700 ease-out ${
-                  i === idx ? "opacity-100" : "opacity-0 absolute"
+                  i === idx ? "opacity-100" : "opacity-0 absolute inset-0"
                 }`}
               >
                 <Image
@@ -73,21 +77,23 @@ export default function SignupHeroSlider() {
             ))}
           </div>
         </div>
-        <div className="mt-6 text-center">
-          <h2 className="text-[28px] sm:text-3xl font-extrabold text-[#1C2120] leading-tight tracking-tight">
+
+        <div className="mt-6 text-center align-middle">
+          <h2 className="text-[22px] sm:text-[28px] md:text-3xl font-extrabold text-[#1C2120] leading-tight tracking-tight whitespace-break-spaces align-middle text-center">
             {slides[idx].title}
           </h2>
-          <p className="mt-2 text-base sm:text-lg text-[#666968] leading-7">
+          <p className="mt-2 text-sm sm:text-base md:text-lg text-[#666968] leading-7 ">
             {slides[idx].subtitle}
           </p>
         </div>
-        <div className="mt-3 flex justify-center gap-2">
+
+        <div className="mt-3 flex justify-center gap-1 sm:gap-2">
           {slides.map((_, i) => (
             <button
               key={i}
               onClick={() => setIdx(i)}
               aria-label={`اسلاید ${i + 1}`}
-              className={`h-[3px] w-10 rounded-full transition-all ${
+              className={`h-[3px] rounded-full transition-all ${
                 i === idx ? "w-8 bg-[#020202]" : "w-3 bg-[#DBDBDB]"
               }`}
             />

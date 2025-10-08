@@ -117,7 +117,7 @@ export default function Header() {
             </span>
             <DD
               title={
-                <span className="flex items-center text-sm">
+                <span className="flex items-center text-sm whitespace-nowrap">
                   <Image
                     src="/svg/plan.svg"
                     alt="plan"
@@ -130,7 +130,7 @@ export default function Header() {
             />
             <Link
               href="/careers"
-              className={`${navLink} flex items-center text-sm leading-6`}
+              className={`${navLink} flex items-center text-sm leading-6 whitespace-nowrap`}
             >
               <Image
                 src="/svg/groupmen.svg"
@@ -142,7 +142,7 @@ export default function Header() {
             </Link>
             <DD
               title={
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 whitespace-nowrap">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"

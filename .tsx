@@ -1,73 +1,252 @@
+# Auth Signup (SSR Page + Client Form)
+
+> ساختار کامل برای سرور ساید رندرینگ (Next.js App Router). تمام JSX ایستا سمت سرور رندر می‌شود و فقط فرم با state و event ها به صورت Client Component جدا شده است. استایل‌ها و فانکشنالیتی دست‌نخورده باقی مانده‌اند.
+
+---
+
+## File: `app/(auth)/signup/page.tsx` (Server Component)
+```tsx
+import AutoSlider from "@/components/AutoSlider";
 import Image from "next/image";
+import ClientSignupForm from "./ClientSignupForm"; // فرم کلاینتی جدا
 
-type LiteArticle = {
-  id?: string;
-  title?: string;
-  createdAt?: string;
-  category?: string;
-  author?: { id: string; firstName: string; lastName: string };
-  thumbnail?: string | null;
-  readingPeriod?: string;
-};
+export const dynamic = "force-dynamic"; // تا هر بار تازه رندر شود
 
-export default function SidebarLatest({ posts }: { posts: LiteArticle[] }) {
+export default async function Page() {
   return (
-    <div>
-      <div className="flex items-center gap-3 px-4 py-8 ">
-        <Image
-          src="/svg/Rectangle.svg"
-          alt="thumb"
-          width={6.69}
-          height={36.3}
-        />
-        <h3 className="text-xl font-semibold text-[#1C2121]">
-          محبوب ترین مقالات
-        </h3>
-      </div>
+    <div className="min-h-screen py-10 px-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-[28px] shadow-xl overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            {/* پنل چپ: محتوای ایستا (اسلایدر) - Server Rendered */}
+            <div className="relative bg-[#FAFAFA]">
+              <div className="relative bg-gray-50">
+                <div className="p-8 sm:p-12 lg:p-16 h-full">
+                  <AutoSlider />
+                </div>
+              </div>
+            </div>
 
-      <div className="px-4 pb-4 space-y-8">
-        {posts.map((p) => (
-          <SidebarCard key={p.id} post={p} />
-        ))}
+            {/* پنل راست: هدر ایستا + فرم کلاینتی */}
+            <div className="p-6 sm:p-10">
+              {/* Header (ایستا) */}
+              <div className="flex items-center mb-6 justify-end gap-2.5">
+                <a href="/" className="text-sm text-gray-500 hover:text-gray-700">
+                  صفحه اصلی
+                </a>
+                <div className="flex items-center gap-2 ">
+                  <div className="w-9 h-9 rounded-xl border-[#BFC1C0] border grid place-items-center">
+                    <Image src="/svg/ArrowRight.svg" alt="" height={16} width={16} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Hero (ایستا) */}
+              <div className="justify-center items-center flex-col flex ">
+                <div className="w-[60px] h-[60px] bg-[#19C9A4] rounded-[14px] flex justify-center items-center my-8">
+                  <Image src="/image/mainLogo.png" alt="logo" height={39} width={34} />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">به مای پراپ خوش آمدید.</h1>
+                <p className="text-gray-500 mt-6">اطلاعات خود را جهت ثبت‌نام وارد نمایید.</p>
+              </div>
+
+              {/* فرم به صورت کلاینتی (بدون تغییر در استایل و رفتار) */}
+              <ClientSignupForm />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+```
 
-function SidebarCard({ post }: { post: LiteArticle }) {
+---
+
+## File: `app/(auth)/signup/ClientSignupForm.tsx` (Client Component)
+```tsx
+"use client";
+
+import Image from "next/image";
+import PhoneInput from "@/components/PhoneInput";
+import React, { useMemo, useState } from "react";
+
+// همان تایپ‌های قبلی (بدون تغییر)
+type FormState = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  dial: string; // در PhoneInput فعلی استفاده نمی‌شود، برای سازگاری حفظ شده
+  password: string;
+  remember: boolean;
+};
+
+export default function ClientSignupForm() {
+  const [form, setForm] = useState<FormState>({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    dial: "",
+    password: "",
+    remember: false,
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
+  const canSubmit = useMemo(
+    () =>
+      form.firstName.trim() &&
+      form.lastName.trim() &&
+      form.phone.trim() &&
+      form.password.length >= 8 &&
+      !loading,
+    [form, loading]
+  );
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const errs: Record<string, string> = {};
+    if (!form.firstName.trim()) errs.firstName = "firstname is essential";
+    if (!form.lastName.trim()) errs.lastName = "surname is essential";
+    if (!form.phone.trim()) errs.phone = "phone number is essential";
+    if (form.password.length < 8) errs.password = "your password must contain 8 letter";
+
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          phone: `${form.dial}${form.phone}`,
+          password: form.password,
+          remember: form.remember,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        setErrors({ general: data?.message ?? "register failed" });
+        return;
+      }
+
+      alert("register successful");
+    } catch (err) {
+      setErrors({ general: "Server error .Try again later" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <article className="group">
-      <div className="w-[361.67px] h-[236.81px]">
-        <div className="relative w-[361.67px] h-[236.81px] rounded-md overflow-hidden">
-          <Image
-            src={post.thumbnail || "/image/hero1.jpg"}
-            alt="thumb"
-            fill
-            className="object-cover"
+    <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-base text-[#1C2120]">نام</label>
+          <input
+            className={`input ${errors.firstName ? "!border-red-400" : ""}`}
+            placeholder="نام خود را وارد نمایید"
+            value={form.firstName}
+            onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
           />
-
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-
-          <div className="absolute top-3 right-3">
-            <div className="relative inline-block">
-              <Image
-                src="/svg/arrowLeftBlack.svg"
-                alt="badge"
-                width={108}
-                height={34.66}
-                className="block"
-                priority
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold leading-none px-2">
-                {post.category}
-              </span>
-            </div>
-          </div>
-          <div className="absolute bottom-3 right-4 text-white">
-            <h5 className="sm:text-base font-medium leading-7">{post.title}</h5>
-          </div>
+          {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
+        </div>
+        <div className="space-y-2">
+          <label className="text-base text-[#1C2120]">نام خانوادگی</label>
+          <input
+            className={`input ${errors.lastName ? "!border-red-400" : ""}`}
+            placeholder="نام خانوادگی خود را وارد نمایید"
+            value={form.lastName}
+            onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+          />
+          {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
         </div>
       </div>
-    </article>
+
+      <div className="space-y-2">
+        <label className="text-base text-[#1C2120] font-medium">شماره موبایل</label>
+        {/* PhoneInput فعلی فقط phone را برمی‌گرداند؛ اگر dial را هم خواستی، prop بده یا تغییرش بده */}
+        <PhoneInput
+          className="mt-2.5"
+          // @ts-ignore - PhoneInput شما onChange فقط شماره را می‌دهد
+          onChange={(val: string) => setForm((f) => ({ ...f, phone: val }))}
+        />
+        {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-base text-[#1C2120] font-medium">رمز عبور</label>
+        <div className="relative mt-2.5">
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+            <Image src="/image/password.png" alt="password" width={18} height={18} className="opacity-70" />
+          </span>
+          <input
+            className={`input pr-12 ${errors.password ? "!border-red-400" : ""}`}
+            type="password"
+            placeholder="رمز عبور خود را وارد نمایید"
+            value={form.password}
+            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+          />
+        </div>
+        {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+      </div>
+
+      <label className="flex items-center gap-2 text-base text-[#1C2120]">
+        <input
+          type="checkbox"
+          className="checkbox"
+          checked={form.remember}
+          onChange={(e) => setForm((f) => ({ ...f, remember: e.target.checked }))}
+        />
+        مرا به خاطر بسپار
+      </label>
+
+      <button
+        type="submit"
+        disabled={!canSubmit}
+        className={`w-full h-12 rounded-xl text-white font-semibold [background:linear-gradient(180deg,#141414_0%,#313131_100%)] hover:[background:linear-gradient(180deg,#161919_0%,#2B3333_100%)] shadow-[inset_0_-12px_24px_rgba(255,255,255,0.08)] disabled:opacity-60 disabled:cursor-not-allowed`}
+      >
+        <span className="inline-flex items-center gap-2">
+          {loading ? "در حال ارسال..." : "ثبت نام"}
+          <Image src="/svg/arrowPoint.svg" alt="arrowPoint" height={24} width={24} />
+        </span>
+      </button>
+
+      <div className="relative text-center">
+        <div className="h-px bg-[#DEDFDE]" />
+        <span className="absolute inset-0 -top-3 mx-auto bg-white px-3 text-sm font-normal text-gray-400 w-fit">یا</span>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => alert("ورود با گوگل - بعداً اتصال واقعی")}
+        className="w-full h-11 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium"
+      >
+        <span className="inline-flex items-center gap-3">
+          ورود و ثبت نام با حساب گوگل
+          <Image src="/svg/GoogleIcon.svg" alt="google" width={18} height={18} />
+        </span>
+      </button>
+
+      {errors.general && <div className="text-sm text-red-600 text-center">{errors.general}</div>}
+
+      <p className="text-sm text-gray-600 text-center">
+        حساب کاربری دارید؟
+        <a href="/login" className="text-[#19CCA7] font-semibold px-1 hover:underline">
+          وارد شوید
+        </a>
+      </p>
+    </form>
   );
 }
+```
+
+---
+
+### نکات
+- **PhoneInput** و **AutoSlider** همان قبلی‌ها هستند و تغییری در استایل یا رفتار فرم داده نشده است.
+- اگر خواستی کد **PhoneInput** را هم طوری تغییر بدهم که علاوه بر `phone` مقدار `dial` را هم برگرداند (برای ساخت `${dial}${phone}`)، بگو تا نسخه‌ی کلاینتی‌اش را به صورت سازگار اضافه کنم، بدون تغییر در UI. 
