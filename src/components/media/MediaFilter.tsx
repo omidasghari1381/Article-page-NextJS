@@ -61,49 +61,63 @@ export function MediaFilters(props: { initial: { q: string; type: string; sort: 
   }, [type, sort]);
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 bg-white p-2 " dir="rtl">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <div className="md:col-span-6">
-          <label className="block text-sm text-black mb-2">جستجو (نام/توضیح)</label>
+    <form onSubmit={onSubmit} className="-mx-2 sm:mx-0" dir="rtl">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+        <div className="lg:col-span-6">
+          <label className="block text-sm text-black mb-1 sm:mb-2">جستجو (نام/توضیح)</label>
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="مثلاً: لوگو یا ویدیو معرفی"
-            className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
         </div>
 
-        <div className="md:col-span-3">
-          <label className="block text-sm text-black mb-2">نوع</label>
-          <select value={type} onChange={(e) => setType(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-            <option value="all">همه</option>
-            <option value="image">تصویر</option>
-            <option value="video">ویدیو</option>
-          </select>
-        </div>
-
-        <div className="md:col-span-3">
-          <label className="block text-sm text-black mb-2">مرتب‌سازی</label>
-          <select value={sort} onChange={(e) => setSort(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-            <option value="newest">جدیدترین</option>
-            <option value="oldest">قدیمی‌ترین</option>
-            <option value="name_asc">نام (الف → ی)</option>
-            <option value="name_desc">نام (ی → الف)</option>
-          </select>
-        </div>
-
-        <div className="md:col-span-12 flex items-center gap-3 justify-end">
-          <div className="flex items-center gap-2">
-            <Link href="/media/editor" className="px-5 py-2 rounded-lg bg-white text-black border-black border hover:bg-gray-100 ">
-              + افزودن مدیا
-            </Link>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:col-span-3">
+          <div>
+            <label className="block text-sm text-black mb-1 sm:mb-2">نوع</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              <option value="all">همه</option>
+              <option value="image">تصویر</option>
+              <option value="video">ویدیو</option>
+            </select>
           </div>
-          <button type="button" onClick={onClear} className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50">
-            پاک‌سازی
-          </button>
-          <button type="submit" className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50" disabled={isPending}>
-            {isPending ? "در حال به‌روزرسانی…" : "اعمال فیلترها"}
-          </button>
+
+          <div>
+            <label className="block text-sm text-black mb-1 sm:mb-2">مرتب‌سازی</label>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              <option value="newest">جدیدترین</option>
+              <option value="oldest">قدیمی‌ترین</option>
+              <option value="name_asc">نام (الف → ی)</option>
+              <option value="name_desc">نام (ی → الف)</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="lg:col-span-3 flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center justify-end gap-2 sm:gap-3">
+          <Link
+            href="/media/editor"
+            className="px-5 py-2.5 rounded-lg bg-white text-black border-black border hover:bg-gray-100 text-center"
+          >
+            + افزودن مدیا
+          </Link>
+          <div className="flex gap-2 sm:gap-3">
+            <button type="button" onClick={onClear} className="px-4 py-2.5 rounded-lg border text-gray-700 hover:bg-gray-50 w-full sm:w-auto">
+              پاک‌سازی
+            </button>
+            <button type="submit" className="px-5 py-2.5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 w-full sm:w-auto" disabled={isPending}>
+              {isPending ? "در حال به‌روزرسانی…" : "اعمال فیلترها"}
+            </button>
+          </div>
         </div>
       </div>
     </form>

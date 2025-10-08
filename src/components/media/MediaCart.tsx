@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // اگر type اینجا لازم است دوباره تعریف شود:
-type MediaDTO = {
+export type MediaDTO = {
   id: string;
   name: string;
   description: string | null;
@@ -77,18 +77,22 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+      {/*
+        - از auto-fill + minmax برای این‌که کارت‌ها تو موبایل خیلی ریز نشن
+        - حداقل 160px برای هر کارت
+      */}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 sm:gap-4 md:gap-5">
         {gridItems.map((m) => (
           <button
             key={m.id}
-            className="border rounded-xl p-2 text-left hover:shadow transition bg-white"
+            className="border rounded-xl p-2 text-right hover:shadow transition bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
             onClick={() => setSelected(m)}
             title={m.name}
           >
             <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
               {m.type === "image" ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={m.url} alt={m.name} className="w-full h-full object-cover" />
+                <img src={toAbsoluteUrl(m.url)} alt={m.name} className="w-full h-full object-cover" />
               ) : (
                 <video src={toAbsoluteUrl(m.url)} className="w-full h-full object-cover" />
               )}
@@ -98,17 +102,23 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
         ))}
       </div>
 
+      {/* Modal */}
       {selected ? (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setSelected(null)}>
-          <div className="bg-white w-[92vw] max-w-2xl rounded-2xl p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">جزییات مدیا</h2>
-              <button className="text-black px-3 py-1 rounded-lg border hover:bg-gray-50" onClick={() => setSelected(null)}>
-                بستن
-              </button>
+        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50" onClick={() => setSelected(null)}>
+          <div
+            className="bg-white w-full sm:w-[92vw] sm:max-w-2xl rounded-t-2xl sm:rounded-2xl p-4 sm:p-5 shadow-lg max-h-[92vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 justify-between mb-4">
+              <h2 className="text-lg font-semibold">جزئیات مدیا</h2>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button className="text-black px-4 py-2 rounded-lg border hover:bg-gray-50" onClick={() => setSelected(null)}>
+                  بستن
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
               <div>
                 <div className="aspect-square rounded-xl overflow-hidden bg-gray-100">
                   {selected.type === "image" ? (
@@ -133,18 +143,22 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
 
                 <div>
                   <div className="text-sm text-gray-600 mb-1">آدرس (URL)</div>
-                  <button className="w-full text-left text-blue-700 underline break-all hover:opacity-80" onClick={() => handleCopyUrl(selected)} title="برای کپی کلیک کنید">
+                  <button
+                    className="w-full text-right text-blue-700 underline break-all hover:opacity-80"
+                    onClick={() => handleCopyUrl(selected)}
+                    title="برای کپی کلیک کنید"
+                  >
                     {toAbsoluteUrl(selected.url)}
                   </button>
                   {copied === selected.id && <div className="text-xs text-green-600 mt-1">آدرس کامل کپی شد ✓</div>}
                 </div>
 
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-2">
                   <Link href={`/media/editor/${selected.id}`} className="px-4 py-2 rounded-xl bg-black text-white hover:bg-gray-800">
                     ویرایش
                   </Link>
 
-                  <a href={toAbsoluteUrl(selected.url)} target="_blank" className=" text-black px-4 py-2 rounded-xl border hover:bg-gray-50" rel="noreferrer">
+                  <a href={toAbsoluteUrl(selected.url)} target="_blank" className="text-black px-4 py-2 rounded-xl border hover:bg-gray-50" rel="noreferrer">
                     باز کردن فایل
                   </a>
 

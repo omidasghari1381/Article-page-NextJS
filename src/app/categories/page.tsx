@@ -1,6 +1,6 @@
 import Breadcrumb from "@/components/Breadcrumb";
 import CategoryRow from "./CategoryCart";
-import CategoryCard, { type CategoryNode } from "./CategoryCart";
+import { type CategoryNode } from "./CategoryCart";
 import { CategoryFilters } from "./CategoryFilters";
 
 type MaybeWrapped<T> =

@@ -28,8 +28,7 @@ async function fetchMedia(searchParams: {
   const qs = new URLSearchParams();
 
   if (searchParams.q) qs.set("q", searchParams.q);
-  if (searchParams.type && searchParams.type !== "all")
-    qs.set("type", searchParams.type);
+  if (searchParams.type && searchParams.type !== "all") qs.set("type", searchParams.type);
   if (searchParams.sort) qs.set("sort", searchParams.sort);
   qs.set("limit", searchParams.limit ?? "100");
   if (searchParams.offset) qs.set("offset", searchParams.offset);
@@ -45,7 +44,7 @@ export default async function MediaListPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // ✅ Next.js 15+: searchParams باید await شود
+  // ✅ Next.js 15: await searchParams
   const spRaw = await searchParams;
   const sp = {
     q: typeof spRaw.q === "string" ? spRaw.q : undefined,
@@ -55,38 +54,27 @@ export default async function MediaListPage({
     offset: typeof spRaw.offset === "string" ? spRaw.offset : "0",
   };
 
-  // ✅ SSR fetch
   const { items, total } = await fetchMedia(sp);
 
   return (
-    <main className="pb-24 pt-6 px-20" dir="rtl">
-      <Breadcrumb
-        items={[
-          { label: "مای پراپ", href: "/" },
-          { label: "مدیا", href: "/media" },
-        ]}
-      />
+    <main className="pb-28 pt-4 sm:pt-6" dir="rtl">
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+        <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "مدیا", href: "/media" }]} />
 
-      <div className="mt-6 flex items-center justify-between text-gray-800">
-        <h1 className="text-2xl font-semibold">لیست مدیا</h1>
+        <div className="mt-4 sm:mt-6 flex items-center justify-between text-gray-800">
+          <h1 className="text-xl sm:text-2xl font-semibold">لیست مدیا</h1>
+        </div>
+
+        <section className="mt-4 sm:mt-6 bg-white rounded-2xl shadow-sm border p-4 sm:p-6 lg:p-8" dir="rtl">
+          <MediaFilters initial={{ q: sp.q ?? "", type: sp.type!, sort: sp.sort! }} />
+        </section>
+
+        <div className="text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4 mb-2">
+          مجموع نتایج: <b>{total}</b>
+        </div>
+
+        <MediaGrid items={items} />
       </div>
-
-      <section
-        className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8"
-        dir="rtl"
-      >
-        {/* ⛔️ بدون تغییر استایل/رفتار؛ فقط SSR ورودی اولیه */}
-        <MediaFilters
-          initial={{ q: sp.q ?? "", type: sp.type!, sort: sp.sort! }}
-        />
-      </section>
-
-      <div className="text-sm text-gray-500 mt-4 mb-2">
-        مجموع نتایج: <b>{total}</b>
-      </div>
-
-      {/* Grid همچنان کلاینتی است (به‌دلیل state و modal) */}
-      <MediaGrid items={items} />
     </main>
   );
 }
