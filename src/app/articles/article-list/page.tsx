@@ -14,7 +14,6 @@ type LiteArticle = {
   readingPeriod: number;
 };
 
-// فقط یک asArray جنریک داشته باش
 function asArray<T = any>(data: any): T[] {
   if (!data) return [];
   if (Array.isArray(data)) return data as T[];
@@ -26,10 +25,8 @@ function asArray<T = any>(data: any): T[] {
 export default async function Page({
   searchParams,
 }: {
-  // ✅ Next 15: searchParams باید Promise باشه
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  // ✅ ابتدا await کن
   const sp = await searchParams;
 
   const q = (sp.q as string) || "";
@@ -55,7 +52,6 @@ export default async function Page({
   const [articlesRes, catsRes] = await Promise.all([
     fetch(absolute(`/api/articles?${qs.toString()}`), { cache: "no-store" }),
 
-    // ✅ فقط از /api/categories استفاده کن (نه /api/articles/categories)
     fetch(absolute(`/api/categories?sortBy=depth&sortDir=ASC&pageSize=100`), {
       cache: "no-store",
     }),

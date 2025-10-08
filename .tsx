@@ -1,252 +1,583 @@
-# Auth Signup (SSR Page + Client Form)
+// =====================================
+// app/categories/[id]/page.tsx (Server)
+// =====================================
+import "server-only";
+import { absolute } from "@/app/utils/base-url";
+import { cookies, headers } from "next/headers";
+import { cache } from "react";
+import { unstable_noStore as noStore } from "next/cache";
+import CategoryEditWithTabs from "@/components/categories/CategoryEditWithTabs";
 
-> ساختار کامل برای سرور ساید رندرینگ (Next.js App Router). تمام JSX ایستا سمت سرور رندر می‌شود و فقط فرم با state و event ها به صورت Client Component جدا شده است. استایل‌ها و فانکشنالیتی دست‌نخورده باقی مانده‌اند.
+// ----- Types -----
+type CategoryDTO = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parent?: { id: string } | null;
+  depth: number;
+};
 
----
+type SeoMetaPayload = {
+  useAuto: boolean;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: "index,follow" | "noindex,follow" | "index,nofollow" | "noindex,nofollow" | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  ogImageUrl: string | null;
+  twitterCard: "summery" | "summery_large_image" | null;
+  publishedTime: string | null;
+  modifiedTime: string | null;
+  authorName: string | null;
+  tags: string[] | null;
+};
 
-## File: `app/(auth)/signup/page.tsx` (Server Component)
-```tsx
-import AutoSlider from "@/components/AutoSlider";
-import Image from "next/image";
-import ClientSignupForm from "./ClientSignupForm"; // فرم کلاینتی جدا
+// ----- Server fetch helpers -----
+const getFetchInit = async () => {
+  const hdrs = await headers();
+  const ck = await cookies();
+  return {
+    headers: {
+      cookie: ck.toString(),
+      "x-forwarded-host": hdrs.get("host") ?? undefined,
+    } as Record<string, string>,
+    cache: "no-store" as const,
+  };
+};
 
-export const dynamic = "force-dynamic"; // تا هر بار تازه رندر شود
+const getAllCategories = cache(async (): Promise<CategoryDTO[]> => {
+  noStore();
+  const res = await fetch(absolute("/api/categories"), await getFetchInit());
+  if (!res.ok) return [];
+  const data = (await res.json()) as CategoryDTO[];
+  return Array.isArray(data) ? data : [];
+});
 
-export default async function Page() {
+const getCategoryById = cache(async (id: string): Promise<CategoryDTO | null> => {
+  noStore();
+  if (!id) return null;
+  const res = await fetch(absolute(`/api/categories/${id}`), await getFetchInit());
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Failed to fetch category");
+  return (await res.json()) as CategoryDTO;
+});
+
+const getSeoForCategory = cache(async (id: string, locale = "") => {
+  noStore();
+  if (!id) return { exists: false, data: null as SeoMetaPayload | null };
+  const qs = new URLSearchParams({ entityType: "category", entityId: id, locale }).toString();
+  const res = await fetch(absolute(`/api/seo?${qs}`), await getFetchInit());
+  if (res.status === 404) return { exists: false, data: null };
+  if (!res.ok) throw new Error("Failed to fetch SEO");
+  const data = (await res.json()) as SeoMetaPayload;
+  return { exists: true, data };
+});
+
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id?: string }>; // Next 15: await params
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { id = "" } = await params;
+  const sp = await searchParams;
+  const initialTab = sp?.tab === "seo" ? "seo" : "category";
+
+  const [allCategories, category, seo] = await Promise.all([
+    getAllCategories(),
+    id ? getCategoryById(id) : Promise.resolve(null),
+    id ? getSeoForCategory(id) : Promise.resolve({ exists: false, data: null }),
+  ]);
+
   return (
-    <div className="min-h-screen py-10 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-[28px] shadow-xl overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2">
-            {/* پنل چپ: محتوای ایستا (اسلایدر) - Server Rendered */}
-            <div className="relative bg-[#FAFAFA]">
-              <div className="relative bg-gray-50">
-                <div className="p-8 sm:p-12 lg:p-16 h-full">
-                  <AutoSlider />
-                </div>
-              </div>
-            </div>
+    <main className="pb-32 pt-4 sm:pt-6">
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+        <CategoryEditWithTabs
+          initialTab={initialTab as "category" | "seo"}
+          categoryId={category?.id ?? null}
+          allCategories={allCategories}
+          initialCategory={category}
+          initialSeoExists={seo.exists}
+          initialSeo={seo.data}
+        />
+      </div>
+    </main>
+  );
+}
 
-            {/* پنل راست: هدر ایستا + فرم کلاینتی */}
-            <div className="p-6 sm:p-10">
-              {/* Header (ایستا) */}
-              <div className="flex items-center mb-6 justify-end gap-2.5">
-                <a href="/" className="text-sm text-gray-500 hover:text-gray-700">
-                  صفحه اصلی
-                </a>
-                <div className="flex items-center gap-2 ">
-                  <div className="w-9 h-9 rounded-xl border-[#BFC1C0] border grid place-items-center">
-                    <Image src="/svg/ArrowRight.svg" alt="" height={16} width={16} />
-                  </div>
-                </div>
-              </div>
+// =====================================================
+// components/categories/CategoryEditWithTabs.tsx (Client)
+// =====================================================
+"use client";
 
-              {/* Hero (ایستا) */}
-              <div className="justify-center items-center flex-col flex ">
-                <div className="w-[60px] h-[60px] bg-[#19C9A4] rounded-[14px] flex justify-center items-center my-8">
-                  <Image src="/image/mainLogo.png" alt="logo" height={39} width={34} />
-                </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">به مای پراپ خوش آمدید.</h1>
-                <p className="text-gray-500 mt-6">اطلاعات خود را جهت ثبت‌نام وارد نمایید.</p>
-              </div>
+import { useState } from "react";
+import Breadcrumb from "@/components/Breadcrumb";
+import CategoryForm from "./CategoryForm";
+import CategorySeoSettingsForm from "./CategorySeoSettingsForm";
 
-              {/* فرم به صورت کلاینتی (بدون تغییر در استایل و رفتار) */}
-              <ClientSignupForm />
-            </div>
+// Types همانی که صفحه دارد
+export type CategoryDTO = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parent?: { id: string } | null;
+  depth: number;
+};
+
+export type SeoMetaPayload = {
+  useAuto: boolean;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: "index,follow" | "noindex,follow" | "index,nofollow" | "noindex,nofollow" | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  ogImageUrl: string | null;
+  twitterCard: "summery" | "summery_large_image" | null;
+  publishedTime: string | null;
+  modifiedTime: string | null;
+  authorName: string | null;
+  tags: string[] | null;
+};
+
+export default function CategoryEditWithTabs({
+  initialTab = "category",
+  categoryId,
+  allCategories,
+  initialCategory,
+  initialSeoExists,
+  initialSeo,
+}: {
+  initialTab?: "category" | "seo";
+  categoryId: string | null;
+  allCategories: CategoryDTO[];
+  initialCategory: CategoryDTO | null;
+  initialSeoExists: boolean;
+  initialSeo: SeoMetaPayload | null;
+}) {
+  const [tab, setTab] = useState<"category" | "seo">(initialTab);
+
+  return (
+    <section className="w-full" dir="rtl">
+      <Breadcrumb
+        items={[
+          { label: "مای پراپ", href: "/" },
+          { label: "دسته‌ها", href: "/categories" },
+          { label: initialCategory?.id ? "ویرایش دسته" : "افزودن دسته", href: "/categories/new" },
+        ]}
+      />
+
+      {/* Tabs */}
+      <div className="mt-5">
+        <div
+          role="tablist"
+          aria-label="Category tabs"
+          className="relative -mx-3 sm:mx-0 overflow-x-auto scrollbar-none"
+        >
+          <div className="px-3 sm:px-0 inline-flex gap-2">
+            <button
+              role="tab"
+              aria-selected={tab === "category"}
+              className={`px-4 py-2 rounded-full border transition whitespace-nowrap ${
+                tab === "category"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-800 hover:bg-gray-50 border-gray-200"
+              }`}
+              onClick={() => setTab("category")}
+            >
+              اطلاعات دسته
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === "seo"}
+              className={`px-4 py-2 rounded-full border transition whitespace-nowrap ${
+                tab === "seo"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-800 hover:bg-gray-50 border-gray-200"
+              }`}
+              onClick={() => setTab("seo")}
+            >
+              SEO
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          {tab === "category" ? (
+            <CategoryForm initialAllCategories={allCategories} initialCategory={initialCategory} />
+          ) : (
+            <CategorySeoSettingsForm
+              categoryId={categoryId}
+              initialData={initialSeo}
+              initialExists={initialSeoExists}
+            />
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ==============================================================
+// components/categories/CategorySeoSettingsForm.tsx (Client)
+//  — Responsive UX upgrades: mobile-safe paddings, sticky actions,
+//    gentle stacking on small screens, larger touch targets, RTL.
+// ==============================================================
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+type RobotsSetting = "index,follow" | "noindex,follow" | "index,nofollow" | "noindex,nofollow";
+type TwitterCardType = "summery" | "summery_large_image";
+
+export type SeoMetaPayload = {
+  useAuto: boolean;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: RobotsSetting | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  ogImageUrl: string | null;
+  twitterCard: TwitterCardType | null;
+  publishedTime: string | null;
+  modifiedTime: string | null;
+  authorName: string | null;
+  tags: string[] | null;
+};
+
+type Props = {
+  categoryId: string | null;
+  locale?: string;
+  initialData?: SeoMetaPayload | null; // از سرور
+  initialExists?: boolean;             // از سرور
+};
+
+const API_BASE = "/api/seo/";
+
+export default function CategorySeoSettingsForm({ categoryId, locale = "", initialData = null, initialExists = false }: Props) {
+  const entityType = "category";
+  const disabled = !categoryId;
+
+  const [loading, setLoading] = useState<boolean>(!!categoryId && !initialExists);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [exists, setExists] = useState<boolean>(!!initialExists);
+
+  const [form, setForm] = useState<SeoMetaPayload>(
+    initialData ?? {
+      useAuto: true,
+      seoTitle: null,
+      seoDescription: null,
+      canonicalUrl: null,
+      robots: null,
+      ogTitle: null,
+      ogDescription: null,
+      ogImageUrl: null,
+      twitterCard: "summery_large_image",
+      publishedTime: null,
+      modifiedTime: null,
+      authorName: null,
+      tags: null,
+    }
+  );
+
+  // اگر initialData نبود، fallback به fetch همیشگی کلاینتی
+  useEffect(() => {
+    let active = true;
+    if (!categoryId) return;
+    if (initialData) return; // سروری داریم
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const qs = new URLSearchParams({ entityType, entityId: categoryId, locale }).toString();
+        const res = await fetch(`${API_BASE}?${qs}`, { cache: "no-store" });
+        if (res.status === 404) {
+          if (!active) return;
+          setExists(false);
+          setLoading(false);
+          return;
+        }
+        if (!res.ok) throw new Error("خطا در دریافت تنظیمات سئو");
+        const data = await res.json();
+        if (!active) return;
+        setExists(true);
+        setForm({
+          useAuto: !!data.useAuto,
+          seoTitle: data.seoTitle ?? null,
+          seoDescription: data.seoDescription ?? null,
+          canonicalUrl: data.canonicalUrl ?? null,
+          robots: data.robots ?? null,
+          ogTitle: data.ogTitle ?? null,
+          ogDescription: data.ogDescription ?? null,
+          ogImageUrl: data.ogImageUrl ?? null,
+          twitterCard: data.twitterCard ?? "summery_large_image",
+          publishedTime: data.publishedTime ?? null,
+          modifiedTime: data.modifiedTime ?? null,
+          authorName: data.authorName ?? null,
+          tags: Array.isArray(data.tags) ? data.tags : null,
+        });
+      } catch (e: any) {
+        if (active) setError(e?.message || "خطا در بارگیری تنظیمات سئو");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => { active = false; };
+  }, [categoryId, locale, initialData]);
+
+  const handleChange = <K extends keyof SeoMetaPayload>(key: K) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | boolean | string[]
+  ) => {
+    setForm((f) => {
+      if (typeof e === "boolean") return { ...f, [key]: e } as any;
+      if (Array.isArray(e)) return { ...f, [key]: e } as any;
+      return { ...f, [key]: (e.target as HTMLInputElement).value || null } as any;
+    });
+  };
+
+  const tagsText = useMemo(() => (form.tags ?? []).join(", "), [form.tags]);
+  const setTagsText = (txt: string) => {
+    const arr = txt.split(",").map((s) => s.trim()).filter(Boolean);
+    setForm((f) => ({ ...f, tags: arr.length ? arr : null }));
+  };
+
+  const onSave = async () => {
+    if (!categoryId) return;
+    try {
+      setSaving(true);
+      setError(null);
+      const payload = { ...form, entityType, entityId: categoryId, locale };
+      const method = exists ? "PATCH" : "POST";
+      const res = await fetch(API_BASE, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || "خطا در ذخیره تنظیمات سئو");
+      }
+      if (!exists) setExists(true);
+      alert("تنظیمات سئو دسته با موفقیت ذخیره شد ✅");
+    } catch (e: any) {
+      setError(e?.message || "خطا در ذخیره تنظیمات");
+    } finally { setSaving(false); }
+  };
+
+  const onDelete = async () => {
+    if (!categoryId) return;
+    if (!confirm("تنظیمات سئوی این دسته حذف شود؟")) return;
+    try {
+      setDeleting(true);
+      setError(null);
+      const qs = new URLSearchParams({ entityType, entityId: categoryId, locale }).toString();
+      const res = await fetch(`${API_BASE}?${qs}`, { method: "DELETE" });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || "حذف تنظیمات ناموفق بود");
+      }
+      setExists(false);
+      setForm({
+        useAuto: true,
+        seoTitle: null,
+        seoDescription: null,
+        canonicalUrl: null,
+        robots: null,
+        ogTitle: null,
+        ogDescription: null,
+        ogImageUrl: null,
+        twitterCard: "summery_large_image",
+        publishedTime: null,
+        modifiedTime: null,
+        authorName: null,
+        tags: null,
+      });
+      alert("تنظیمات سئو دسته حذف شد ✅");
+    } catch (e: any) {
+      setError(e?.message || "خطا در حذف تنظیمات");
+    } finally { setDeleting(false); }
+  };
+
+  const isFieldsDisabled = form.useAuto;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 lg:p-8" dir="rtl">
+      {/* Tips / errors */}
+      {!categoryId && (
+        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 sm:p-4 text-amber-800 text-sm">
+          برای تنظیم سئو، ابتدا <b>دسته</b> را ذخیره کنید تا شناسه (ID) داشته باشد.
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-3 sm:p-4 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Mobile sticky action bar */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/85 backdrop-blur border-t p-3 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onDelete}
+          className="px-4 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50"
+          disabled={!categoryId || deleting || !exists}
+        >
+          {deleting ? "حذف…" : "حذف"}
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+          disabled={!categoryId || saving}
+        >
+          {saving ? "ذخیره…" : "ذخیره"}
+        </button>
+      </div>
+
+      {/* Header controls (desktop) */}
+      <div className="hidden md:flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <input
+            id="seo-use-auto"
+            type="checkbox"
+            className="h-4 w-4"
+            checked={!!form.useAuto}
+            onChange={(e) => setForm((f) => ({ ...f, useAuto: e.target.checked }))}
+            disabled={!categoryId}
+          />
+          <label htmlFor="seo-use-auto" className="text-sm text-black">استفاده از مقادیر خودکار (پیشنهادی)</label>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={onDelete} className="px-4 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50" disabled={!categoryId || deleting || !exists}>
+            {deleting ? "در حال حذف…" : "حذف تنظیمات"}
+          </button>
+          <button type="button" onClick={onSave} className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50" disabled={!categoryId || saving}>
+            {saving ? "در حال ذخیره…" : "ذخیره تنظیمات سئو"}
+          </button>
+        </div>
+      </div>
+
+      {/* The rest of the form */}
+      <div className="mt-4 md:mt-6">
+        <div className="flex md:hidden items-center gap-2 mb-4">
+          <input
+            id="seo-use-auto-m"
+            type="checkbox"
+            className="h-5 w-5"
+            checked={!!form.useAuto}
+            onChange={(e) => setForm((f) => ({ ...f, useAuto: e.target.checked }))}
+            disabled={!categoryId}
+          />
+          <label htmlFor="seo-use-auto-m" className="text-sm text-black">استفاده از مقادیر خودکار (پیشنهادی)</label>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
+          <div className="xl:col-span-7 space-y-6">
+            <fieldset className="space-y-4">
+              <legend className="font-medium text-black">SEO Basics</legend>
+              <LabeledInput label="SEO Title" placeholder="اگر خالی باشد از نام دسته استفاده می‌شود" value={form.seoTitle ?? ""} onChange={handleChange("seoTitle")} max={60} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledTextarea label="Meta Description" placeholder="اگر خالی باشد از توضیح دسته ساخته می‌شود" value={form.seoDescription ?? ""} onChange={handleChange("seoDescription")} max={180} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledInput label="Canonical URL" placeholder="https://example.com/category/slug" value={form.canonicalUrl ?? ""} onChange={handleChange("canonicalUrl")} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledSelect label="Robots" value={(form.robots ?? "") as any} onChange={handleChange("robots")} options={[{ label: "پیش‌فرض (خالی)", value: "" }, { label: "index,follow", value: "index,follow" }, { label: "noindex,follow", value: "noindex,follow" }, { label: "index,nofollow", value: "index,nofollow" }, { label: "noindex,nofollow", value: "noindex,nofollow" }]} disabled={!categoryId || isFieldsDisabled} />
+            </fieldset>
+
+            <fieldset className="space-y-4">
+              <legend className="font-medium text-black">Twitter</legend>
+              <LabeledSelect label="Twitter Card" value={form.twitterCard ?? "summery_large_image"} onChange={handleChange("twitterCard")} options={[{ label: "summery_large_image", value: "summery_large_image" }, { label: "summery", value: "summery" }]} disabled={!categoryId || isFieldsDisabled} />
+            </fieldset>
+
+            <fieldset className="space-y-4">
+              <legend className="font-medium text-black">Meta</legend>
+              <LabeledInput label="Author/Owner Name" value={form.authorName ?? ""} onChange={handleChange("authorName")} disabled={!categoryId || isFieldsDisabled} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <LabeledInput label="Published Time (ISO)" placeholder="2025-09-30T12:00:00.000Z" value={form.publishedTime ?? ""} onChange={handleChange("publishedTime")} disabled={!categoryId || isFieldsDisabled} />
+                <LabeledInput label="Modified Time (ISO)" placeholder="2025-09-30T12:00:00.000Z" value={form.modifiedTime ?? ""} onChange={handleChange("modifiedTime")} disabled={!categoryId || isFieldsDisabled} />
+              </div>
+              <LabeledInput label="Tags (comma separated)" value={tagsText} onChange={(e: any) => setTagsText((e.target as HTMLInputElement).value)} disabled={!categoryId || isFieldsDisabled} />
+            </fieldset>
+          </div>
+
+          <div className="xl:col-span-5 space-y-6">
+            <fieldset className="space-y-4">
+              <legend className="font-medium text-black">Open Graph</legend>
+              <LabeledInput label="OG Title" placeholder="اگر خالی باشد از SEO Title استفاده می‌شود" value={form.ogTitle ?? ""} onChange={handleChange("ogTitle")} max={70} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledTextarea label="OG Description" placeholder="اگر خالی باشد از Meta Description استفاده می‌شود" value={form.ogDescription ?? ""} onChange={handleChange("ogDescription")} max={200} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledInput label="OG Image URL" placeholder="https://... (از سیستم مدیا)" value={form.ogImageUrl ?? ""} onChange={handleChange("ogImageUrl")} disabled={!categoryId || isFieldsDisabled} />
+              <div className="rounded-xl border border-gray-200 overflow-hidden h-[180px] sm:h-[200px] md:h-[220px] flex items-center justify-center bg-gray-50">
+                {form.ogImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.ogImageUrl} alt="OG preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-xs text-gray-400">پیش‌نمایش تصویر OG</div>
+                )}
+              </div>
+            </fieldset>
+
+            <fieldset className="space-y-3">
+              <legend className="font-medium text-black">پیش‌نمایش SERP</legend>
+              <div className="rounded-xl border border-gray-200 p-4">
+                <div className="text-[#1a0dab] text-base sm:text-lg leading-6 truncate">{form.seoTitle || "عنوان دسته (نمونه)"}</div>
+                <div className="text-[#006621] text-[12px] mt-1 truncate">{form.canonicalUrl || "https://example.com/category/slug"}</div>
+                <div className="text-[#545454] text-[13px] mt-1 line-clamp-2">{form.seoDescription || "توضیحات متا حداکثر حدود ۱۵۰–۱۶۰ کاراکتر، برای جذب کلیک بهتر."}</div>
+              </div>
+            </fieldset>
           </div>
         </div>
       </div>
+
+      {/* Spacer so sticky bar not covering content on mobile */}
+      <div className="h-16 md:h-0" />
     </div>
   );
 }
-```
 
----
+// ------------------ Shared small controls ------------------
+function CharCounter({ value, max }: { value: string; max: number }) {
+  const len = value?.length || 0;
+  const danger = len > max * 0.9;
+  return <span className={`text-xs ${danger ? "text-red-500" : "text-gray-400"}`}>{len}/{max}</span>;
+}
 
-## File: `app/(auth)/signup/ClientSignupForm.tsx` (Client Component)
-```tsx
-"use client";
-
-import Image from "next/image";
-import PhoneInput from "@/components/PhoneInput";
-import React, { useMemo, useState } from "react";
-
-// همان تایپ‌های قبلی (بدون تغییر)
-type FormState = {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  dial: string; // در PhoneInput فعلی استفاده نمی‌شود، برای سازگاری حفظ شده
-  password: string;
-  remember: boolean;
-};
-
-export default function ClientSignupForm() {
-  const [form, setForm] = useState<FormState>({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    dial: "",
-    password: "",
-    remember: false,
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
-
-  const canSubmit = useMemo(
-    () =>
-      form.firstName.trim() &&
-      form.lastName.trim() &&
-      form.phone.trim() &&
-      form.password.length >= 8 &&
-      !loading,
-    [form, loading]
-  );
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const errs: Record<string, string> = {};
-    if (!form.firstName.trim()) errs.firstName = "firstname is essential";
-    if (!form.lastName.trim()) errs.lastName = "surname is essential";
-    if (!form.phone.trim()) errs.phone = "phone number is essential";
-    if (form.password.length < 8) errs.password = "your password must contain 8 letter";
-
-    setErrors(errs);
-    if (Object.keys(errs).length) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
-          phone: `${form.dial}${form.phone}`,
-          password: form.password,
-          remember: form.remember,
-        }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data?.ok) {
-        setErrors({ general: data?.message ?? "register failed" });
-        return;
-      }
-
-      alert("register successful");
-    } catch (err) {
-      setErrors({ general: "Server error .Try again later" });
-    } finally {
-      setLoading(false);
-    }
-  }
-
+function LabeledInput({ label, value, onChange, placeholder, max, disabled }: { label: string; value: string; onChange: (e: any) => void; placeholder?: string; max?: number; disabled?: boolean; }) {
   return (
-    <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-base text-[#1C2120]">نام</label>
-          <input
-            className={`input ${errors.firstName ? "!border-red-400" : ""}`}
-            placeholder="نام خود را وارد نمایید"
-            value={form.firstName}
-            onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
-          />
-          {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
-        </div>
-        <div className="space-y-2">
-          <label className="text-base text-[#1C2120]">نام خانوادگی</label>
-          <input
-            className={`input ${errors.lastName ? "!border-red-400" : ""}`}
-            placeholder="نام خانوادگی خود را وارد نمایید"
-            value={form.lastName}
-            onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
-          />
-          {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
-        </div>
+    <div>
+      <div className="flex items-center justify-between">
+        <label className="block text-sm text-black mb-1 sm:mb-2">{label}</label>
+        {typeof value === "string" && max ? <CharCounter value={value} max={max} /> : null}
       </div>
-
-      <div className="space-y-2">
-        <label className="text-base text-[#1C2120] font-medium">شماره موبایل</label>
-        {/* PhoneInput فعلی فقط phone را برمی‌گرداند؛ اگر dial را هم خواستی، prop بده یا تغییرش بده */}
-        <PhoneInput
-          className="mt-2.5"
-          // @ts-ignore - PhoneInput شما onChange فقط شماره را می‌دهد
-          onChange={(val: string) => setForm((f) => ({ ...f, phone: val }))}
-        />
-        {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-base text-[#1C2120] font-medium">رمز عبور</label>
-        <div className="relative mt-2.5">
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-            <Image src="/image/password.png" alt="password" width={18} height={18} className="opacity-70" />
-          </span>
-          <input
-            className={`input pr-12 ${errors.password ? "!border-red-400" : ""}`}
-            type="password"
-            placeholder="رمز عبور خود را وارد نمایید"
-            value={form.password}
-            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-          />
-        </div>
-        {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-      </div>
-
-      <label className="flex items-center gap-2 text-base text-[#1C2120]">
-        <input
-          type="checkbox"
-          className="checkbox"
-          checked={form.remember}
-          onChange={(e) => setForm((f) => ({ ...f, remember: e.target.checked }))}
-        />
-        مرا به خاطر بسپار
-      </label>
-
-      <button
-        type="submit"
-        disabled={!canSubmit}
-        className={`w-full h-12 rounded-xl text-white font-semibold [background:linear-gradient(180deg,#141414_0%,#313131_100%)] hover:[background:linear-gradient(180deg,#161919_0%,#2B3333_100%)] shadow-[inset_0_-12px_24px_rgba(255,255,255,0.08)] disabled:opacity-60 disabled:cursor-not-allowed`}
-      >
-        <span className="inline-flex items-center gap-2">
-          {loading ? "در حال ارسال..." : "ثبت نام"}
-          <Image src="/svg/arrowPoint.svg" alt="arrowPoint" height={24} width={24} />
-        </span>
-      </button>
-
-      <div className="relative text-center">
-        <div className="h-px bg-[#DEDFDE]" />
-        <span className="absolute inset-0 -top-3 mx-auto bg-white px-3 text-sm font-normal text-gray-400 w-fit">یا</span>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => alert("ورود با گوگل - بعداً اتصال واقعی")}
-        className="w-full h-11 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium"
-      >
-        <span className="inline-flex items-center gap-3">
-          ورود و ثبت نام با حساب گوگل
-          <Image src="/svg/GoogleIcon.svg" alt="google" width={18} height={18} />
-        </span>
-      </button>
-
-      {errors.general && <div className="text-sm text-red-600 text-center">{errors.general}</div>}
-
-      <p className="text-sm text-gray-600 text-center">
-        حساب کاربری دارید؟
-        <a href="/login" className="text-[#19CCA7] font-semibold px-1 hover:underline">
-          وارد شوید
-        </a>
-      </p>
-    </form>
+      <input type="text" className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-60" placeholder={placeholder} value={value || ""} onChange={onChange} maxLength={max} disabled={disabled} />
+    </div>
   );
 }
-```
 
----
+function LabeledTextarea({ label, value, onChange, placeholder, max, disabled }: { label: string; value: string; onChange: (e: any) => void; placeholder?: string; max?: number; disabled?: boolean; }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <label className="block text-sm text-black mb-1 sm:mb-2">{label}</label>
+        {typeof value === "string" && max ? <CharCounter value={value} max={max} /> : null}
+      </div>
+      <textarea className="w-full min-h-[140px] sm:min-h-[160px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-60" placeholder={placeholder} value={value || ""} onChange={onChange} maxLength={max} disabled={disabled} />
+    </div>
+  );
+}
 
-### نکات
-- **PhoneInput** و **AutoSlider** همان قبلی‌ها هستند و تغییری در استایل یا رفتار فرم داده نشده است.
-- اگر خواستی کد **PhoneInput** را هم طوری تغییر بدهم که علاوه بر `phone` مقدار `dial` را هم برگرداند (برای ساخت `${dial}${phone}`)، بگو تا نسخه‌ی کلاینتی‌اش را به صورت سازگار اضافه کنم، بدون تغییر در UI. 
+function LabeledSelect({ label, value, onChange, options, disabled }: { label: string; value: string; onChange: (e: any) => void; options: { label: string; value: string }[]; disabled?: boolean; }) {
+  return (
+    <div>
+      <label className="block text-sm text-black mb-1 sm:mb-2">{label}</label>
+      <select className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-60" value={value || ""} onChange={onChange} disabled={disabled}>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}

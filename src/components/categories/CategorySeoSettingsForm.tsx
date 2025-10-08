@@ -177,102 +177,139 @@ export default function CategorySeoSettingsForm({ categoryId, locale = "", initi
   const isFieldsDisabled = form.useAuto;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border p-6 md:p-8" dir="rtl">
+    <div className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 lg:p-8" dir="rtl">
+      {/* Tips / errors */}
       {!categoryId && (
-        <div className="mb-4 rounded border border-amber-300 bg-amber-50 p-3 text-amber-800">
+        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 sm:p-4 text-amber-800 text-sm">
           برای تنظیم سئو، ابتدا <b>دسته</b> را ذخیره کنید تا شناسه (ID) داشته باشد.
         </div>
       )}
 
       {error && (
-        <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">{error}</div>
+        <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-3 sm:p-4 text-red-700 text-sm">
+          {error}
+        </div>
       )}
 
-      {loading ? (
-        <div>در حال بارگذاری تنظیمات سئو…</div>
-      ) : (
-        <>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <input
-                id="seo-use-auto"
-                type="checkbox"
-                className="h-4 w-4"
-                checked={!!form.useAuto}
-                onChange={(e) => setForm((f) => ({ ...f, useAuto: e.target.checked }))}
-                disabled={disabled}
-              />
-              <label htmlFor="seo-use-auto" className="text-sm text-black">استفاده از مقادیر خودکار (پیشنهادی)</label>
-            </div>
+      {/* Mobile sticky action bar */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/85 backdrop-blur border-t p-3 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onDelete}
+          className="px-4 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50"
+          disabled={!categoryId || deleting || !exists}
+        >
+          {deleting ? "حذف…" : "حذف"}
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+          disabled={!categoryId || saving}
+        >
+          {saving ? "ذخیره…" : "ذخیره"}
+        </button>
+      </div>
 
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={onDelete} className="px-4 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50" disabled={disabled || deleting || !exists}>
-                {deleting ? "در حال حذف…" : "حذف تنظیمات"}
-              </button>
-              <button type="button" onClick={onSave} className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50" disabled={disabled || saving}>
-                {saving ? "در حال ذخیره…" : "ذخیره تنظیمات سئو"}
-              </button>
-            </div>
+      {/* Header controls (desktop) */}
+      <div className="hidden md:flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <input
+            id="seo-use-auto"
+            type="checkbox"
+            className="h-4 w-4"
+            checked={!!form.useAuto}
+            onChange={(e) => setForm((f) => ({ ...f, useAuto: e.target.checked }))}
+            disabled={!categoryId}
+          />
+          <label htmlFor="seo-use-auto" className="text-sm text-black">استفاده از مقادیر خودکار (پیشنهادی)</label>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={onDelete} className="px-4 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50" disabled={!categoryId || deleting || !exists}>
+            {deleting ? "در حال حذف…" : "حذف تنظیمات"}
+          </button>
+          <button type="button" onClick={onSave} className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50" disabled={!categoryId || saving}>
+            {saving ? "در حال ذخیره…" : "ذخیره تنظیمات سئو"}
+          </button>
+        </div>
+      </div>
+
+      {/* The rest of the form */}
+      <div className="mt-4 md:mt-6">
+        <div className="flex md:hidden items-center gap-2 mb-4">
+          <input
+            id="seo-use-auto-m"
+            type="checkbox"
+            className="h-5 w-5"
+            checked={!!form.useAuto}
+            onChange={(e) => setForm((f) => ({ ...f, useAuto: e.target.checked }))}
+            disabled={!categoryId}
+          />
+          <label htmlFor="seo-use-auto-m" className="text-sm text-black">استفاده از مقادیر خودکار (پیشنهادی)</label>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
+          <div className="xl:col-span-7 space-y-6">
+            <fieldset className="space-y-4">
+              <legend className="font-medium text-black">SEO Basics</legend>
+              <LabeledInput label="SEO Title" placeholder="اگر خالی باشد از نام دسته استفاده می‌شود" value={form.seoTitle ?? ""} onChange={handleChange("seoTitle")} max={60} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledTextarea label="Meta Description" placeholder="اگر خالی باشد از توضیح دسته ساخته می‌شود" value={form.seoDescription ?? ""} onChange={handleChange("seoDescription")} max={180} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledInput label="Canonical URL" placeholder="https://example.com/category/slug" value={form.canonicalUrl ?? ""} onChange={handleChange("canonicalUrl")} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledSelect label="Robots" value={(form.robots ?? "") as any} onChange={handleChange("robots")} options={[{ label: "پیش‌فرض (خالی)", value: "" }, { label: "index,follow", value: "index,follow" }, { label: "noindex,follow", value: "noindex,follow" }, { label: "index,nofollow", value: "index,nofollow" }, { label: "noindex,nofollow", value: "noindex,nofollow" }]} disabled={!categoryId || isFieldsDisabled} />
+            </fieldset>
+
+            <fieldset className="space-y-4">
+              <legend className="font-medium text-black">Twitter</legend>
+              <LabeledSelect label="Twitter Card" value={form.twitterCard ?? "summery_large_image"} onChange={handleChange("twitterCard")} options={[{ label: "summery_large_image", value: "summery_large_image" }, { label: "summery", value: "summery" }]} disabled={!categoryId || isFieldsDisabled} />
+            </fieldset>
+
+            <fieldset className="space-y-4">
+              <legend className="font-medium text-black">Meta</legend>
+              <LabeledInput label="Author/Owner Name" value={form.authorName ?? ""} onChange={handleChange("authorName")} disabled={!categoryId || isFieldsDisabled} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <LabeledInput label="Published Time (ISO)" placeholder="2025-09-30T12:00:00.000Z" value={form.publishedTime ?? ""} onChange={handleChange("publishedTime")} disabled={!categoryId || isFieldsDisabled} />
+                <LabeledInput label="Modified Time (ISO)" placeholder="2025-09-30T12:00:00.000Z" value={form.modifiedTime ?? ""} onChange={handleChange("modifiedTime")} disabled={!categoryId || isFieldsDisabled} />
+              </div>
+              <LabeledInput label="Tags (comma separated)" value={tagsText} onChange={(e: any) => setTagsText((e.target as HTMLInputElement).value)} disabled={!categoryId || isFieldsDisabled} />
+            </fieldset>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-            <div className="lg:col-span-7 space-y-6">
-              <fieldset className="space-y-4">
-                <legend className="font-medium text-black">SEO Basics</legend>
-                <LabeledInput label="SEO Title" placeholder="اگر خالی باشد از نام دسته استفاده می‌شود" value={form.seoTitle ?? ""} onChange={handleChange("seoTitle")} max={60} disabled={disabled || isFieldsDisabled} />
-                <LabeledTextarea label="Meta Description" placeholder="اگر خالی باشد از توضیح دسته ساخته می‌شود" value={form.seoDescription ?? ""} onChange={handleChange("seoDescription")} max={180} disabled={disabled || isFieldsDisabled} />
-                <LabeledInput label="Canonical URL" placeholder="https://example.com/category/slug" value={form.canonicalUrl ?? ""} onChange={handleChange("canonicalUrl")} disabled={disabled || isFieldsDisabled} />
-                <LabeledSelect label="Robots" value={form.robots ?? "" as any} onChange={handleChange("robots")} options={[{ label: "پیش‌فرض (خالی)", value: "" }, { label: "index,follow", value: "index,follow" }, { label: "noindex,follow", value: "noindex,follow" }, { label: "index,nofollow", value: "index,nofollow" }, { label: "noindex,nofollow", value: "noindex,nofollow" }]} disabled={disabled || isFieldsDisabled} />
-              </fieldset>
+          <div className="xl:col-span-5 space-y-6">
+            <fieldset className="space-y-4">
+              <legend className="font-medium text-black">Open Graph</legend>
+              <LabeledInput label="OG Title" placeholder="اگر خالی باشد از SEO Title استفاده می‌شود" value={form.ogTitle ?? ""} onChange={handleChange("ogTitle")} max={70} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledTextarea label="OG Description" placeholder="اگر خالی باشد از Meta Description استفاده می‌شود" value={form.ogDescription ?? ""} onChange={handleChange("ogDescription")} max={200} disabled={!categoryId || isFieldsDisabled} />
+              <LabeledInput label="OG Image URL" placeholder="https://... (از سیستم مدیا)" value={form.ogImageUrl ?? ""} onChange={handleChange("ogImageUrl")} disabled={!categoryId || isFieldsDisabled} />
+              <div className="rounded-xl border border-gray-200 overflow-hidden h-[180px] sm:h-[200px] md:h-[220px] flex items-center justify-center bg-gray-50">
+                {form.ogImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.ogImageUrl} alt="OG preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-xs text-gray-400">پیش‌نمایش تصویر OG</div>
+                )}
+              </div>
+            </fieldset>
 
-              <fieldset className="space-y-4">
-                <legend className="font-medium text-black">Twitter</legend>
-                <LabeledSelect label="Twitter Card" value={form.twitterCard ?? "summery_large_image"} onChange={handleChange("twitterCard")} options={[{ label: "summery_large_image", value: "summery_large_image" }, { label: "summery", value: "summery" }]} disabled={disabled || isFieldsDisabled} />
-              </fieldset>
-
-              <fieldset className="space-y-4">
-                <legend className="font-medium text-black">Meta</legend>
-                <LabeledInput label="Author/Owner Name" value={form.authorName ?? ""} onChange={handleChange("authorName")} disabled={disabled || isFieldsDisabled} />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <LabeledInput label="Published Time (ISO)" placeholder="2025-09-30T12:00:00.000Z" value={form.publishedTime ?? ""} onChange={handleChange("publishedTime")} disabled={disabled || isFieldsDisabled} />
-                  <LabeledInput label="Modified Time (ISO)" placeholder="2025-09-30T12:00:00.000Z" value={form.modifiedTime ?? ""} onChange={handleChange("modifiedTime")} disabled={disabled || isFieldsDisabled} />
-                </div>
-                <LabeledInput label="Tags (comma separated)" value={tagsText} onChange={(e: any) => setTagsText((e.target as HTMLInputElement).value)} disabled={disabled || isFieldsDisabled} />
-              </fieldset>
-            </div>
-
-            <div className="lg:col-span-5 space-y-6">
-              <fieldset className="space-y-4">
-                <legend className="font-medium text-black">Open Graph</legend>
-                <LabeledInput label="OG Title" placeholder="اگر خالی باشد از SEO Title استفاده می‌شود" value={form.ogTitle ?? ""} onChange={handleChange("ogTitle")} max={70} disabled={disabled || isFieldsDisabled} />
-                <LabeledTextarea label="OG Description" placeholder="اگر خالی باشد از Meta Description استفاده می‌شود" value={form.ogDescription ?? ""} onChange={handleChange("ogDescription")} max={200} disabled={disabled || isFieldsDisabled} />
-                <LabeledInput label="OG Image URL" placeholder="https://... (از سیستم مدیا)" value={form.ogImageUrl ?? ""} onChange={handleChange("ogImageUrl")} disabled={disabled || isFieldsDisabled} />
-                <div className="rounded-xl border border-gray-200 overflow-hidden h-[160px] flex items-center justify-center bg-gray-50">
-                  {form.ogImageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={form.ogImageUrl} alt="OG preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-xs text-gray-400">پیش‌نمایش تصویر OG</div>
-                  )}
-                </div>
-              </fieldset>
-
-              <fieldset className="space-y-3">
-                <legend className="font-medium text-black">پیش‌نمایش SERP</legend>
-                <div className="rounded-xl border border-gray-200 p-4">
-                  <div className="text-[#1a0dab] text-[18px] leading-6 truncate">{form.seoTitle || "عنوان دسته (نمونه)"}</div>
-                  <div className="text-[#006621] text-[12px] mt-1 truncate">{form.canonicalUrl || "https://example.com/category/slug"}</div>
-                  <div className="text-[#545454] text-[13px] mt-1 line-clamp-2">{form.seoDescription || "توضیحات متا حداکثر حدود ۱۵۰–۱۶۰ کاراکتر، برای جذب کلیک بهتر."}</div>
-                </div>
-              </fieldset>
-            </div>
+            <fieldset className="space-y-3">
+              <legend className="font-medium text-black">پیش‌نمایش SERP</legend>
+              <div className="rounded-xl border border-gray-200 p-4">
+                <div className="text-[#1a0dab] text-base sm:text-lg leading-6 truncate">{form.seoTitle || "عنوان دسته (نمونه)"}</div>
+                <div className="text-[#006621] text-[12px] mt-1 truncate">{form.canonicalUrl || "https://example.com/category/slug"}</div>
+                <div className="text-[#545454] text-[13px] mt-1 line-clamp-2">{form.seoDescription || "توضیحات متا حداکثر حدود ۱۵۰–۱۶۰ کاراکتر، برای جذب کلیک بهتر."}</div>
+              </div>
+            </fieldset>
           </div>
-        </>
-      )}
+        </div>
+      </div>
+
+      {/* Spacer so sticky bar not covering content on mobile */}
+      <div className="h-16 md:h-0" />
     </div>
   );
 }
 
+// ------------------ Shared small controls ------------------
 function CharCounter({ value, max }: { value: string; max: number }) {
   const len = value?.length || 0;
   const danger = len > max * 0.9;
@@ -283,10 +320,10 @@ function LabeledInput({ label, value, onChange, placeholder, max, disabled }: { 
   return (
     <div>
       <div className="flex items-center justify-between">
-        <label className="block text-sm text-black mb-2">{label}</label>
+        <label className="block text-sm text-black mb-1 sm:mb-2">{label}</label>
         {typeof value === "string" && max ? <CharCounter value={value} max={max} /> : null}
       </div>
-      <input type="text" className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-60" placeholder={placeholder} value={value || ""} onChange={onChange} maxLength={max} disabled={disabled} />
+      <input type="text" className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-60" placeholder={placeholder} value={value || ""} onChange={onChange} maxLength={max} disabled={disabled} />
     </div>
   );
 }
@@ -295,10 +332,10 @@ function LabeledTextarea({ label, value, onChange, placeholder, max, disabled }:
   return (
     <div>
       <div className="flex items-center justify-between">
-        <label className="block text-sm text-black mb-2">{label}</label>
+        <label className="block text-sm text-black mb-1 sm:mb-2">{label}</label>
         {typeof value === "string" && max ? <CharCounter value={value} max={max} /> : null}
       </div>
-      <textarea className="w-full min-h-[160px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-60" placeholder={placeholder} value={value || ""} onChange={onChange} maxLength={max} disabled={disabled} />
+      <textarea className="w-full min-h-[140px] sm:min-h-[160px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-60" placeholder={placeholder} value={value || ""} onChange={onChange} maxLength={max} disabled={disabled} />
     </div>
   );
 }
@@ -306,8 +343,8 @@ function LabeledTextarea({ label, value, onChange, placeholder, max, disabled }:
 function LabeledSelect({ label, value, onChange, options, disabled }: { label: string; value: string; onChange: (e: any) => void; options: { label: string; value: string }[]; disabled?: boolean; }) {
   return (
     <div>
-      <label className="block text-sm text-black mb-2">{label}</label>
-      <select className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-60" value={value || ""} onChange={onChange} disabled={disabled}>
+      <label className="block text-sm text-black mb-1 sm:mb-2">{label}</label>
+      <select className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300 disabled:opacity-60" value={value || ""} onChange={onChange} disabled={disabled}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}

@@ -90,15 +90,17 @@ export default async function Page({
   ]);
 
   return (
-    <main className="pb-24 pt-6 px-20">
-      <CategoryEditWithTabs
-        initialTab={initialTab as "category" | "seo"}
-        categoryId={category?.id ?? null}
-        allCategories={allCategories}
-        initialCategory={category}
-        initialSeoExists={seo.exists}
-        initialSeo={seo.data}
-      />
+    <main className="pb-32 pt-4 sm:pt-6">
+      <div className="mx-auto w-full max-w-8xl px-3 sm:px-6 lg:px-8">
+        <CategoryEditWithTabs
+          initialTab={initialTab as "category" | "seo"}
+          categoryId={category?.id ?? null}
+          allCategories={allCategories}
+          initialCategory={category}
+          initialSeoExists={seo.exists}
+          initialSeo={seo.data}
+        />
+      </div>
     </main>
   );
 }

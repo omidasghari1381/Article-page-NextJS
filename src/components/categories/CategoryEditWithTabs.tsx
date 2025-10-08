@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
 import CategoryForm from "./CategoryForm";
 import CategorySeoSettingsForm from "./CategorySeoSettingsForm";
 
-
 // Types همانی که صفحه دارد
-type CategoryDTO = {
+export type CategoryDTO = {
   id: string;
   name: string;
   slug: string;
@@ -16,7 +15,7 @@ type CategoryDTO = {
   depth: number;
 };
 
-type SeoMetaPayload = {
+export type SeoMetaPayload = {
   useAuto: boolean;
   seoTitle: string | null;
   seoDescription: string | null;
@@ -47,50 +46,64 @@ export default function CategoryEditWithTabs({
   initialSeoExists: boolean;
   initialSeo: SeoMetaPayload | null;
 }) {
-  const [tab, setTab] = useState<"category" | "seo" >(initialTab);
+  const [tab, setTab] = useState<"category" | "seo">(initialTab);
 
   return (
     <section className="w-full" dir="rtl">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
-          { label: "दسته", href: "/categories" },
-          { label: "افزودن/ویرایش دسته", href: "/article/new-category" },
+          { label: "دسته‌ها", href: "/categories" },
+          { label: initialCategory?.id ? "ویرایش دسته" : "افزودن دسته", href: "/categories/new" },
         ]}
       />
 
+      {/* Tabs */}
       <div className="mt-5">
-        <div className="flex items-center gap-2 mb-4">
-          <button
-            className={`px-4 py-2 rounded-lg border ${
-              tab === "category" ? "bg-black text-white" : "bg-white text-gray-800 hover:bg-gray-50"
-            }`}
-            onClick={() => setTab("category")}
-          >
-            اطلاعات دسته
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg border ${
-              tab === "seo" ? "bg-black text-white" : "bg-white text-gray-800 hover:bg-gray-50"
-            }`}
-            onClick={() => setTab("seo")}
-          >
-            SEO
-          </button>
+        <div
+          role="tablist"
+          aria-label="Category tabs"
+          className="relative -mx-3 sm:mx-0 overflow-x-auto scrollbar-none"
+        >
+          <div className="px-3 sm:px-0 inline-flex gap-2">
+            <button
+              role="tab"
+              aria-selected={tab === "category"}
+              className={`px-4 py-2 rounded-full border transition whitespace-nowrap ${
+                tab === "category"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-800 hover:bg-gray-50 border-gray-200"
+              }`}
+              onClick={() => setTab("category")}
+            >
+              اطلاعات دسته
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === "seo"}
+              className={`px-4 py-2 rounded-full border transition whitespace-nowrap ${
+                tab === "seo"
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-800 hover:bg-gray-50 border-gray-200"
+              }`}
+              onClick={() => setTab("seo")}
+            >
+              SEO
+            </button>
+          </div>
         </div>
 
-        {tab === "category" ? (
-          <CategoryForm
-            initialAllCategories={allCategories}
-            initialCategory={initialCategory}
-          />
-        ) : (
-          <CategorySeoSettingsForm
-            categoryId={categoryId}
-            initialData={initialSeo}
-            initialExists={initialSeoExists}
-          />
-        )}
+        <div className="mt-4">
+          {tab === "category" ? (
+            <CategoryForm initialAllCategories={allCategories} initialCategory={initialCategory} />
+          ) : (
+            <CategorySeoSettingsForm
+              categoryId={categoryId}
+              initialData={initialSeo}
+              initialExists={initialSeoExists}
+            />
+          )}
+        </div>
       </div>
     </section>
   );

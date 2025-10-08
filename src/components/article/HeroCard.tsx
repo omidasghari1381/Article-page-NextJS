@@ -8,11 +8,20 @@ type Props = {
   introduction?: string | null;
   quotes?: string | null;
   thumbnail?: string | null;
-  readingPeriod?: string;
+  readingPeriod?: number | string | null; // ← عدد هم اوکیه
   viewCount?: number;
   category?: string | null;
   summery?: string[];
 };
+
+// کمکی: تبدیل به متن «N دقیقه» با پیش‌فرض «یک دقیقه»
+function formatMinutes(v?: number | string | null) {
+  const n = typeof v === "string" ? Number(v) : (v ?? 0);
+  if (!n || Number.isNaN(n) || n <= 1) return "یک دقیقه";
+  // اگر دوست داری عدد فارسی بشه:
+  const faNum = n.toLocaleString("fa-IR");
+  return `${faNum} دقیقه`;
+}
 
 export default function HeroCard({
   title,
@@ -38,7 +47,7 @@ export default function HeroCard({
       <div className="relative">
         <div className="flex flex-wrap items-center gap-3 my-3 text-xs text-[#2E3232]">
           <Image src="/svg/time.svg" alt="time" width={24} height={24} />
-          <span>{readingPeriod || "—"}</span>
+          <span>{formatMinutes(readingPeriod)}</span>
           <span>,</span>
           <Image src="/svg/eye.svg" alt="views" width={18} height={14} />
           <span>{(viewCount ?? 0).toLocaleString("fa-IR")} بازدید</span>

@@ -1,16 +1,16 @@
 import Image from "next/image";
 
-type LiteArticle = {
+type LatestItem = {
   id?: string;
   title?: string;
   createdAt?: string;
   category?: string;
   author?: { id: string; firstName: string; lastName: string };
   thumbnail?: string | null;
-  readingPeriod?: string;
+  readingPeriod?: number | string; // ← قابل‌انعطاف
 };
 
-export default function SidebarLatest({ posts = [] }: { posts: LiteArticle[] }) {
+export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
   return (
     <aside>
       <div className="flex items-center gap-3 px-2 sm:px-4 py-6">
@@ -31,7 +31,7 @@ export default function SidebarLatest({ posts = [] }: { posts: LiteArticle[] }) 
   );
 }
 
-function SidebarCard({ post }: { post: LiteArticle }) {
+function SidebarCard({ post }: { post: LatestItem }) {
   return (
     <article className="group">
       <div className="relative w-full aspect-[16/10] sm:aspect-[3/2] rounded-md overflow-hidden">

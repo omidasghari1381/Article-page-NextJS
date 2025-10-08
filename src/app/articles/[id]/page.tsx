@@ -4,66 +4,40 @@ import SidebarLatest from "@/components/SidebarLatest";
 import HeroCard from "@/components/article/HeroCard";
 import ArticleBody from "@/components/article/ArticleBody";
 import InlineNextCard from "@/components/article/InlineNextCard";
-import { Thumbnaill } from "@/components/article/Thumbnail";
+import Thumbnail from "@/components/article/Thumbnail"; // ← default import و نام درست
 import RelatedArticles from "@/components/article/RelatedArticles";
 import CommentsBlock from "@/components/article/CommentsBlock";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { absolute } from "@/app/utils/base-url";
-import type { Metadata } from "next";
+// import type { Metadata } from "next"; // فعلاً استفاده نمی‌شود
 
 type Author = { id: string; firstName: string; lastName: string };
 
-type ArticleDetail = {
+type ApiCategory = { id: string; name: string; slug: string };
+type ApiTag = { id: string; name: string; slug: string };
+
+type ApiArticle = {
   id: string;
   title: string;
-  subject: string;
-  category: string;
-  readingPeriod: string;
+  slug: string | null;
+  subject: string | null;
+  readingPeriod: number;
   viewCount: number;
   thumbnail: string | null;
-  Introduction: string | null;
+  introduction: string | null; // ← i کوچک
   quotes: string | null;
+  summery: string[] | null; // ← همون نام املایی موجود در API
   mainText: string;
-  secondaryText: string;
+  secondaryText: string | null;
   author: Author;
+  categories: ApiCategory[]; // ← آرایه
+  tags: ApiTag[];
   createdAt: string;
-  summery: string[];
+  createdAtISO?: string;
 };
 
-enum SeoEntityType {
-  ARTICLE = "article",
-  CATEGORY = "category",
-}
-enum RobotsSetting {
-  INDEX_FOLLOW = "index,follow",
-  NOINDEX_FOLLOW = "noindex,follow",
-  INDEX_NOFOLLOW = "index,nofollow",
-  NOINDEX_NOFOLLOW = "noindex,nofollow",
-}
-enum TwitterCardType {
-  summery = "summery",
-  summery_LARGE_IMAGE = "summery_large_image",
-}
-type SeoMetaDTO = {
-  entityType: SeoEntityType;
-  entityId: string;
-  locale: string;
-  useAuto: boolean;
-  seoTitle: string | null;
-  seoDescription: string | null;
-  canonicalUrl: string | null;
-  robots: RobotsSetting | null;
-  ogTitle: string | null;
-  ogDescription: string | null;
-  ogImageUrl: string | null;
-  twitterCard: TwitterCardType | null;
-  publishedTime: string | null;
-  modifiedTime: string | null;
-  authorName: string | null;
-  tags: string[] | null;
-};
-
+// برای Latest/Related
 type LiteArticle = {
   id: string;
   title: string;
@@ -71,17 +45,7 @@ type LiteArticle = {
   category: string;
   author: Author;
   thumbnail: string | null;
-  readingPeriod: string;
-};
-
-type LikeArticle = {
-  id: string;
-  subject: string;
-  createdAt: string;
-  readingPeriod: string;
-  author: Author;
-  category: string;
-  thumbnail: string | null;
+  readingPeriod: string | number;
 };
 
 type CommentWithReplies = {
@@ -101,7 +65,7 @@ type CommentWithReplies = {
   }[];
 };
 
-async function getArticle(id: string): Promise<ArticleDetail | null> {
+async function getArticle(id: string): Promise<ApiArticle | null> {
   const res = await fetch(absolute(`/api/articles/${encodeURIComponent(id)}`), {
     cache: "no-store",
   });
@@ -118,151 +82,75 @@ async function getLatest(): Promise<LiteArticle[]> {
   return data?.items ?? [];
 }
 
-async function getSeoForArticle(
-  articleId: string,
-  locale = ""
-): Promise<SeoMetaDTO | null> {
-  const url = absolute(
-    `/api/seo?entityType=${SeoEntityType.ARTICLE}&entityId=${encodeURIComponent(
-      articleId
-    )}&locale=${encodeURIComponent(locale)}`
+async function getRelated(firstCategorySlug?: string, excludeId?: string) {
+  if (!firstCategorySlug) return null;
+  const res = await fetch(
+    absolute(`/api/articles?perPage=4&category=${encodeURIComponent(firstCategorySlug)}`),
+    { cache: "no-store" }
   );
-  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) return null;
-  return res.json();
+  const data = await res.json();
+  const items: LiteArticle[] = Array.isArray(data?.items) ? data.items : [];
+  return items.find((x) => x.id !== excludeId) ?? null;
 }
 
-function parseRobots(
-  r?: RobotsSetting | null
-): { index?: boolean; follow?: boolean } | undefined {
-  if (!r) return undefined;
-  switch (r) {
-    case RobotsSetting.INDEX_FOLLOW:
-      return { index: true, follow: true };
-    case RobotsSetting.NOINDEX_FOLLOW:
-      return { index: false, follow: true };
-    case RobotsSetting.INDEX_NOFOLLOW:
-      return { index: true, follow: false };
-    case RobotsSetting.NOINDEX_NOFOLLOW:
-      return { index: false, follow: false };
-    default:
-      return undefined;
-  }
+async function getComments(
+  articleId: string
+): Promise<{ items: CommentWithReplies[]; total: number }> {
+  const res = await fetch(
+    absolute(`/api/articles/${encodeURIComponent(articleId)}/comments?skip=0&take=10&withReplies=1`),
+    { cache: "no-store" }
+  );
+  if (!res.ok) return { items: [], total: 0 };
+  const data = await res.json();
+  return { items: data?.data ?? [], total: data?.total ?? 0 };
 }
 
-function twitterCardFromEnum(
-  t?: TwitterCardType | null
-): "summery" | "summery_large_image" | undefined {
-  if (!t) return undefined;
-  return t === TwitterCardType.summery_LARGE_IMAGE
-    ? "summery_large_image"
-    : "summery";
-}
-
-function buildFinalSeo(article: ArticleDetail, seo?: SeoMetaDTO | null) {
-  const autoDesc =
-    article.subject ||
-    article.Introduction ||
-    (Array.isArray(article.summery) ? article.summery.join("، ") : "") ||
-    "";
-
-  const authorName =
-    seo?.authorName ||
-    `${article.author?.firstName ?? ""} ${
-      article.author?.lastName ?? ""
-    }`.trim() ||
-    undefined;
-
-  const published = seo?.publishedTime || article.createdAt || undefined;
-  const imageAbs = (url?: string | null) => (url ? absolute(url) : undefined);
-
-  const useAuto = seo?.useAuto ?? true;
-
-  const title =
-    !useAuto && seo?.seoTitle ? seo.seoTitle : `${article.title} | مای‌پراپ`;
-
-  const description =
-    !useAuto && seo?.seoDescription ? seo.seoDescription : autoDesc;
-
-  const ogTitle =
-    !useAuto && seo?.ogTitle ? seo.ogTitle : title ?? article.title;
-
-  const ogDescription =
-    !useAuto && seo?.ogDescription ? seo.ogDescription : description;
-
-  const ogImage =
-    !useAuto && seo?.ogImageUrl
-      ? imageAbs(seo.ogImageUrl)
-      : imageAbs(article.thumbnail);
-
-  const canonical =
-    !useAuto && seo?.canonicalUrl
-      ? seo.canonicalUrl
-      : absolute(`/article/${encodeURIComponent(article.id)}`);
-
-  const robots =
-    !useAuto && seo?.robots
-      ? parseRobots(seo.robots)
-      : { index: true, follow: true };
-
-  const twitterCard =
-    !useAuto && seo?.twitterCard
-      ? twitterCardFromEnum(seo.twitterCard)
-      : ogImage
-      ? "summery_large_image"
-      : "summery";
+// نرمال‌سازی برای کم کردن if-else در JSX
+function normalize(article: ApiArticle) {
+  const firstCategory: ApiCategory | undefined = Array.isArray(article.categories)
+    ? article.categories[0]
+    : undefined;
 
   return {
-    title,
-    description,
-    canonical,
-    robots,
-    og: {
-      title: ogTitle,
-      description: ogDescription,
-      image: ogImage,
-      url: canonical,
+    id: article.id,
+    title: article.title,
+    subject: article.subject ?? "",
+    introduction: article.introduction ?? "", // ← درست شد
+    quotes: article.quotes ?? "",
+    mainText: article.mainText,
+    secondaryText: article.secondaryText ?? "",
+    readingPeriod: article.readingPeriod ?? 0,
+    viewCount: article.viewCount ?? 0,
+    thumbnail: article.thumbnail ?? null, // رشته URL
+    createdAt: article.createdAt,
+    author: article.author,
+    category: {
+      name: firstCategory?.name ?? "",
+      slug: firstCategory?.slug ?? "",
+      id: firstCategory?.id ?? "",
     },
-    twitter: {
-      card: twitterCard,
-      title: ogTitle,
-      description: ogDescription,
-      images: ogImage ? [ogImage] : undefined,
-    },
-    articleLike: {
-      authorName,
-      publishedTime: published,
-      modifiedTime: seo?.modifiedTime || undefined,
-      section: article.category,
-      readingTime: article.readingPeriod,
-      tags: seo?.tags ?? undefined,
-    },
+    categories: article.categories,
+    tags: article.tags,
+    summery: Array.isArray(article.summery) ? article.summery : [],
   };
 }
 
-
-
-function JsonLd({
-  article,
-  final,
-}: {
-  article: ArticleDetail;
-  final: ReturnType<typeof buildFinalSeo>;
-}) {
+function JsonLd({ a }: { a: ReturnType<typeof normalize> }) {
   const data = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: article.title,
-    description: final.description ?? "",
-    datePublished: final.articleLike.publishedTime,
-    dateModified: final.articleLike.modifiedTime,
-    author: final.articleLike.authorName
-      ? { "@type": "Person", name: final.articleLike.authorName }
+    headline: a.title,
+    description: a.introduction || "",
+    datePublished: a.createdAt,
+    dateModified: a.createdAt, // اگر modified نداری فعلاً همونه
+    author: a.author
+      ? { "@type": "Person", name: `${a.author.firstName} ${a.author.lastName}`.trim() }
       : undefined,
-    image: final.og.image ? [final.og.image] : undefined,
-    articleSection: article.category,
-    keywords: final.articleLike.tags,
-    mainEntityOfPage: final.canonical,
+    image: a.thumbnail ? [a.thumbnail] : undefined,
+    articleSection: a.category.name,
+    keywords: a.tags?.map((t) => t.name),
+    mainEntityOfPage: absolute(`/article/${encodeURIComponent(a.id)}`),
   };
   return (
     <script
@@ -273,57 +161,24 @@ function JsonLd({
   );
 }
 
-async function getRelated(
-  category: string,
-  excludeId: string
-): Promise<LikeArticle | null> {
-  const res = await fetch(
-    absolute(
-      `/api/articles?perPage=4&category=${encodeURIComponent(category)}`
-    ),
-    {
-      cache: "no-store",
-    }
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  const items: LikeArticle[] = Array.isArray(data?.items) ? data.items : [];
-  return items.find((x) => x.id !== excludeId) ?? null;
-}
-
-async function getComments(
-  articleId: string
-): Promise<{ items: CommentWithReplies[]; total: number }> {
-  const res = await fetch(
-    absolute(
-      `/api/articles/${encodeURIComponent(
-        articleId
-      )}/comments?skip=0&take=10&withReplies=1`
-    ),
-    { cache: "no-store" }
-  );
-  if (!res.ok) return { items: [], total: 0 };
-  const data = await res.json();
-  return { items: data?.data ?? [], total: data?.total ?? 0 };
-}
-
 export default async function Page({ params }: { params: { id: string } }) {
-  const { id } = await params;
-  const article = await getArticle(id);
-  if (!article) {
+  const { id } = await params; // Next.js 15
+  const apiArticle = await getArticle(id);
+
+  if (!apiArticle) {
     return (
       <main className="px-7 py-10">
         <h1 className="text-xl font-bold">مقاله پیدا نشد</h1>
       </main>
     );
   }
-  const seo = await getSeoForArticle(id, "");
-  const finalSeo = buildFinalSeo(article, seo);
+
+  const a = normalize(apiArticle);
 
   const [latest, related, commentsRes, session] = await Promise.all([
     getLatest(),
-    getRelated(article.category, article.id),
-    getComments(article.id),
+    getRelated(a.category.slug, a.id),
+    getComments(a.id),
     getServerSession(authOptions),
   ]);
 
@@ -332,14 +187,15 @@ export default async function Page({ params }: { params: { id: string } }) {
 
   return (
     <main className="px-7 sm:px-6 lg:px- py-6 mx-auto ">
-      <JsonLd article={article} final={finalSeo} />
+      <JsonLd a={a} />
 
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
-          { label: "مقالات", href: "/" },
-          { label: article.category || "_", href: "/categories" },
-          { label: article.title || "..." },
+          { label: "مقالات", href: "/articles" },
+          // ← الان اسم کتگوری از a.category.name میاد
+          { label: a.category.name || "_", href: `/categories/${a.category.slug || ""}` },
+          { label: a.title || "..." },
         ]}
       />
 
@@ -347,32 +203,32 @@ export default async function Page({ params }: { params: { id: string } }) {
         <section className="lg:col-span-9 space-y-8">
           <div>
             <HeroCard
-              title={article.title}
-              subject={article.subject}
-              introduction={article.Introduction}
-              thumbnail={article.thumbnail}
-              readingPeriod={article.readingPeriod}
-              viewCount={article.viewCount}
-              category={article.category}
-              summery={article.summery}
+              title={a.title}
+              subject={a.subject}
+              introduction={a.introduction} 
+              thumbnail={a.thumbnail}
+              readingPeriod={a.readingPeriod}
+              viewCount={a.viewCount}
+              category={a.category.name} 
+              summery={a.summery}
             />
 
             <ArticleBody
-              mainText={article.mainText}
-              quotes={article.quotes}
-              secondryText={article.secondaryText}
+              mainText={a.mainText}
+              quotes={a.quotes}
+              secondryText={a.secondaryText}
             />
 
             <div className="flex items-start gap-4 my-6">
-              <Thumbnaill
-                thumbnail={article.thumbnail}
-                category={article.category}
+              <Thumbnail
+                thumbnail={a.thumbnail || undefined}
+                category={a.category.name}
               />
               <InlineNextCard
-                author={article.author}
-                createdAt={article.createdAt}
-                subject={article.subject}
-                readingPeriod={article.readingPeriod}
+                author={a.author}
+                createdAt={a.createdAt}
+                subject={a.subject}
+                readingPeriod={a.readingPeriod}
               />
             </div>
           </div>
@@ -383,21 +239,18 @@ export default async function Page({ params }: { params: { id: string } }) {
         </aside>
       </div>
 
-      {/* بلاک نظرات: جزیره‌ی کلاینتی با داده‌ی اولیه */}
       <CommentsBlock
         initialComments={commentsRes.items}
-        articleId={article.id}
+        articleId={a.id}
         initialTotal={commentsRes.total}
       />
 
-      <RelatedArticles post={related} />
+<RelatedArticles post={related} fallbackCategory={a.category.name} />
 
       {isAdmin ? (
         <div className="mt-10 flex justify-end">
           <Link
-            href={`/article/editor/new-article/${encodeURIComponent(
-              article.id
-            )}`}
+            href={`/article/editor/new-article/${encodeURIComponent(a.id)}`}
             className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
           >
             ویرایش این مقاله
