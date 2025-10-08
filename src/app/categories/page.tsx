@@ -30,13 +30,11 @@ function normalizeCategory(raw: any): CategoryNode {
           id: raw.parent.id,
           name: raw.parent.name ?? "",
           slug: raw.parent.slug ?? "",
-          // اگر API والد.children برگردونه، این هم میاد
           children: Array.isArray(raw.parent.children)
             ? raw.parent.children.map(normalizeCategory)
             : undefined,
         }
       : null,
-    // اگر API children برگردونه، اینجا نرمال میشه
     children: Array.isArray(raw.children)
       ? raw.children.map(normalizeCategory)
       : undefined,
