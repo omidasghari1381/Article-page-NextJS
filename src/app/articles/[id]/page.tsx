@@ -4,7 +4,7 @@ import SidebarLatest from "@/components/SidebarLatest";
 import HeroCard from "@/components/article/HeroCard";
 import ArticleBody from "@/components/article/ArticleBody";
 import InlineNextCard from "@/components/article/InlineNextCard";
-import Thumbnail from "@/components/article/Thumbnail"; // ← default import و نام درست
+import Thumbnail, { SideImage } from "@/components/article/Thumbnail"; // ← default import و نام درست
 import RelatedArticles from "@/components/article/RelatedArticles";
 import CommentsBlock from "@/components/article/CommentsBlock";
 import { getServerSession } from "next-auth";
@@ -85,7 +85,11 @@ async function getLatest(): Promise<LiteArticle[]> {
 async function getRelated(firstCategorySlug?: string, excludeId?: string) {
   if (!firstCategorySlug) return null;
   const res = await fetch(
-    absolute(`/api/articles?perPage=4&category=${encodeURIComponent(firstCategorySlug)}`),
+    absolute(
+      `/api/articles?perPage=4&category=${encodeURIComponent(
+        firstCategorySlug
+      )}`
+    ),
     { cache: "no-store" }
   );
   if (!res.ok) return null;
@@ -98,7 +102,11 @@ async function getComments(
   articleId: string
 ): Promise<{ items: CommentWithReplies[]; total: number }> {
   const res = await fetch(
-    absolute(`/api/articles/${encodeURIComponent(articleId)}/comments?skip=0&take=10&withReplies=1`),
+    absolute(
+      `/api/articles/${encodeURIComponent(
+        articleId
+      )}/comments?skip=0&take=10&withReplies=1`
+    ),
     { cache: "no-store" }
   );
   if (!res.ok) return { items: [], total: 0 };
@@ -108,7 +116,9 @@ async function getComments(
 
 // نرمال‌سازی برای کم کردن if-else در JSX
 function normalize(article: ApiArticle) {
-  const firstCategory: ApiCategory | undefined = Array.isArray(article.categories)
+  const firstCategory: ApiCategory | undefined = Array.isArray(
+    article.categories
+  )
     ? article.categories[0]
     : undefined;
 
@@ -145,7 +155,10 @@ function JsonLd({ a }: { a: ReturnType<typeof normalize> }) {
     datePublished: a.createdAt,
     dateModified: a.createdAt, // اگر modified نداری فعلاً همونه
     author: a.author
-      ? { "@type": "Person", name: `${a.author.firstName} ${a.author.lastName}`.trim() }
+      ? {
+          "@type": "Person",
+          name: `${a.author.firstName} ${a.author.lastName}`.trim(),
+        }
       : undefined,
     image: a.thumbnail ? [a.thumbnail] : undefined,
     articleSection: a.category.name,
@@ -186,30 +199,32 @@ export default async function Page({ params }: { params: { id: string } }) {
   const isAdmin = role === "admin";
 
   return (
-    <main className="px-7 sm:px-6 lg:px- py-6 mx-auto ">
+    <main className="px-7 sm:px-6 lg:px-20 py-6 mx-auto ">
       <JsonLd a={a} />
 
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
           { label: "مقالات", href: "/articles" },
-          // ← الان اسم کتگوری از a.category.name میاد
-          { label: a.category.name || "_", href: `/categories/${a.category.slug || ""}` },
+          {
+            label: a.category.name || "_",
+            href: `/categories/${a.category.slug || ""}`,
+          },
           { label: a.title || "..." },
         ]}
       />
 
-      <div className="hidden lg:grid lg:grid-cols-13 gap-2 mt-6">
+      <div className="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-13">
         <section className="lg:col-span-9 space-y-8">
           <div>
             <HeroCard
               title={a.title}
               subject={a.subject}
-              introduction={a.introduction} 
+              introduction={a.introduction}
               thumbnail={a.thumbnail}
               readingPeriod={a.readingPeriod}
               viewCount={a.viewCount}
-              category={a.category.name} 
+              category={a.category.name}
               summery={a.summery}
             />
 
@@ -219,10 +234,18 @@ export default async function Page({ params }: { params: { id: string } }) {
               secondryText={a.secondaryText}
             />
 
-            <div className="flex items-start gap-4 my-6">
-              <Thumbnail
+            <div className="flex flex-col gap-4 my-6 lg:flex-row lg:items-stretch">
+              <SideImage
                 thumbnail={a.thumbnail || undefined}
                 category={a.category.name}
+                // موبایل: نسبت 16:9 و تمام عرض
+                mobileAspectClass="aspect-[16/9]"
+                // دسکتاپ: هم‌قد کارت و عرض ثابت کنار کارت
+                desktopSizeClass="lg:aspect-auto lg:h-[163.5px] lg:w-[291.14px]"
+                rounded="rounded-xl"
+                // بدج پایین راست
+                badgeClass="bottom-2 right-2 sm:bottom-2 sm:right-2"
+                categoryTextClass="bottom-3 right-4 sm:bottom-3.5 sm:right-5 text-xs"
               />
               <InlineNextCard
                 author={a.author}
@@ -245,7 +268,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         initialTotal={commentsRes.total}
       />
 
-<RelatedArticles post={related} fallbackCategory={a.category.name} />
+      <RelatedArticles post={related} fallbackCategory={a.category.name} />
 
       {isAdmin ? (
         <div className="mt-10 flex justify-end">

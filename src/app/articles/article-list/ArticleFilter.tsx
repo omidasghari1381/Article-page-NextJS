@@ -147,7 +147,9 @@ export default function ArticleFilters({
           defaultValue={initial.categoryId || ""}
           className="w-full rounded-xl border border-gray-300 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
-          <option value="">{loadingCats ? "در حال بارگذاری..." : "همه دسته‌ها"}</option>
+          <option value="">
+            {loadingCats ? "در حال بارگذاری..." : "همه دسته‌ها"}
+          </option>
           {cats.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -223,17 +225,18 @@ export default function ArticleFilters({
       </div>
 
       {/* Actions */}
-      <div className="md:col-span-12 flex items-center gap-2 justify-end">
+      <div className="md:col-span-12 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-end gap-2 sm:gap-3">
         <button
           type="button"
           onClick={onReset}
-          className="px-4 py-2 rounded-xl border border-gray-300 text-black hover:bg-gray-50"
+          className="h-[44px] w-full sm:w-auto px-4 rounded-xl border border-gray-300 text-black hover:bg-gray-50 text-sm md:text-base whitespace-nowrap leading-none"
         >
           پاکسازی
         </button>
+
         <button
           type="submit"
-          className="px-4 py-2 rounded-2xl bg-black text-white hover:bg-gray-800 transition"
+          className="h-[44px] w-full sm:w-auto px-4 rounded-xl bg-black text-white hover:bg-gray-800 transition text-sm md:text-base whitespace-nowrap leading-none"
         >
           اعمال فیلترها
         </button>

@@ -8,17 +8,15 @@ type Props = {
   introduction?: string | null;
   quotes?: string | null;
   thumbnail?: string | null;
-  readingPeriod?: number | string | null; // ← عدد هم اوکیه
+  readingPeriod?: number | string | null;
   viewCount?: number;
   category?: string | null;
   summery?: string[];
 };
 
-// کمکی: تبدیل به متن «N دقیقه» با پیش‌فرض «یک دقیقه»
 function formatMinutes(v?: number | string | null) {
   const n = typeof v === "string" ? Number(v) : (v ?? 0);
   if (!n || Number.isNaN(n) || n <= 1) return "یک دقیقه";
-  // اگر دوست داری عدد فارسی بشه:
   const faNum = n.toLocaleString("fa-IR");
   return `${faNum} دقیقه`;
 }
@@ -53,9 +51,8 @@ export default function HeroCard({
           <span>{(viewCount ?? 0).toLocaleString("fa-IR")} بازدید</span>
         </div>
 
-        <div className="relative h-72 sm:h-96">
-          <Thumbnail thumbnail={thumbnail} category={category ?? "—"} />
-        </div>
+        {/* — تصویر: تمام عرض + نسبت 16:9 */}
+        <Thumbnail thumbnail={thumbnail} category={category ?? "—"} />
       </div>
 
       {introduction ? (
@@ -69,19 +66,33 @@ export default function HeroCard({
   );
 }
 
-function Thumbnail({ thumbnail, category }: { thumbnail?: string | null; category?: string | null }) {
+function Thumbnail({
+  thumbnail,
+  category,
+}: {
+  thumbnail?: string | null;
+  category?: string | null;
+}) {
   const src = thumbnail?.trim().length ? thumbnail! : "/image/a.png";
+
   return (
-    <div className="relative h-72 sm:h-96">
-      <Image src={src} alt="cover" fill className="object-cover rounded-xl" />
-      <Image
-        src="/svg/Rectangle3.svg"
-        alt="cover"
-        width={145.64}
-        height={46.74}
-        className="absolute bottom-4 right-4 z-10 text-white text-xs px-3 py-1.5 rounded-sm"
-      />
-      <span className="absolute bottom-[30px] right-11 z-10 text-base font-semibold">{category || "—"}</span>
+    // ظرف تمام‌عرض با نسبت 16:9
+    <div className="relative w-full overflow-hidden rounded-xl">
+      <div className="relative w-full aspect-[16/9]">
+        <Image src={src} alt="cover" fill className="object-cover" sizes="100vw" />
+
+        {/* بدج پایین راست؛ ریسپانسیو */}
+        <Image
+          src="/svg/Rectangle3.svg"
+          alt=""
+          width={146}
+          height={47}
+          className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-10 w-[96px] h-[32px] sm:w-[145.64px] sm:h-[46.74px]"
+        />
+        <span className="absolute bottom-5 right-7 sm:bottom-7 sm:right-11 z-10 text-xs sm:text-base font-semibold ">
+          {category || "—"}
+        </span>
+      </div>
     </div>
   );
 }

@@ -102,7 +102,7 @@ export type SmallThumbnailProps = ThumbnailProps & {
   categoryTextClass?: string;
 };
 
-export function Thumbnaill({
+export function SideImage({
   thumbnail,
   category,
   className,
