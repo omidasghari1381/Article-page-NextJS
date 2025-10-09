@@ -1,310 +1,199 @@
-// =====================================
-// app/redirects/editor/[[...id]]/page.tsx — responsive container only
-// =====================================
-import Breadcrumb from "@/components/Breadcrumb";
-import { absolute } from "@/app/utils/base-url";
-import RedirectFormClient from "@/components/redirects/RedirectFormClient";
+"use client";
 
-// ---------- Types ----------
-export type RedirectDTO = {
-  id: string;
-  fromPath: string;
-  toPath: string;
-  statusCode: 301 | 302 | 307 | 308;
-  isActive: boolean;
-};
+import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export const dynamic = "force-dynamic";
+const ROLE_OPTIONS = [
+  { label: "ADMIN", value: "ADMIN" },
+  { label: "EDITOR", value: "EDITOR" },
+  { label: "CLIENT", value: "CLIENT" },
+];
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id?: string[] }>;
-}) {
-  const p = await params;
-  const id = Array.isArray(p?.id) && p.id.length ? p.id[0] : null;
-  let initialRecord: RedirectDTO | null = null;
+const SORT_BY = [
+  { label: "تاریخ ایجاد", value: "createdAt" },
+  { label: "نام", value: "firstName" },
+  { label: "نام‌خانوادگی", value: "lastName" },
+  { label: "تلفن", value: "phone" },
+  { label: "نقش", value: "role" },
+  { label: "تاریخ بروزرسانی", value: "updatedAt" },
+];
 
-  if (id) {
-    try {
-      const res = await fetch(absolute(`/api/redirect/${id}`), {
-        cache: "no-store",
-      });
-      if (res.ok) initialRecord = (await res.json()) as RedirectDTO;
-    } catch {}
-  }
+export function UsersFilter() {
+  const router = useRouter();
+  const sp = useSearchParams();
+
+  const initial = useMemo(() => {
+    const get = (k: string, d = "") => sp.get(k) ?? d;
+
+    const selectedRoles = sp.getAll("role").length
+      ? sp.getAll("role")
+      : get("role")
+      ? get("role")!.split(",").filter(Boolean)
+      : [];
+
+    return {
+      q: get("q"),
+      roles: selectedRoles as string[],
+      createdFrom: get("createdFrom"),
+      createdTo: get("createdTo"),
+      sortBy: get("sortBy", "createdAt"),
+      sortDir: (get("sortDir", "DESC") || "DESC").toUpperCase(),
+      pageSize: get("pageSize", "20"),
+    };
+  }, [sp]);
+
+  const [roles, setRoles] = useState<string[]>(initial.roles);
+
+  const updateQuery = (patch: Record<string, string | string[] | undefined>) => {
+    const usp = new URLSearchParams(sp.toString());
+    Object.entries(patch).forEach(([k, v]) => {
+      usp.delete(k);
+      if (Array.isArray(v)) {
+        v.filter(Boolean).forEach((val) => usp.append(k, val));
+      } else if (v) {
+        usp.set(k, v);
+      }
+    });
+    usp.set("page", "1");
+    router.push(`?${usp.toString()}`);
+  };
+
+  const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+
+    const q = String(fd.get("q") || "");
+    const createdFrom = String(fd.get("createdFrom") || "");
+    const createdTo = String(fd.get("createdTo") || "");
+    const sortBy = String(fd.get("sortBy") || "createdAt");
+    const sortDir = String(fd.get("sortDir") || "DESC");
+    const pageSize = String(fd.get("pageSize") || "20");
+
+    updateQuery({
+      q: q || undefined,
+      role: roles.length ? roles : undefined,
+      createdFrom: createdFrom || undefined,
+      createdTo: createdTo || undefined,
+      sortBy,
+      sortDir,
+      pageSize,
+    });
+  };
+
+  const onClear = () => {
+    setRoles([]);
+    router.push(`?`);
+  };
+
+  const toggleRole = (value: string) => {
+    setRoles((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+  };
 
   return (
-    <main
-      className="pb-24 pt-6 px-4 sm:px-6 lg:px-16 xl:px-20 2xl:px-28"
-      dir="rtl"
-    >
-      <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
-        <Breadcrumb
-          items={[
-            { label: "مای پراپ", href: "/" },
-            { label: "ریدایرکت‌ها", href: "/redirects" },
-            {
-              label: "افزودن/ویرایش ریدایرکت",
-              href: "/redirects/new-redirect",
-            },
-          ]}
+    <form onSubmit={onSubmit} className="grid gap-4 sm:gap-6 2xl:gap-8 md:grid-cols-12" dir="rtl">
+      <div className="md:col-span-3">
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">جستجو</label>
+        <input
+          name="q"
+          defaultValue={initial.q}
+          placeholder="نام / نام‌خانوادگی / تلفن"
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
         />
-        <div className="mt-5">
-          <RedirectFormClient id={id} initialRecord={initialRecord} />
+      </div>
+
+      <div className="md:col-span-3">
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">از تاریخ</label>
+        <input
+          type="date"
+          name="createdFrom"
+          defaultValue={initial.createdFrom}
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+        />
+      </div>
+
+      <div className="md:col-span-3">
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">تا تاریخ</label>
+        <input
+          type="date"
+          name="createdTo"
+          defaultValue={initial.createdTo}
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+        />
+      </div>
+
+      <div className="md:col-span-3">
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">مرتب‌سازی</label>
+        <select
+          name="sortBy"
+          defaultValue={initial.sortBy}
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+        >
+          {SORT_BY.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="md:col-span-6">
+        <label className="block text-sm text-gray-600 mb-2">نقش</label>
+        <div className="flex flex-wrap gap-3">
+          {ROLE_OPTIONS.map((o) => {
+            const active = roles.includes(o.value);
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => toggleRole(o.value)}
+                className={`px-3 py-1.5 rounded-lg border ${active ? "bg-black text-white border-black" : "bg-white text-gray-800 border-gray-200"}`}
+                aria-pressed={active}
+                title={o.label}
+              >
+                {o.label}
+              </button>
+            );
+          })}
         </div>
       </div>
-    </main>
-  );
-}
 
-// =====================================
-// components/redirects/RedirectFormClient.tsx — fixed button heights
-// =====================================
-("use client");
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import type { RedirectDTO } from "@/app/redirects/editor/[[...id]]/page";
-import ActionsBar from "./ActionsBar";
-import ActiveCheckbox from "./ActiveCheckbox";
-import ProblemsList from "./ProblemsList";
-import StatusSelect, { STATUS_OPTIONS } from "./StatusSelect";
-import TextInput from "./TextInput";
+      <div className="md:col-span-3">
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">جهت</label>
+        <select
+          name="sortDir"
+          defaultValue={initial.sortDir}
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+        >
+          <option value="DESC">نزولی</option>
+          <option value="ASC">صعودی</option>
+        </select>
+      </div>
 
-export type RedirectCreatePayload = {
-  fromPath: string;
-  toPath: string;
-  statusCode?: RedirectDTO["statusCode"];
-  isActive?: boolean;
-};
+      <div className="md:col-span-3">
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">در صفحه</label>
+        <select
+          name="pageSize"
+          defaultValue={initial.pageSize}
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+        >
+          {[10,20,40,80,100].map(n => <option key={n} value={n}>{n}</option>)}
+        </select>
+      </div>
 
-export default function RedirectFormClient({
-  id,
-  initialRecord,
-}: {
-  id: string | null;
-  initialRecord: RedirectDTO | null;
-}) {
-  const router = useRouter();
-  const isEdit = !!id;
-
-  const [form, setForm] = useState({
-    fromPath: initialRecord?.fromPath ?? "",
-    toPath: initialRecord?.toPath ?? "",
-    statusCode: (initialRecord?.statusCode as RedirectDTO["statusCode"]) ?? 301,
-    isActive: initialRecord?.isActive ?? true,
-  });
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const isUrl = (s: string) => /^https?:\/\//i.test(s);
-  const isPath = (s: string) => /^\//.test(s);
-  const validFrom = (s: string) => isPath(s);
-  const validTo = (s: string) => isPath(s) || isUrl(s);
-
-  const problems = useMemo(() => {
-    const errs: string[] = [];
-    if (!form.fromPath.trim()) errs.push("fromPath الزامی است.");
-    if (!form.toPath.trim()) errs.push("toPath الزامی است.");
-    if (form.fromPath.trim() && !validFrom(form.fromPath.trim()))
-      errs.push("fromPath باید با / شروع شود.");
-    if (form.toPath.trim() && !validTo(form.toPath.trim()))
-      errs.push("toPath باید مسیر داخلی یا URL معتبر باشد.");
-    if (
-      form.fromPath.trim() &&
-      form.toPath.trim() &&
-      form.fromPath.trim() === form.toPath.trim()
-    )
-      errs.push("fromPath و toPath نباید یکسان باشند.");
-    return errs;
-  }, [form]);
-
-  const handleChange = (field: keyof typeof form) => (e: any) => {
-    const val =
-      typeof e === "object" && e.target
-        ? e.target.type === "checkbox"
-          ? e.target.checked
-          : e.target.value
-        : e;
-    setForm((f) => ({ ...f, [field]: val }));
-  };
-
-  const handleDelete = async () => {
-    if (!isEdit || !id) return;
-    if (!confirm("آیا از حذف این ریدایرکت مطمئن هستید؟")) return;
-    try {
-      setDeleting(true);
-      const res = await fetch("/api/redirect", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) throw new Error("حذف ناموفق بود");
-      alert("حذف شد ✅");
-      router.push("/redirects");
-      router.refresh();
-    } catch (e: any) {
-      alert(e.message);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (problems.length) {
-      alert(problems.join("\n"));
-      return;
-    }
-    const payload: RedirectCreatePayload = {
-      fromPath: form.fromPath.trim(),
-      toPath: form.toPath.trim(),
-      statusCode: form.statusCode,
-      isActive: form.isActive,
-    };
-    try {
-      setSaving(true);
-      const url = isEdit ? `/api/redirect/${id}` : `/api/redirect`;
-      const method = isEdit ? "PATCH" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("ذخیره ناموفق بود");
-      alert(isEdit ? "ویرایش شد ✅" : "ایجاد شد ✅");
-      router.push("/redirects");
-      router.refresh();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <section className="w-full" dir="rtl">
-      <form
-        onSubmit={onSubmit}
-        className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8 w-full mx-auto"
-      >
-        {error && (
-          <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
-            {error}
-          </div>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 2xl:gap-8">
-          <div className="md:col-span-6 space-y-4 sm:space-y-6">
-            <TextInput
-              label="fromPath"
-              placeholder="/old-url"
-              value={form.fromPath}
-              onChange={handleChange("fromPath")}
-            />
-            <TextInput
-              label="toPath"
-              placeholder="/new-url یا https://example.com/new-url"
-              value={form.toPath}
-              onChange={handleChange("toPath")}
-            />
-          </div>
-
-          <div className="md:col-span-6 space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <StatusSelect
-                label="کد وضعیت"
-                value={form.statusCode}
-                onChange={(n) => handleChange("statusCode")(n)}
-                options={STATUS_OPTIONS}
-              />
-              <ActiveCheckbox
-                id="isActive"
-                label="فعال باشد"
-                checked={form.isActive}
-                onChange={handleChange("isActive")}
-              />
-            </div>
-
-            {/* Fixed-height buttons */}
-            <div className="hidden md:flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() =>
-                  setForm({
-                    fromPath: "",
-                    toPath: "",
-                    statusCode: 301,
-                    isActive: true,
-                  })
-                }
-                className="h-[44px] px-4 rounded-lg border text-gray-700 hover:bg-gray-50"
-              >
-                پاکسازی
-              </button>
-              {isEdit && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="h-[44px] px-4 rounded-lg border border-red-400 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                >
-                  حذف
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={saving}
-                className="h-[44px] px-6 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
-              >
-                {saving
-                  ? "در حال ذخیره…"
-                  : isEdit
-                  ? "ثبت تغییرات"
-                  : "ثبت ریدایرکت"}
-              </button>
-            </div>
-
-            {/* Sticky bar mobile */}
-            <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-t p-3 flex items-center gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() =>
-                  setForm({
-                    fromPath: "",
-                    toPath: "",
-                    statusCode: 301,
-                    isActive: true,
-                  })
-                }
-                className="h-[44px] px-4 rounded-lg border text-gray-700 hover:bg-gray-50 flex-1"
-              >
-                پاکسازی
-              </button>
-              {isEdit && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="h-[44px] px-4 rounded-lg border border-red-400 text-red-600 hover:bg-red-50 disabled:opacity-50 flex-1"
-                >
-                  حذف
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={saving}
-                className="h-[44px] px-6 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 flex-1"
-              >
-                {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت"}
-              </button>
-            </div>
-
-            <ProblemsList problems={problems} />
-            <div className="h-16 md:h-0" />
-          </div>
-        </div>
-      </form>
-    </section>
+      {/* Actions: موبایل زیر هم، فول‌عرض؛ از sm کنار هم. ارتفاع ثابت. */}
+      <div className="md:col-span-12 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-2">
+        <button
+          type="button"
+          onClick={onClear}
+          className="h-[44px] w-full sm:w-auto px-4 rounded-lg border text-gray-700 hover:bg-gray-50"
+        >
+          پاکسازی
+        </button>
+        <button
+          type="submit"
+          className="h-[44px] w-full sm:w-auto px-5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+        >
+          اعمال فیلتر
+        </button>
+      </div>
+    </form>
   );
 }

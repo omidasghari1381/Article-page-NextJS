@@ -11,7 +11,7 @@ export type UserDTO = {
   phone: string;
   createdAt?: string;
   updatedAt?: string;
-  isDeleted?: number; 
+  isDeleted?: number;
 };
 
 type Props = {
@@ -29,11 +29,23 @@ export default function UserListItem({
   onDeleteClick,
   showDates = true,
 }: Props) {
-  const { id, firstName, lastName, role, phone, createdAt, updatedAt, isDeleted } = item;
+  const {
+    id,
+    firstName,
+    lastName,
+    role,
+    phone,
+    createdAt,
+    updatedAt,
+    isDeleted,
+  } = item;
 
   const providedEditLink =
-    typeof editHref === "function" ? editHref(id) :
-    typeof editHref === "string"   ? editHref    : null;
+    typeof editHref === "function"
+      ? editHref(id)
+      : typeof editHref === "string"
+      ? editHref
+      : null;
 
   const finalEditHref = providedEditLink ?? `/users/${id}`;
 
@@ -41,7 +53,8 @@ export default function UserListItem({
 
   const copyPhone = async (text: string) => {
     try {
-      if (navigator?.clipboard?.writeText) await navigator.clipboard.writeText(text);
+      if (navigator?.clipboard?.writeText)
+        await navigator.clipboard.writeText(text);
       else {
         const ta = document.createElement("textarea");
         ta.value = text;
@@ -58,10 +71,14 @@ export default function UserListItem({
   const canDelete = typeof onDeleteClick === "function" && isDeleted !== 1;
 
   return (
-    <div className={`rounded-2xl border shadow-sm bg-white p-4 text-black border-gray-300 ${isDeleted === 1 ? "opacity-75" : ""}`}>
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-10 flex-1 min-w-0">
-          {/* نام و نقش + وضعیت */}
+    <div
+      className={`rounded-2xl border shadow-sm bg-white p-4 sm:p-5 2xl:p-6 text-black border-gray-300 ${
+        isDeleted === 1 ? "opacity-75" : ""
+      }`}
+    >
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+        {/* نام/نقش/وضعیت + تلفن؛ روی موبایل زیر هم */}
+        <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="min-w-0">
             <div className="text-[13px] text-gray-500 mb-1">نام و نقش</div>
             <div className="flex items-center flex-wrap gap-2 min-w-0">
@@ -79,7 +96,6 @@ export default function UserListItem({
             </div>
           </div>
 
-          {/* تلفن */}
           <div className="min-w-0">
             <div className="text-[13px] text-gray-500 mb-1">تلفن</div>
             <div className="flex items-center gap-2 min-w-0">
@@ -100,9 +116,9 @@ export default function UserListItem({
           </div>
         </div>
 
-        {/* تاریخ‌ها */}
+        {/* تاریخ‌ها: روی موبایل می‌آد زیر اطلاعات؛ روی دسکتاپ کنار اکشن‌ها */}
         {showDates && (createdAt || updatedAt) && (
-          <div className="gap-3 text-xs text-gray-500 hidden md:flex">
+          <div className="text-xs text-gray-500 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 md:order-none">
             {createdAt && (
               <div>
                 <span className="text-gray-400">ایجاد: </span>
@@ -118,12 +134,11 @@ export default function UserListItem({
           </div>
         )}
 
-        {/* اکشن‌ها */}
-        <div className="flex items-center md:gap-4 gap-3">
-          {/* ویرایش */}
+        {/* اکشن‌ها: موبایل فول‌عرض و زیر هم؛ از sm کنار هم و ارتفاع ثابت */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:gap-4 md:shrink-0">
           {typeof onEditClick === "function" ? (
             <button
-              className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50"
+              className="h-[44px] w-full sm:w-auto px-3 rounded-lg border text-gray-700 hover:bg-gray-50 flex justify-center items-center"
               onClick={() => onEditClick(id)}
             >
               ویرایش
@@ -131,17 +146,18 @@ export default function UserListItem({
           ) : (
             <Link
               href={finalEditHref}
-              className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50"
+              className="h-[44px] w-full sm:w-auto px-3 rounded-lg border text-gray-700 hover:bg-gray-50 flex justify-center items-center"
             >
               ویرایش
             </Link>
           )}
 
-          {/* حذف (غیرفعال اگر حذف‌شده باشد) */}
           {typeof onDeleteClick === "function" && (
             <button
-              className={`px-3 py-1.5 rounded-lg text-white ${
-                canDelete ? "bg-red-700 hover:bg-red-800" : "bg-gray-300 cursor-not-allowed"
+              className={`h-[44px] w-full sm:w-auto px-3 rounded-lg text-white text-center ${
+                canDelete
+                  ? "bg-red-700 hover:bg-red-800"
+                  : "bg-gray-300 cursor-not-allowed"
               }`}
               onClick={() => canDelete && onDeleteClick(id)}
               disabled={!canDelete}
@@ -161,7 +177,10 @@ function formatDateTime(iso?: string) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
-    return new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(d);
+    return new Intl.DateTimeFormat("fa-IR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(d);
   } catch {
     return iso!;
   }

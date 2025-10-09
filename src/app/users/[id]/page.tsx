@@ -33,7 +33,6 @@ export default async function Page({
     });
     if (res.ok) {
       const data = (await res.json()) as any;
-      // ✅ normalize role to UserRole (string literal or number)
       const normalizedRole: UserRole =
         typeof data.role === "string" && ["ADMIN", "EDITOR", "CLIENT"].includes(data.role)
           ? (data.role as UserRole)
@@ -53,16 +52,18 @@ export default async function Page({
   } catch {}
 
   return (
-    <main className="pb-24 pt-6 px-20">
-      <Breadcrumb
-        items={[
-          { label: "مای پراپ", href: "/" },
-          { label: "کاربران", href: "/users" },
-          { label: "ویرایش کاربر", href: "" },
-        ]}
-      />
-      <div className="mt-5">
-        <UserEditFormClient userId={id} initialUser={initialUser} />
+    <main className="pb-24 pt-6 px-4 sm:px-6 lg:px-16 xl:px-20 2xl:px-28" dir="rtl">
+      <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
+        <Breadcrumb
+          items={[
+            { label: "مای پراپ", href: "/" },
+            { label: "کاربران", href: "/users" },
+            { label: "ویرایش کاربر", href: "" },
+          ]}
+        />
+        <div className="mt-5">
+          <UserEditFormClient userId={id} initialUser={initialUser} />
+        </div>
       </div>
     </main>
   );

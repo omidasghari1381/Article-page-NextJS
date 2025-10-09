@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const ROLE_OPTIONS = [
-  // با enum واقعی سینک کن
   { label: "ADMIN", value: "ADMIN" },
   { label: "EDITOR", value: "EDITOR" },
   { label: "CLIENT", value: "CLIENT" },
@@ -43,12 +42,9 @@ export function UsersFilter() {
     };
   }, [sp]);
 
-  // --- لوکال استیت برای دکمه‌های نقش ---
   const [roles, setRoles] = useState<string[]>(initial.roles);
 
-  const updateQuery = (
-    patch: Record<string, string | string[] | undefined>
-  ) => {
+  const updateQuery = (patch: Record<string, string | string[] | undefined>) => {
     const usp = new URLSearchParams(sp.toString());
     Object.entries(patch).forEach(([k, v]) => {
       usp.delete(k);
@@ -58,7 +54,6 @@ export function UsersFilter() {
         usp.set(k, v);
       }
     });
-    // همیشه صفحه ۱
     usp.set("page", "1");
     router.push(`?${usp.toString()}`);
   };
@@ -91,64 +86,56 @@ export function UsersFilter() {
   };
 
   const toggleRole = (value: string) => {
-    setRoles((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-    );
+    setRoles((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
   };
 
-  const clearRoles = () => setRoles([]);
-
   return (
-    <form onSubmit={onSubmit} className=" p-4 grid gap-4 md:grid-cols-12">
-      {/* q */}
+    <form onSubmit={onSubmit} className="grid gap-4 sm:gap-6 2xl:gap-8 md:grid-cols-12" dir="rtl">
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">جستجو</label>
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">جستجو</label>
         <input
           name="q"
           defaultValue={initial.q}
           placeholder="نام / نام‌خانوادگی / تلفن"
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
         />
       </div>
-      {/* createdFrom */}
+
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">از تاریخ</label>
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">از تاریخ</label>
         <input
           type="date"
           name="createdFrom"
           defaultValue={initial.createdFrom}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
         />
-      </div>{" "}
-      {/* createdTo */}
+      </div>
+
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">تا تاریخ</label>
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">تا تاریخ</label>
         <input
           type="date"
           name="createdTo"
           defaultValue={initial.createdTo}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
         />
       </div>
-      {/* Roles as toggle buttons */}
-      {/* sortBy */}
+
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">مرتب‌سازی</label>
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">مرتب‌سازی</label>
         <select
           name="sortBy"
           defaultValue={initial.sortBy}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           {SORT_BY.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
+            <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
-      </div>{" "}
+      </div>
+
       <div className="md:col-span-6">
         <label className="block text-sm text-gray-600 mb-2">نقش</label>
-
         <div className="flex flex-wrap gap-3">
           {ROLE_OPTIONS.map((o) => {
             const active = roles.includes(o.value);
@@ -157,13 +144,8 @@ export function UsersFilter() {
                 key={o.value}
                 type="button"
                 onClick={() => toggleRole(o.value)}
-                className={`px-3 py-1.5 rounded-lg border ${
-                  active
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-gray-800 border-gray-200"
-                }`}
+                className={`px-3 py-1.5 rounded-lg border ${active ? "bg-black text-white border-black" : "bg-white text-gray-800 border-gray-200"}`}
                 aria-pressed={active}
-                data-active={active}
                 title={o.label}
               >
                 {o.label}
@@ -172,46 +154,42 @@ export function UsersFilter() {
           })}
         </div>
       </div>
-      {/* sortDir */}
+
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">جهت</label>
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">جهت</label>
         <select
           name="sortDir"
           defaultValue={initial.sortDir}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
           <option value="DESC">نزولی</option>
           <option value="ASC">صعودی</option>
         </select>
       </div>
-      {/* pageSize */}
+
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">در صفحه</label>
+        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">در صفحه</label>
         <select
           name="pageSize"
           defaultValue={initial.pageSize}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
         >
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="40">40</option>
-          <option value="80">80</option>
-          <option value="100">100</option>
+          {[10,20,40,80,100].map(n => <option key={n} value={n}>{n}</option>)}
         </select>
-      </div>{" "}
-      {/* Actions */}
-      <div className="md:col-span-12 flex items-center gap-2 justify-end mt-4">
-        {" "}
+      </div>
+
+      {/* Actions: موبایل زیر هم، فول‌عرض؛ از sm کنار هم. ارتفاع ثابت. */}
+      <div className="md:col-span-12 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-2">
         <button
           type="button"
           onClick={onClear}
-          className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+          className="h-[44px] w-full sm:w-auto px-4 rounded-lg border text-gray-700 hover:bg-gray-50"
         >
-          پاکسازی{" "}
+          پاکسازی
         </button>
         <button
           type="submit"
-          className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+          className="h-[44px] w-full sm:w-auto px-5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
         >
           اعمال فیلتر
         </button>
