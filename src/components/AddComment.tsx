@@ -67,7 +67,7 @@ export default function AddComment({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="نظر خود را بنویسید..."
-        className="w-full h-24 p-2 rounded-md border border-gray-300 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#19CCA7]"
+        className="w-full h-18 sm:h-28 p-2 rounded-md border border-gray-300 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#19CCA7]"
       />
       <div className="flex justify-end">
         <button

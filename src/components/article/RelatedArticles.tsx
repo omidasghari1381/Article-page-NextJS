@@ -1,10 +1,9 @@
 import Image from "next/image";
 import InlineNextCard from "./InlineNextCard";
-import Thumbnail from "./Thumbnail"; // default
+import { SideImage } from "./Thumbnail";
 
 type Author = { id: string; firstName: string; lastName: string };
 
-// مدل‌هایی که ممکنه از API بگیریم:
 type CategoryLike =
   | string
   | { name?: string | null; slug?: string | null }
@@ -43,44 +42,30 @@ export default function RelatedArticles({
   fallbackCategory,
 }: {
   post: LikeArticle | LatestItem | null;
-  fallbackCategory?: string; // ← از بیرون هم می‌تونیم بدیم
+  fallbackCategory?: string;
 }) {
   if (!post) return null;
 
-  // نرمال‌سازی
   const subject =
-    (post as LikeArticle).subject ??
-    (post as LatestItem).title ??
-    "—";
-
+    (post as LikeArticle).subject ?? (post as LatestItem).title ?? "—";
   const createdAt =
-    (post as LikeArticle).createdAt ??
-    (post as LatestItem).createdAt ??
-    "";
-
+    (post as LikeArticle).createdAt ?? (post as LatestItem).createdAt ?? "";
   const author =
-    (post as LikeArticle).author ??
-    (post as LatestItem).author ??
-    undefined;
-
+    (post as LikeArticle).author ?? (post as LatestItem).author ?? undefined;
   const categoryName = getCategoryName(
     (post as LikeArticle).category ?? (post as LatestItem).category,
     fallbackCategory
   );
-
   const thumbnail =
-    (post as LikeArticle).thumbnail ??
-    (post as LatestItem).thumbnail ??
-    null;
-
+    (post as LikeArticle).thumbnail ?? (post as LatestItem).thumbnail ?? null;
   const readingPeriod =
     (post as LikeArticle).readingPeriod ??
     (post as LatestItem).readingPeriod ??
     null;
 
   return (
-    <section className="mt-14">
-      <div className="flex items-center mb-6 gap-4 ">
+    <section className="mt-14" >
+      <div className="flex items-center mb-6 gap-4">
         <Image
           src="/svg/Rectangle2.svg"
           alt="thumb"
@@ -92,16 +77,25 @@ export default function RelatedArticles({
         </h3>
       </div>
 
-      <div className="space-y-6">
-        <div className="flex items-start gap-4 w-full">
-          <Thumbnail thumbnail={thumbnail ?? undefined} category={categoryName} />
-          <InlineNextCard
-            author={author}
-            createdAt={createdAt}
-            subject={subject}
-            readingPeriod={readingPeriod} // خودش فرمت می‌کنه («یک دقیقه»/«N دقیقه»)
-          />
-        </div>
+      {/* کارت و عکس — ریسپانسیو */}
+      <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-stretch w-full">
+
+        <SideImage
+          thumbnail={thumbnail ?? undefined}
+          category={categoryName}
+          // نسبت 16:9 در موبایل، اندازه ثابت در دسکتاپ
+          mobileAspectClass="aspect-[16/9]"
+          desktopSizeClass="lg:aspect-auto lg:h-[163.5px] lg:w-[291.14px]"
+          rounded="rounded-xl"
+          badgeClass="bottom-2 right-2 sm:bottom-2 sm:right-2"
+          categoryTextClass="bottom-2.5 right-4 sm:bottom-2.5 sm:right-4 text-xs"
+        />        <InlineNextCard
+          author={author}
+          createdAt={createdAt}
+          subject={subject}
+          readingPeriod={readingPeriod}
+          className="flex-1"
+        />
       </div>
     </section>
   );
