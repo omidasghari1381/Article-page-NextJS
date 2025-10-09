@@ -1,14 +1,34 @@
 import Image from "next/image";
 
+type Author = { id: string; firstName: string; lastName: string };
+type CategoryObj = { id: string; name: string; slug: string };
+
+type CategoryLike = string | CategoryObj | CategoryObj[] | null | undefined;
+
 type LatestItem = {
   id?: string;
   title?: string;
   createdAt?: string;
-  category?: string;
-  author?: { id: string; firstName: string; lastName: string };
+  categories?: CategoryLike;
+  author?: Author;
   thumbnail?: string | null;
-  readingPeriod?: number | string; // ← قابل‌انعطاف
+  readingPeriod?: number | string | null;
 };
+
+function getCategoryName(categories: CategoryLike): string | null {
+  if (!categories) return null;
+  if (typeof categories === "string") {
+    const trimmed = categories.trim();
+    return trimmed.length ? trimmed : null;
+  }
+  if (Array.isArray(categories)) {
+    const first = categories[0];
+    const name = first?.name?.trim();
+    return name?.length ? name : null;
+  }
+  const name = categories.name?.trim();
+  return name?.length ? name : null;
+}
 
 export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
   return (
@@ -22,7 +42,9 @@ export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
 
       <div className="px-2 sm:px-4 pb-4 space-y-6 sm:space-y-8">
         {posts.length ? (
-          posts.map((p) => <SidebarCard key={p.id ?? Math.random()} post={p} />)
+          posts.map((p) => (
+            <SidebarCard key={p.id ?? `${p.title}-${Math.random()}`} post={p} />
+          ))
         ) : (
           <div className="text-sm text-gray-500">موردی برای نمایش نیست.</div>
         )}
@@ -32,6 +54,8 @@ export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
 }
 
 function SidebarCard({ post }: { post: LatestItem }) {
+  const categoryName = getCategoryName(post.categories);
+
   return (
     <article className="group">
       <div className="relative w-full aspect-[16/10] sm:aspect-[3/2] rounded-md overflow-hidden">
@@ -45,8 +69,10 @@ function SidebarCard({ post }: { post: LatestItem }) {
                  33vw"
           priority={false}
         />
+
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
-        {post.category && (
+
+        {categoryName && (
           <div className="absolute top-3 right-3">
             <div className="relative inline-block">
               <Image
@@ -57,12 +83,13 @@ function SidebarCard({ post }: { post: LatestItem }) {
                 className="block"
                 priority
               />
-              <span className="absolute inset-0 flex items-center justify-center text-white text-[10px] sm:text-xs font-semibold leading-none px-2">
-                {post.category}
+              <span className="absolute inset-0 left-3 flex items-center justify-center text-white text-[10px] sm:text-xs font-semibold leading-none px-2">
+                {categoryName}
               </span>
             </div>
           </div>
         )}
+
         <div className="absolute bottom-3 right-4 left-4 text-white">
           <h5 className="text-sm sm:text-base font-medium leading-7 line-clamp-2">
             {post.title || "—"}
