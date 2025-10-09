@@ -16,7 +16,6 @@ export type CreateArticleInput = {
   introduction?: string | null;
   quotes?: string | null;
 
-  /** روابط */
   categoryId: string;        // الزامی و تکی
   tagIds?: string[];         // اختیاری (چندتایی)
 

@@ -18,11 +18,9 @@ const UpdateArticleSchema = z.object({
   readingPeriod: z.number().int().nonnegative().optional(),
   summery: z.array(z.string()).optional().nullable(),
 
-  // روابط
-  categoryId: z.string().uuid().optional(), // الزامی فقط وقتی میاد
+  categoryId: z.string().uuid().optional(), 
   tagIds: z.array(z.string().uuid()).optional(),
 
-  // فقط URL یا null
   thumbnail: z.string().url().optional().or(z.literal(null)),
 });
 

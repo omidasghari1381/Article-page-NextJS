@@ -1,69 +1,73 @@
 // app/page.tsx
-import HeroSection from "@/components/HeroSection";
-import SidebarLatest from "@/components/SidebarLatest";
+
 import Image from "next/image";
 import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
-import { timeAgoFa } from "@/app/utils/date";
 import { absolute } from "@/app/utils/base-url";
-import Chosen from "@/components/Chosen";
-import Educational from "@/components/Educational";
-import LatestArticle from "@/components/LatestArticle";
-import Markets from "@/components/Markets";
-import Video from "@/components/Video";
+import Chosen from "@/components/mainPage/Chosen";
+import Educational from "@/components/mainPage/Educational";
+import LatestArticle from "@/components/mainPage/LatestArticle";
+import Markets from "@/components/mainPage/Markets";
+import Video from "@/components/mainPage/Video";
+import HeroSection from "@/components/mainPage/HeroSection";
+import SidebarLatest from "@/components/mainPage/SidebarLatest";
 
-type ArticleDetail = {
+// ---- Types ----
+type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
+type CategoryLite = { id: string; name: string; slug?: string };
+type ArticleLite = {
   id: string;
   title: string;
-  subject: string;
-  category: string;
+  subject: string | null;
+  createdAt: string; // ISO
   viewCount: number;
   thumbnail: string | null;
-  Introduction: string | null;
-  author: { id: string; firstName: string; lastName: string };
-  createdAt: string;
+  readingPeriod: number;
+  author?: AuthorDTO;
+  categories?: CategoryLite[];
 };
-
-type Latest = {
-  thumbnail: string | null;
-  viewCount: number;
-  subject: string;
-  createdAt: string;
-};
-
 type ApiList<T> = { items: T[]; total?: number };
 
-async function getLatest() {
-  const res = await fetch(absolute("/api/articles?perPage=4"), {
+// ---- Fetchers (SSR) ----
+async function getLatest(): Promise<ArticleLite[]> {
+  const res = await fetch(absolute("/api/articles?perPage=4&sortBy=createdAt&sortDir=DESC"), {
     cache: "no-store",
   });
   if (!res.ok) return [];
-  const data = await res.json();
+  const data: ApiList<ArticleLite> = await res.json();
   return data.items ?? [];
 }
 
-async function getHero() {
-  const res = await fetch(absolute("/api/articles?perPage=1"), {
+async function getHero(): Promise<ArticleLite | null> {
+  const res = await fetch(absolute("/api/articles?perPage=1&sortBy=createdAt&sortDir=DESC"), {
     cache: "no-store",
   });
   if (!res.ok) return null;
-  const data = await res.json();
+  const data: ApiList<ArticleLite> = await res.json();
   return Array.isArray(data.items) ? data.items[0] ?? null : null;
 }
 
-// اگر خواستی مستقیم Service بزنی (TypeORM/سرور): از این الگو استفاده کن
-// import { getDataSource } from "@/server/db/typeorm.datasource";
-// import { ArticleService } from "@/server/modules/articles/services/article.service";
-// async function getLatestByService() { const ds = await getDataSource(); return new ArticleService(ds).list({ perPage: 4 }); }
+// ✅ فچ مخصوص سکشن Educational
+async function getEducational(): Promise<ArticleLite[]> {
+  // در صورت نیاز می‌تونی به کوئری، فیلتر دسته/تگ اضافه کنی:
+  // /api/articles?perPage=5&sortBy=createdAt&sortDir=DESC&categoryId=... یا &tagId=...
+  const res = await fetch(absolute("/api/articles?perPage=5&sortBy=createdAt&sortDir=DESC"), {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  const data: ApiList<ArticleLite> = await res.json();
+  return data.items ?? [];
+}
 
 export default async function HomePage() {
-  // تمام دیتاها اینجا روی سرور آماده می‌شن
-  const [latest, article] = await Promise.all([getLatest(), getHero()]);
+  const [latest, hero, educational] = await Promise.all([
+    getLatest(),
+    getHero(),
+    getEducational(),
+  ]);
 
-  const categories = Object.values(
-    articleCategoryEnum
-  ) as articleCategoryEnum[];
+  const categories = Object.values(articleCategoryEnum) as articleCategoryEnum[];
 
-  /** داده‌ی نمایشی sidebar (مثل نمونه‌ی قبلیت) */
+  /** داده‌ی نمایشی sidebar – موقت؛ هر وقت APIش آماده شد جایگزین می‌کنیم */
   const related = [
     {
       id: "1a591415-538a-462a-990d-ef3d390c1289",
@@ -78,48 +82,23 @@ export default async function HomePage() {
       thumbnail: "/image/a.png",
       readingPeriod: "7 min",
     },
-    {
-      id: "1a591415-538a-461a-990d-ef3d390c1289",
-      title: "DSAFADSFASDF",
-      createdAt: "2025-09-10 14:10:52.900681",
-      category: "پراپ تریدینگ",
-      author: {
-        id: "1a591415-538a-466a-990d-ef3d390c1289",
-        firstName: "امید",
-        lastName: "اصغری",
-      },
-      thumbnail: "/image/a.png",
-      readingPeriod: "7 min",
-    },
-    {
-      id: "1a591415-538a-466a-990d-ef3d390c1289",
-      title: "DSAFADSFASDF",
-      createdAt: "2025-09-10 14:10:52.900681",
-      category: "پراپ تریدینگ",
-      author: {
-        id: "1a591415-538a-466a-990d-ef3d390c1289",
-        firstName: "امید",
-        lastName: "اصغری",
-      },
-      thumbnail: "/image/a.png",
-      readingPeriod: "7 min",
-    },
+    // ...
   ];
 
   return (
     <main className="w-full">
-      <HeroSection article={article} items={latest} />
+      <HeroSection article={hero} items={latest} />
 
       <div className="px-4 sm:px-6 lg:px-10 xl:px-20 pb-10">
-        {/* تنها بخش کلاینتی این صفحه */}
         <Chosen categories={categories} article={latest[0] ?? null} />
 
         <section className="mt-10">
           <Markets />
         </section>
 
+        {/* ✅ اینجا داده‌ی واقعی را پاس می‌دهیم */}
         <section className="mt-12">
-          <Educational />
+          <Educational items={educational} />
         </section>
 
         <section className="mt-10">
