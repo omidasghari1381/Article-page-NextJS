@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
-export function MediaFilters(props: { initial: { q: string; type: string; sort: string } }) {
+export function MediaFilters(props: {
+  initial: { q: string; type: string; sort: string };
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -61,10 +63,12 @@ export function MediaFilters(props: { initial: { q: string; type: string; sort: 
   }, [type, sort]);
 
   return (
-    <form onSubmit={onSubmit} className="-mx-2 sm:mx-0" dir="rtl">
+    <form onSubmit={onSubmit} className="-mx-2 sm:mx-0">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
         <div className="lg:col-span-6">
-          <label className="block text-sm text-black mb-1 sm:mb-2">جستجو (نام/توضیح)</label>
+          <label className="block text-sm text-black mb-1 sm:mb-2">
+            جستجو (نام/توضیح)
+          </label>
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -88,7 +92,9 @@ export function MediaFilters(props: { initial: { q: string; type: string; sort: 
           </div>
 
           <div>
-            <label className="block text-sm text-black mb-1 sm:mb-2">مرتب‌سازی</label>
+            <label className="block text-sm text-black mb-1 sm:mb-2">
+              مرتب‌سازی
+            </label>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
@@ -103,22 +109,28 @@ export function MediaFilters(props: { initial: { q: string; type: string; sort: 
         </div>
 
         {/* Actions */}
-        <div className="lg:col-span-3 flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center justify-end gap-2 sm:gap-3">
-          <Link
-            href="/media/editor"
-            className="px-5 py-2.5 rounded-lg bg-white text-black border-black border hover:bg-gray-100 text-center"
-          >
-            + افزودن مدیا
-          </Link>
-          <div className="flex gap-2 sm:gap-3">
-            <button type="button" onClick={onClear} className="px-4 py-2.5 rounded-lg border text-gray-700 hover:bg-gray-50 w-full sm:w-auto">
-              پاک‌سازی
-            </button>
-            <button type="submit" className="px-5 py-2.5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 w-full sm:w-auto" disabled={isPending}>
-              {isPending ? "در حال به‌روزرسانی…" : "اعمال فیلترها"}
-            </button>
-          </div>
-        </div>
+      </div>{" "}
+      <div className=" flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-7">
+        <Link
+          href="/media/editor"
+          className="px-5 py-2.5 rounded-lg bg-white text-black border-black border hover:bg-gray-100 text-center max-h-12 whitespace-nowrap  sm:w-auto  w-full"
+        >
+          + افزودن مدیا
+        </Link>
+        <button
+          type="button"
+          onClick={onClear}
+          className="px-4 py-2.5 rounded-lg border text-gray-700 hover:bg-gray-50 w-full sm:w-auto max-h-12 whitespace-nowrap"
+        >
+          پاک‌سازی
+        </button>
+        <button
+          type="submit"
+          className="px-5 py-2.5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 w-full sm:w-auto max-h-12 whitespace-nowrap"
+          disabled={isPending}
+        >
+          {isPending ? "در حال به‌روزرسانی…" : "اعمال فیلترها"}
+        </button>
       </div>
     </form>
   );

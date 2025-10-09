@@ -58,7 +58,7 @@ export default async function MediaListPage({
 
   return (
     <main className="pb-28 pt-4 sm:pt-6" dir="rtl">
-      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-8xl px-3 sm:px-6 lg:px-8">
         <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "مدیا", href: "/media" }]} />
 
         <div className="mt-4 sm:mt-6 flex items-center justify-between text-gray-800">

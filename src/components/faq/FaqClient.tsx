@@ -46,7 +46,6 @@ export default function FaqClient() {
 
   return (
     <section>
-      {/* Banner stays visually identical; container below is made responsive */}
       <BannerWithBox setCategory={setCategory} />
 
       <div className="mt-20 sm:mt-24 mb-10 sm:mb-14 space-y-5 sm:space-y-7">
