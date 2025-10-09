@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/Breadcrumb";
 
-// اگر enum ساده داری، می‌تونی از نوع رشته‌ای استفاده کنی تا وابستگی کم شود
 export type MediaType = "image" | "video";
 
 export type MediaDTO = {
@@ -285,98 +284,220 @@ export default function MediaEditorClient({
   }
 
   return (
-    <main className="pb-24 pt-10 px-20 " dir="rtl">
-      <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "مدیا", href: "/media" }, { label: "افزودن/ویرایش مدیا", href: "/media/editor" }]} />
+    // 🔧 ریسپانسیو فقط برای موبایل و خیلی بزرگ‌ها
+    <main
+      className="pb-24 pt-10 px-4 sm:px-8 lg:px-16 xl:px-20 2xl:px-28 2xl:pb-28"
+      dir="rtl"
+    >
+      <div className="mx-auto w-full max-w-[92rem] 2xl:max-w-[110rem]">
+        <Breadcrumb
+          items={[
+            { label: "مای پراپ", href: "/" },
+            { label: "مدیا", href: "/media" },
+            { label: "افزودن/ویرایش مدیا", href: "/media/editor" },
+          ]}
+        />
 
-      {error && (
-        <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">{error}</div>
-      )}
+        {error && (
+          <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
+            {error}
+          </div>
+        )}
 
-      <section className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-10">
-        {/* ستون آپلود/پیش‌نمایش */}
-        <div className="md:col-span-5 space-y-4">
-          <div onDrop={onDrop} onDragOver={preventDefault} onDragEnter={preventDefault} onDragLeave={preventDefault} className="border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center min-h-[220px] bg-gray-50">
-            {previewUrl ? (
-              <div className="w-full">
-                <div className="aspect-square rounded-xl overflow-hidden bg-gray-100 mb-3">
-                  {type === "image" ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={previewUrl} alt={name || "preview"} className="w-full h-full object-cover" />
-                  ) : (
-                    <video src={previewUrl} className="w-full h-full object-cover" controls />
-                  )}
+        <section
+          className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 2xl:gap-8 pt-8"
+        >
+          {/* ستون آپلود/پیش‌نمایش */}
+          <div className="md:col-span-5 2xl:col-span-5 space-y-4">
+            <div
+              onDrop={onDrop}
+              onDragOver={preventDefault}
+              onDragEnter={preventDefault}
+              onDragLeave={preventDefault}
+              className="border-2 border-dashed rounded-2xl p-4 sm:p-6 2xl:p-8 flex flex-col items-center justify-center text-center min-h-[200px] sm:min-h-[220px] 2xl:min-h-[260px] bg-gray-50"
+            >
+              {previewUrl ? (
+                <div className="w-full">
+                  {/* در موبایل نسبت مربعی، روی خیلی بزرگ‌ها نسبت بازتر */}
+                  <div className="rounded-xl overflow-hidden bg-gray-100 mb-3 aspect-square 2xl:aspect-[16/10]">
+                    {type === "image" ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={previewUrl}
+                        alt={name || "preview"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <video
+                        src={previewUrl}
+                        className="w-full h-full object-cover"
+                        controls
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      className="text-black px-3 py-2 rounded-lg border hover:bg-gray-100"
+                      onClick={() => {
+                        if (previewUrl) navigator.clipboard.writeText(previewUrl);
+                        alert("آدرس کپی شد!");
+                      }}
+                    >
+                      کپی آدرس
+                    </button>
+                    {temp ? (
+                      <button
+                        type="button"
+                        className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
+                        onClick={handleDeleteTemp}
+                      >
+                        حذف فایل موقت
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="text-black px-3 py-2 rounded-lg border hover:bg-gray-100"
+                        onClick={handlePickFile}
+                      >
+                        جایگزینی فایل…
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center justify-center gap-2">
-                  <button type="button" className="text-black px-3 py-2 rounded-lg border hover:bg-gray-100" onClick={() => { navigator.clipboard.writeText(previewUrl); alert("آدرس کپی شد!"); }}>
-                    کپی آدرس
+              ) : (
+                <div className="space-y-3">
+                  <div className="text-gray-700">فایل را اینجا دراپ کنید</div>
+                  <div className="text-xs text-gray-500">فقط تصویر یا ویدئو</div>
+                  <button
+                    type="button"
+                    onClick={handlePickFile}
+                    className="px-3 py-2 rounded-lg border hover:bg-gray-100 text-gray-700"
+                  >
+                    انتخاب فایل…
                   </button>
-                  {temp ? (
-                    <button type="button" className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50" onClick={handleDeleteTemp}>
-                      حذف فایل موقت
-                    </button>
-                  ) : (
-                    <button type="button" className="text-black px-3 py-2 rounded-lg border hover:bg-gray-100" onClick={handlePickFile}>
-                      جایگزینی فایل…
-                    </button>
-                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="text-gray-700">فایل را اینجا دراپ کنید</div>
-                <div className="text-xs text-gray-500">فقط تصویر یا ویدئو</div>
-                <button type="button" onClick={handlePickFile} className="px-3 py-2 rounded-lg border hover:bg-gray-100 text-gray-700">
-                  انتخاب فایل…
-                </button>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept="image/*,video/*"
+                onChange={(e) => handleFiles(e.target.files)}
+              />
+            </div>
+
+            {uploading && (
+              <div className="w-full">
+                <div className="text-sm mb-1">در حال آپلود…</div>
+                <div className="w-full h-2 bg-gray-200 rounded">
+                  <div
+                    className="h-2 bg-black rounded"
+                    style={{ width: `${uploadProgress ?? 0}%`, transition: "width .2s" }}
+                  />
+                </div>
               </div>
             )}
-
-            <input ref={fileInputRef} type="file" hidden accept="image/*,video/*" onChange={(e) => handleFiles(e.target.files)} />
           </div>
 
-          {uploading && (
-            <div className="w-full">
-              <div className="text-sm mb-1">در حال آپلود…</div>
-              <div className="w-full h-2 bg-gray-200 rounded">
-                <div className="h-2 bg-black rounded" style={{ width: `${uploadProgress ?? 0}%`, transition: "width .2s" }} />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ستون فرم متادیتا */}
-        <div className="md:col-span-7">
-          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="bg-white rounded-2xl shadow-sm border p-6 space-y-5">
-            <div>
-              <label className="block text-sm text-black mb-2">نام</label>
-              <input className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300" value={name} onChange={(e) => setName(e.target.value)} placeholder="مثلاً: کاور مقاله بازار" required />
-            </div>
-
-            <div>
-              <label className="block text-sm text-black mb-2">نوع</label>
-              <select className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300" value={type} onChange={(e) => setType(e.target.value as MediaType)}>
-                <option value="image">تصویر</option>
-                <option value="video">ویدئو</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm text-black mb-2">توضیح</label>
-              <textarea className="w-full min-h-[120px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="توضیح کوتاه (اختیاری)…" maxLength={1000} />
-            </div>
-
-            <div className="flex items-center justify-end gap-3">
-              <button type="button" className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50" onClick={() => { setName(""); setDescription(""); setType("image"); if (temp) handleDeleteTemp(); }}>
+          {/* ستون فرم متادیتا */}
+          <div className="md:col-span-7 2xl:col-span-7">
+            {/* نوار اکشن چسبان فقط در موبایل */}
+            <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-t p-3 flex items-center gap-2 justify-end">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+                onClick={() => {
+                  setName("");
+                  setDescription("");
+                  setType("image");
+                  if (temp) handleDeleteTemp();
+                }}
+              >
                 پاک‌سازی
               </button>
-
-              <button type="submit" className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50" disabled={saving || uploading}>
+              <button
+                type="button"
+                onClick={() => handleSave()}
+                className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                disabled={saving || uploading}
+              >
                 {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت مدیا"}
               </button>
             </div>
-          </form>
-        </div>
-      </section>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSave();
+              }}
+              className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8 space-y-5"
+            >
+              <div>
+                <label className="block text-sm text-black mb-2">نام</label>
+                <input
+                  className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="مثلاً: کاور مقاله بازار"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-black mb-2">نوع</label>
+                <select
+                  className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  value={type}
+                  onChange={(e) => setType(e.target.value as MediaType)}
+                >
+                  <option value="image">تصویر</option>
+                  <option value="video">ویدئو</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-black mb-2">توضیح</label>
+                <textarea
+                  className="w-full min-h-[120px] 2xl:min-h-[160px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="توضیح کوتاه (اختیاری)…"
+                  maxLength={1000}
+                />
+              </div>
+
+              {/* اکشن‌ها — روی دسکتاپ معمولی بدون تغییر؛ روی موبایل sticky bar داریم */}
+              <div className="hidden md:flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+                  onClick={() => {
+                    setName("");
+                    setDescription("");
+                    setType("image");
+                    if (temp) handleDeleteTemp();
+                  }}
+                >
+                  پاک‌سازی
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                  disabled={saving || uploading}
+                >
+                  {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت مدیا"}
+                </button>
+              </div>
+            </form>
+
+            {/* فاصله برای این‌که نوار چسبان موبایل روی محتوا نیفتد */}
+            <div className="h-16 md:h-0" />
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

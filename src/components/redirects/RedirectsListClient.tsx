@@ -147,9 +147,7 @@ export default function RedirectsListClient({ initialQueryString, initialData, s
   return (
     <main className="pb-24 pt-6 px-20">
       <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "ریدایرکت‌ها", href: "/redirects" }]} />
-      <div className="mt-6 flex items-center justify-between text-gray-800">
-        <h1 className="text-2xl font-semibold">لیست ریدایرکت ها</h1>
-      </div>
+
 
       {/* فیلترها / سورت */}
       <section className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8" dir="rtl">

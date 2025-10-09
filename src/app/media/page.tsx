@@ -1,8 +1,8 @@
 import Breadcrumb from "@/components/Breadcrumb";
-import type { SimpleMediaType } from "@/server/modules/media/enums/media.enums";
 import { absolute } from "@/app/utils/base-url";
-import { MediaGrid } from "@/components/media/MediaCart";
 import { MediaFilters } from "@/components/media/MediaFilter";
+import type { SimpleMediaType } from "@/server/modules/media/enums/media.enums";
+import { MediaGrid } from "@/components/media/MediaCart";
 
 /** ---- Types ---- */
 type MediaDTO = {

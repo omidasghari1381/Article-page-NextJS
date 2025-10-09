@@ -13,7 +13,7 @@ type MediaDTO = {
   updatedAt: string;
 };
 
-export const dynamic = "force-dynamic"; // ویرایشگر بهتره تازه باشه
+export const dynamic = "force-dynamic"; 
 
 export default async function Page({
   params,
@@ -33,11 +33,8 @@ export default async function Page({
         initialRecord = (await res.json()) as MediaDTO;
       }
     } catch {
-      // silent: کلاینت خودش ارور مناسب را نمایش می‌دهد
     }
   }
 
-  return (
-    <MediaEditorClient initialId={id} initialRecord={initialRecord} />
-  );
+  return <MediaEditorClient initialId={id} initialRecord={initialRecord} />;
 }
