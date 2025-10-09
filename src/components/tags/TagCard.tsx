@@ -19,7 +19,6 @@ type Props = {
 
 export default function TagCard({ item, editHref, showDates = true }: Props) {
   const { id, name, slug, description, createdAt, updatedAt } = item;
-
   const editLink = typeof editHref === "function" ? editHref(id) : typeof editHref === "string" ? editHref : null;
 
   async function deleteAction(formData: FormData) {
@@ -38,16 +37,20 @@ export default function TagCard({ item, editHref, showDates = true }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border shadow-sm bg-white p-4 text-black">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-col flex-1 min-w-0">
-          <div className="text-base font-semibold">{name}</div>
-          <div className="text-sm text-gray-500 mt-1">@{slug}</div>
-          {description && <p className="text-sm text-gray-700 mt-2 line-clamp-2">{description}</p>}
+    <div className="rounded-2xl border shadow-sm bg-white p-4 sm:p-5 2xl:p-6 text-black">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="text-base font-semibold truncate">{name}</div>
+          <div className="text-sm text-gray-500 mt-1 truncate">@{slug}</div>
+          {description && (
+            <p className="text-sm text-gray-700 mt-2 line-clamp-2 sm:line-clamp-1">{description}</p>
+          )}
         </div>
 
+        {/* Dates (optional) */}
         {showDates && (createdAt || updatedAt) && (
-          <div className="gap-3 text-xs text-gray-500 flex flex-col text-left">
+          <div className="text-xs text-gray-500 flex flex-col text-left sm:text-right shrink-0">
             {createdAt && (
               <div>
                 <span className="text-gray-400">ایجاد: </span>
@@ -63,14 +66,15 @@ export default function TagCard({ item, editHref, showDates = true }: Props) {
           </div>
         )}
 
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Actions */}
+        <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-2 shrink-0">
           {editLink ? (
-            <Link href={editLink} className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50">ویرایش</Link>
+            <Link href={editLink} className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50 text-center whitespace-nowrap">ویرایش</Link>
           ) : null}
 
-          <form action={deleteAction}>
+          <form action={deleteAction} className="contents">
             <input type="hidden" name="id" value={id} />
-            <button className="px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800" type="submit">حذف</button>
+            <button className="px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800 whitespace-nowrap" type="submit">حذف</button>
           </form>
         </div>
       </div>

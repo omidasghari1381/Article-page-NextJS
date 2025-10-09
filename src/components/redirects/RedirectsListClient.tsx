@@ -65,14 +65,12 @@ export default function RedirectsListClient({ initialQueryString, initialData, s
     return p.toString();
   }, [q, isActive, statusCodes, createdFrom, createdTo, sortBy, sortDir, page, pageSize]);
 
-  // روی بار اول از داده‌ی سرور استفاده می‌کنیم؛ وقتی queryString عوض شد، fetch کن
   useEffect(() => {
     if (queryString === initialQueryString) return; // سرور همین را لود کرده
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString]);
 
-  // هر بار فیلتری عوض شد، برو صفحه 1
   useEffect(() => {
     setPage(1);
   }, [q, isActive, statusCodes, createdFrom, createdTo, sortBy, sortDir, pageSize]);
@@ -142,118 +140,121 @@ export default function RedirectsListClient({ initialQueryString, initialData, s
     }
   };
 
-  const redirects = data?.items ?? [];
+  const dataSafe = data ?? initialData;
+  const redirects = dataSafe.items ?? [];
 
   return (
-    <main className="pb-24 pt-6 px-20">
-      <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "ریدایرکت‌ها", href: "/redirects" }]} />
+    <main className="pb-24 pt-6 px-4 sm:px-6 lg:px-16 xl:px-20 2xl:px-28" dir="rtl">
+      <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
+        <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "ریدایرکت‌ها", href: "/redirects" }]} />
 
+        {/* فیلترها / سورت */}
+        <section className="mt-6 bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8" dir="rtl">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 2xl:gap-8">
+            <div className="md:col-span-3">
+              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">جستجو</label>
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="روی from/to جستجو می‌کند…" className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300 ltr" />
+            </div>
 
-      {/* فیلترها / سورت */}
-      <section className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8" dir="rtl">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">جستجو</label>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="روی from/to جستجو می‌کند…" className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 ltr" />
-          </div>
+            <div className="md:col-span-3">
+              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">فعال/غیرفعال</label>
+              <select value={isActive} onChange={(e) => setIsActive(e.target.value as any)} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                <option value="">همه</option>
+                <option value="true">فقط فعال</option>
+                <option value="false">فقط غیرفعال</option>
+              </select>
+            </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">فعال/غیرفعال</label>
-            <select value={isActive} onChange={(e) => setIsActive(e.target.value as any)} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-              <option value="">همه</option>
-              <option value="true">فقط فعال</option>
-              <option value="false">فقط غیرفعال</option>
-            </select>
-          </div>
+            <div className="md:col-span-3">
+              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">از تاریخ (ایجاد)</label>
+              <input type="date" value={createdFrom} onChange={(e) => setCreatedFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+            </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">از تاریخ (ایجاد)</label>
-            <input type="date" value={createdFrom} onChange={(e) => setCreatedFrom(e.target.value)} className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300" />
-          </div>
+            <div className="md:col-span-3">
+              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">تا تاریخ (ایجاد)</label>
+              <input type="date" value={createdTo} onChange={(e) => setCreatedTo(e.target.value)} className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300" />
+            </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">تا تاریخ (ایجاد)</label>
-            <input type="date" value={createdTo} onChange={(e) => setCreatedTo(e.target.value)} className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300" />
-          </div>
+            <div className="md:col-span-6">
+              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">کدهای وضعیت (چندانتخاب)</label>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                {statusOptions.map((c) => {
+                  const active = statusCodes.includes(c as any);
+                  return (
+                    <button key={c} type="button" onClick={() => toggleStatus(c as any)} className={`px-3 py-1.5 rounded-lg border whitespace-nowrap ${active ? "bg-black text-white border-black" : "bg-white text-gray-800 border-gray-200"}`}>
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-          <div className="md:col-span-6">
-            <label className="block text-sm text-gray-800 mb-2">کدهای وضعیت (چندانتخاب)</label>
-            <div className="flex flex-wrap gap-3">
-              {statusOptions.map((c) => {
-                const active = statusCodes.includes(c as any);
-                return (
-                  <button key={c} type="button" onClick={() => toggleStatus(c as any)} className={`px-3 py-1.5 rounded-lg border ${active ? "bg-black text-white border-black" : "bg-white text-gray-800 border-gray-200"}`}>
-                    {c}
-                  </button>
-                );
-              })}
+            <div className="md:col-span-3">
+              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">مرتب‌سازی بر اساس</label>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                {sortableFields.map((f) => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="md:col-span-3">
+              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">جهت مرتب‌سازی</label>
+              <select value={sortDir} onChange={(e) => setSortDir(e.target.value as any)} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                <option value="DESC">نزولی</option>
+                <option value="ASC">صعودی</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-3">
+              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">تعداد در صفحه</label>
+              <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                {[10, 20, 50, 100].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* دکمه‌ها: موبایل ستونی، از sm به بعد ردیفی و کنار هم */}
+            <div className="md:col-span-12 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 justify-end">
+              <Link href="/redirects/editor" className="px-4 py-2.5 rounded-lg border text-gray-800 hover:bg-gray-50 text-center whitespace-nowrap">+افزودن ریدایرکت</Link>
+              <button type="button" onClick={resetFilters} className="px-4 py-2.5 rounded-lg border text-gray-800 hover:bg-gray-50 font-medium whitespace-nowrap">پاکسازی</button>
+              <button type="button" onClick={fetchData} className="px-5 py-2.5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap" disabled={loading}>{loading ? "در حال به‌روزرسانی…" : "اعمال فیلترها"}</button>
             </div>
           </div>
+        </section>
 
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">مرتب‌سازی بر اساس</label>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-              {sortableFields.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
-          </div>
+        <section className="mt-6" dir="rtl">
+          {error && <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">{error}</div>}
 
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">جهت مرتب‌سازی</label>
-            <select value={sortDir} onChange={(e) => setSortDir(e.target.value as any)} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-              <option value="DESC">نزولی</option>
-              <option value="ASC">صعودی</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-800 mb-2">تعداد در صفحه</label>
-            <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300">
-              {[10, 20, 50, 100].map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="md:col-span-12 flex items-center gap-3 justify-end">
-            <Link href="/redirects/editor" className="px-4 py-2 rounded-lg border text-gray-800 hover:bg-gray-50">+افزودن ریدایرکت </Link>
-            <button type="button" onClick={resetFilters} className="px-4 py-2 rounded-lg border text-gray-800 hover:bg-gray-50 font-medium">پاکسازی </button>
-            <button type="button" onClick={fetchData} className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50" disabled={loading}>{loading ? "در حال به‌روزرسانی…" : "اعمال فیلترها"}</button>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-6" dir="rtl">
-        {error && <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">{error}</div>}
-
-        <div className="grid grid-cols-1 gap-4">
-          {loading ? (
-            <div className="px-4 py-10 text-center text-gray-800">در حال بارگذاری…</div>
-          ) : (data?.items?.length ?? 0) === 0 ? (
-            <div className="px-4 py-10 text-center text-gray-500">آیتمی یافت نشد.</div>
-          ) : (
-            (data?.items ?? []).map((r) => (
-              <RedirectCard key={r.id} item={r} editHref={(id) => `/redirects/editor/${id}`} onDeleteClick={handleDelete} onToggleActive={handleToggleActive} />
-            ))
-          )}
-        </div>
-
-        <div className="flex items-center justify-between px-0 py-6">
-          <div className="text-sm text-gray-500">
-            {data ? (
-              <>نمایش <strong>{(data.page - 1) * data.pageSize + 1}–{Math.min(data.page * data.pageSize, data.total)}</strong> از <strong>{data.total}</strong></>
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
+            {loading ? (
+              <div className="px-4 py-10 text-center text-gray-800">در حال بارگذاری…</div>
+            ) : (dataSafe?.items?.length ?? 0) === 0 ? (
+              <div className="px-4 py-10 text-center text-gray-500">آیتمی یافت نشد.</div>
             ) : (
-              "—"
+              (redirects).map((r) => (
+                <RedirectCard key={r.id} item={r} editHref={(id) => `/redirects/editor/${id}`} onDeleteClick={handleDelete} onToggleActive={handleToggleActive} />
+              ))
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 disabled:opacity-50" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={loading || (data?.page || 1) <= 1}>قبلی</button>
-            <span className="text-sm text-gray-800">صفحه {data?.page || 1} از {data?.pages || 1}</span>
-            <button className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 disabled:opacity-50" onClick={() => setPage((p) => (data ? Math.min(data.pages, p + 1) : p + 1))} disabled={loading || (data ? data.page >= data.pages : true)}>بعدی</button>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 justify-between px-0 py-6">
+            <div className="text-sm text-gray-500 order-2 sm:order-1 text-center sm:text-right">
+              {dataSafe ? (
+                <>نمایش <strong>{(dataSafe.page - 1) * dataSafe.pageSize + 1}–{Math.min(dataSafe.page * dataSafe.pageSize, dataSafe.total)}</strong> از <strong>{dataSafe.total}</strong></>
+              ) : (
+                "—"
+              )}
+            </div>
+            <div className="order-1 sm:order-2 flex items-center gap-2">
+              <button className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 disabled:opacity-50" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={loading || (dataSafe?.page || 1) <= 1}>قبلی</button>
+              <span className="text-sm text-gray-800">صفحه {dataSafe?.page || 1} از {dataSafe?.pages || 1}</span>
+              <button className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 disabled:opacity-50" onClick={() => setPage((p) => (dataSafe ? Math.min(dataSafe.pages, p + 1) : p + 1))} disabled={loading || (dataSafe ? dataSafe.page >= dataSafe.pages : true)}>بعدی</button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
   );
 }

@@ -1,67 +1,4 @@
-// =====================================
-// app/redirects/editor/[[...id]]/page.tsx — responsive container only
-// =====================================
-import Breadcrumb from "@/components/Breadcrumb";
-import { absolute } from "@/app/utils/base-url";
-import RedirectFormClient from "@/components/redirects/RedirectFormClient";
-
-// ---------- Types ----------
-export type RedirectDTO = {
-  id: string;
-  fromPath: string;
-  toPath: string;
-  statusCode: 301 | 302 | 307 | 308;
-  isActive: boolean;
-};
-
-export const dynamic = "force-dynamic";
-
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id?: string[] }>;
-}) {
-  const p = await params;
-  const id = Array.isArray(p?.id) && p.id.length ? p.id[0] : null;
-  let initialRecord: RedirectDTO | null = null;
-
-  if (id) {
-    try {
-      const res = await fetch(absolute(`/api/redirect/${id}`), {
-        cache: "no-store",
-      });
-      if (res.ok) initialRecord = (await res.json()) as RedirectDTO;
-    } catch {}
-  }
-
-  return (
-    <main
-      className="pb-24 pt-6 px-4 sm:px-6 lg:px-16 xl:px-20 2xl:px-28"
-      dir="rtl"
-    >
-      <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
-        <Breadcrumb
-          items={[
-            { label: "مای پراپ", href: "/" },
-            { label: "ریدایرکت‌ها", href: "/redirects" },
-            {
-              label: "افزودن/ویرایش ریدایرکت",
-              href: "/redirects/new-redirect",
-            },
-          ]}
-        />
-        <div className="mt-5">
-          <RedirectFormClient id={id} initialRecord={initialRecord} />
-        </div>
-      </div>
-    </main>
-  );
-}
-
-// =====================================
-// components/redirects/RedirectFormClient.tsx — fixed button heights
-// =====================================
-("use client");
+"use client";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { RedirectDTO } from "@/app/redirects/editor/[[...id]]/page";
@@ -226,8 +163,7 @@ export default function RedirectFormClient({
               />
             </div>
 
-            {/* Fixed-height buttons */}
-            <div className="hidden md:flex items-center justify-end gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-6">
               <button
                 type="button"
                 onClick={() =>
@@ -238,65 +174,32 @@ export default function RedirectFormClient({
                     isActive: true,
                   })
                 }
-                className="h-[44px] px-4 rounded-lg border text-gray-700 hover:bg-gray-50"
+                className="h-[44px] w-full sm:w-auto px-4 rounded-lg border text-gray-700 hover:bg-gray-50 text-center"
               >
                 پاکسازی
               </button>
+
               {isEdit && (
                 <button
                   type="button"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="h-[44px] px-4 rounded-lg border border-red-400 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  className="h-[44px] w-full sm:w-auto px-4 rounded-lg border border-red-400 text-red-600 hover:bg-red-50 disabled:opacity-50 text-center"
                 >
                   حذف
                 </button>
               )}
+
               <button
                 type="submit"
                 disabled={saving}
-                className="h-[44px] px-6 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                className="h-[44px] w-full sm:w-auto px-6 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 text-center"
               >
                 {saving
                   ? "در حال ذخیره…"
                   : isEdit
                   ? "ثبت تغییرات"
                   : "ثبت ریدایرکت"}
-              </button>
-            </div>
-
-            {/* Sticky bar mobile */}
-            <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-t p-3 flex items-center gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() =>
-                  setForm({
-                    fromPath: "",
-                    toPath: "",
-                    statusCode: 301,
-                    isActive: true,
-                  })
-                }
-                className="h-[44px] px-4 rounded-lg border text-gray-700 hover:bg-gray-50 flex-1"
-              >
-                پاکسازی
-              </button>
-              {isEdit && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="h-[44px] px-4 rounded-lg border border-red-400 text-red-600 hover:bg-red-50 disabled:opacity-50 flex-1"
-                >
-                  حذف
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={saving}
-                className="h-[44px] px-6 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 flex-1"
-              >
-                {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت"}
               </button>
             </div>
 

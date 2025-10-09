@@ -25,14 +25,7 @@ export type ListResponse = {
 };
 
 const STATUS_OPTIONS = [301, 302, 307, 308] as const;
-const SORTABLE_FIELDS = [
-  "createdAt",
-  "updatedAt",
-  "fromPath",
-  "toPath",
-  "statusCode",
-  "isActive",
-] as const;
+const SORTABLE_FIELDS = ["createdAt", "updatedAt", "fromPath", "toPath", "statusCode", "isActive"] as const;
 
 function buildQuery(sp: Record<string, string | string[] | undefined>) {
   const p = new URLSearchParams();
@@ -44,27 +37,17 @@ function buildQuery(sp: Record<string, string | string[] | undefined>) {
   const isActive = get("isActive");
   if (isActive === "true" || isActive === "false") p.set("isActive", isActive);
 
-  // statusCode می‌تواند چندتایی باشد
   const statusCode = sp["statusCode"];
-  const codes = (
-    Array.isArray(statusCode) ? statusCode : statusCode ? [statusCode] : []
-  ).map(String);
+  const codes = (Array.isArray(statusCode) ? statusCode : statusCode ? [statusCode] : []).map(String);
   for (const c of codes) p.append("statusCode", c);
 
   const createdFrom = get("createdFrom");
   const createdTo = get("createdTo");
-  if (createdFrom)
-    p.set("createdFrom", new Date(createdFrom + "T00:00:00Z").toISOString());
-  if (createdTo)
-    p.set("createdTo", new Date(createdTo + "T00:00:00Z").toISOString());
+  if (createdFrom) p.set("createdFrom", new Date(createdFrom + "T00:00:00Z").toISOString());
+  if (createdTo) p.set("createdTo", new Date(createdTo + "T00:00:00Z").toISOString());
 
   const sortBy = get("sortBy");
-  p.set(
-    "sortBy",
-    (SORTABLE_FIELDS as readonly string[]).includes(sortBy)
-      ? sortBy
-      : "createdAt"
-  );
+  p.set("sortBy", (SORTABLE_FIELDS as readonly string[]).includes(sortBy) ? sortBy : "createdAt");
 
   const sortDir = get("sortDir");
   p.set("sortDir", sortDir === "ASC" ? "ASC" : "DESC");
@@ -89,15 +72,13 @@ const getInit = async () => {
   };
 };
 
-const fetchRedirects = cache(
-  async (qs: string): Promise<ListResponse | null> => {
-    noStore();
-    const init = await getInit();
-    const res = await fetch(absolute(`/api/redirect?${qs}`), init);
-    if (!res.ok) return null;
-    return (await res.json()) as ListResponse;
-  }
-);
+const fetchRedirects = cache(async (qs: string): Promise<ListResponse | null> => {
+  noStore();
+  const init = await getInit();
+  const res = await fetch(absolute(`/api/redirect?${qs}`), init);
+  if (!res.ok) return null;
+  return (await res.json()) as ListResponse;
+});
 
 export default async function Page({
   searchParams,
@@ -108,13 +89,7 @@ export default async function Page({
   const qs = buildQuery(sp);
   const initial =
     (await fetchRedirects(qs)) ??
-    ({
-      items: [],
-      total: 0,
-      page: 1,
-      pageSize: 20,
-      pages: 1,
-    } satisfies ListResponse);
+    ({ items: [], total: 0, page: 1, pageSize: 20, pages: 1 } satisfies ListResponse);
 
   return (
     <RedirectsListClient
