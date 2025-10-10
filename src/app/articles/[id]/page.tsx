@@ -3,14 +3,14 @@ import Breadcrumb from "@/components/Breadcrumb";
 import HeroCard from "@/components/article/HeroCard";
 import ArticleBody from "@/components/article/ArticleBody";
 import InlineNextCard from "@/components/article/InlineNextCard";
-import Thumbnail, { SideImage } from "@/components/article/Thumbnail"; // ← default import و نام درست
+import Thumbnail, { SideImage } from "@/components/article/Thumbnail";
 import RelatedArticles from "@/components/article/RelatedArticles";
 import CommentsBlock from "@/components/article/CommentsBlock";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { absolute } from "@/app/utils/base-url";
 import SidebarLatest from "@/components/mainPage/SidebarLatest";
-// import type { Metadata } from "next"; // فعلاً استفاده نمی‌شود
+import type { Metadata } from "next"; // ← فقط برای generateMetadata
 
 type Author = { id: string; firstName: string; lastName: string };
 
@@ -25,19 +25,18 @@ type ApiArticle = {
   readingPeriod: number;
   viewCount: number;
   thumbnail: string | null;
-  introduction: string | null; // ← i کوچک
+  introduction: string | null;
   quotes: string | null;
-  summery: string[] | null; // ← همون نام املایی موجود در API
+  summery: string[] | null;
   mainText: string;
   secondaryText: string | null;
   author: Author;
-  categories: ApiCategory[]; // ← آرایه
+  categories: ApiCategory[];
   tags: ApiTag[];
   createdAt: string;
   createdAtISO?: string;
 };
 
-// برای Latest/Related
 type LiteArticle = {
   id: string;
   title: string;
@@ -64,6 +63,171 @@ type CommentWithReplies = {
     user: Author;
   }[];
 };
+
+/* ====================== SEO META TYPES & FETCHERS ====================== */
+export enum SeoEntityType {
+  ARTICLE = "article",
+  CATEGORY = "category",
+}
+export enum RobotsSetting {
+  INDEX_FOLLOW = "index,follow",
+  NOINDEX_FOLLOW = "noindex,follow",
+  INDEX_NOFOLLOW = "index,nofollow",
+  NOINDEX_NOFOLLOW = "noindex,nofollow",
+}
+export enum TwitterCardType {
+  summery = "summery",
+  summery_LARGE_IMAGE = "summery_large_image",
+}
+
+type SeoMetaDTO = {
+  id: string;
+  entityType: SeoEntityType;
+  entityId: string;
+  locale: string;
+  useAuto: boolean;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: RobotsSetting | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  ogImageUrl: string | null;
+  twitterCard: TwitterCardType | null;
+  publishedTime: string | null; // از API می‌آید (toISOString)
+  modifiedTime: string | null;
+  authorName: string | null;
+  tags: string[] | null;
+};
+
+async function getSeoMeta(
+  entityId: string,
+  locale?: string // فعلاً استفاده نمی‌کنیم
+): Promise<SeoMetaDTO | null> {
+  const qs = new URLSearchParams({
+    entityType: SeoEntityType.ARTICLE,
+    entityId,
+    // عمداً locale نمی‌فرستیم تا پیش‌فرض route که "" است استفاده شود
+  });
+
+  const res = await fetch(absolute(`/api/seo?${qs.toString()}`), { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  if (data?.error) return null;
+  return data ?? null;
+}
+ 
+/** مپ کردن RobotsSetting به ساختار Metadata.robots */
+function robotsToMetadata(robots?: RobotsSetting | null): Metadata["robots"] {
+  if (!robots) return undefined;
+  switch (robots) {
+    case RobotsSetting.INDEX_FOLLOW:
+      return { index: true, follow: true };
+    case RobotsSetting.NOINDEX_FOLLOW:
+      return { index: false, follow: true };
+    case RobotsSetting.INDEX_NOFOLLOW:
+      return { index: true, follow: false };
+    case RobotsSetting.NOINDEX_NOFOLLOW:
+      return { index: false, follow: false };
+    default:
+      return undefined;
+  }
+}
+
+/** ادغام متای سفارشی با داده‌های مقاله (fallback روی مقاله وقتی useAuto=true یا فیلدی تهی است). */
+function resolveSeoMetadata(
+  article: ApiArticle,
+  meta: SeoMetaDTO | null
+): Metadata {
+  // داده‌های پایه از خود مقاله
+  const articleUrl = absolute(`/article/${encodeURIComponent(article.id)}`);
+  const articleTitle = article.title;
+  const articleDesc =
+    (article.introduction ?? "").trim() || (article.subject ?? "").trim() || "";
+  const articleImg = article.thumbnail || undefined;
+  const authorFull =
+    `${article.author?.firstName ?? ""} ${
+      article.author?.lastName ?? ""
+    }`.trim() || undefined;
+  const published = article.createdAt || undefined;
+  const modified = article.createdAtISO || article.createdAt || undefined;
+  const keywords = article.tags?.map((t) => t.name) ?? undefined;
+
+  const useAuto = meta?.useAuto ?? true;
+
+  const title =
+    !useAuto && meta?.seoTitle?.trim() ? meta!.seoTitle! : articleTitle;
+
+  const description =
+    !useAuto && meta?.seoDescription?.trim()
+      ? meta!.seoDescription!
+      : articleDesc;
+
+  const canonical =
+    !useAuto && meta?.canonicalUrl?.trim() ? meta!.canonicalUrl! : articleUrl;
+
+  const ogTitle = !useAuto && meta?.ogTitle?.trim() ? meta!.ogTitle! : title;
+
+  const ogDescription =
+    !useAuto && meta?.ogDescription?.trim()
+      ? meta!.ogDescription!
+      : description;
+
+  const ogImage =
+    !useAuto && meta?.ogImageUrl?.trim() ? meta!.ogImageUrl! : articleImg;
+
+  const twitterCard =
+    (!useAuto && meta?.twitterCard) || TwitterCardType.summery_LARGE_IMAGE;
+
+  const robots = robotsToMetadata(meta?.robots);
+
+  // تاریخ‌ها + نویسنده + تگ‌ها
+  const publishedTime =
+    (!useAuto && meta?.publishedTime) || published || undefined;
+  const modifiedTime =
+    (!useAuto && meta?.modifiedTime) || modified || undefined;
+  const authorName = (!useAuto && meta?.authorName) || authorFull || undefined;
+  const tags =
+    (!useAuto && meta?.tags?.length ? meta?.tags : keywords) || undefined;
+
+  const md: Metadata = {
+    title,
+    description,
+    alternates: {
+      canonical,
+    },
+    robots,
+    openGraph: {
+      type: "article",
+      url: articleUrl,
+      title: ogTitle,
+      description: ogDescription,
+      images: ogImage ? [{ url: ogImage }] : undefined,
+      siteName: "MyProp", // در صورت نیاز تنظیم کنید
+      locale: meta?.locale || "fa_IR",
+      authors: authorName ? [authorName] : undefined,
+      publishedTime,
+      modifiedTime,
+      tags,
+    },
+    twitter: {
+      card:
+        twitterCard === TwitterCardType.summery_LARGE_IMAGE
+          ? "summary_large_image"
+          : "summary",
+      title: ogTitle,
+      description: ogDescription,
+      images: ogImage ? [ogImage] : undefined,
+      creator: authorName,
+    },
+    keywords: tags,
+  };
+
+  return md;
+}
+/* ====================== /SEO META ====================== */
 
 async function getArticle(id: string): Promise<ApiArticle | null> {
   const res = await fetch(absolute(`/api/articles/${encodeURIComponent(id)}`), {
@@ -126,13 +290,13 @@ function normalize(article: ApiArticle) {
     id: article.id,
     title: article.title,
     subject: article.subject ?? "",
-    introduction: article.introduction ?? "", // ← درست شد
+    introduction: article.introduction ?? "",
     quotes: article.quotes ?? "",
     mainText: article.mainText,
     secondaryText: article.secondaryText ?? "",
     readingPeriod: article.readingPeriod ?? 0,
     viewCount: article.viewCount ?? 0,
-    thumbnail: article.thumbnail ?? null, // رشته URL
+    thumbnail: article.thumbnail ?? null,
     createdAt: article.createdAt,
     author: article.author,
     category: {
@@ -153,7 +317,7 @@ function JsonLd({ a }: { a: ReturnType<typeof normalize> }) {
     headline: a.title,
     description: a.introduction || "",
     datePublished: a.createdAt,
-    dateModified: a.createdAt, // اگر modified نداری فعلاً همونه
+    dateModified: a.createdAt,
     author: a.author
       ? {
           "@type": "Person",
@@ -173,6 +337,31 @@ function JsonLd({ a }: { a: ReturnType<typeof normalize> }) {
     />
   );
 }
+
+/* ====================== generateMetadata: تزریق SEO به <head> ====================== */
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const { id } = await params;
+
+  // مقاله برای fallback خودکار
+  const article = await getArticle(id);
+  if (!article) {
+    return {
+      title: "مقاله پیدا نشد",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  // لوکال اگر دارید از روتر/کوکی/هدر بخوانید. فعلاً fa-IR
+  const locale = "fa-IR";
+  const meta = await getSeoMeta(id, locale);
+
+  return resolveSeoMetadata(article, meta);
+}
+/* ====================== /generateMetadata ====================== */
 
 export default async function Page({ params }: { params: { id: string } }) {
   const { id } = await params; // Next.js 15
@@ -238,12 +427,9 @@ export default async function Page({ params }: { params: { id: string } }) {
               <SideImage
                 thumbnail={a.thumbnail || undefined}
                 category={a.category.name}
-                // موبایل: نسبت 16:9 و تمام عرض
                 mobileAspectClass="aspect-[16/9]"
-                // دسکتاپ: هم‌قد کارت و عرض ثابت کنار کارت
                 desktopSizeClass="lg:aspect-auto lg:h-[163.5px] lg:w-[291.14px]"
                 rounded="rounded-xl"
-                // بدج پایین راست
                 badgeClass="bottom-2 right-2 sm:bottom-2 sm:right-2"
                 categoryTextClass="bottom-3 right-4 sm:bottom-3.5 sm:right-5 text-xs"
               />

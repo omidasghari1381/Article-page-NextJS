@@ -1,28 +1,6 @@
 import { DataSource, Repository, In } from "typeorm";
-import type { userRoleEnum } from "../enums/userRoleEnum";
 import { User } from "../entities/user.entity";
-import type { getUserEnum } from "../enums/sortUserBy.enum";
-
-export type UpdateUserDto = Partial<{
-  firstName: string;
-  lastName: string;
-  phone: string;
-  passwordHash: string;
-  role: userRoleEnum;
-}>;
-
-export type ListUserQuery = {
-  q?: string;
-  role?: userRoleEnum | userRoleEnum[];
-  createdFrom?: Date;
-  createdTo?: Date;
-  sortBy?: getUserEnum;
-  sortDir?: "ASC" | "DESC";
-  page?: number;
-  pageSize?: number;
-  withDeleted?: boolean; // 👈 اضافه شد
-  deletedOnly?: boolean; // 👈 اضافه شد
-};
+import type { ListUserQuery, UpdateUserDto } from "../types/service.type";
 
 export class UserService {
   private repo: Repository<User>;
@@ -33,7 +11,7 @@ export class UserService {
   async getOneById(id: string, opts?: { withDeleted?: boolean }) {
     return this.repo.findOne({
       where: { id },
-      withDeleted: !!opts?.withDeleted, // 👈 اگر لازم شد
+      withDeleted: !!opts?.withDeleted, 
     });
   }
 
@@ -53,14 +31,11 @@ export class UserService {
 
     const qb = this.repo.createQueryBuilder("u");
 
-    // 👇 کنترل soft delete
     if (withDeleted || deletedOnly) qb.withDeleted();
 
     if (deletedOnly) {
-      // اگر از فلگ isDeleted استفاده می‌کنی:
       qb.andWhere("(u.deletedAt IS NOT NULL OR u.isDeleted = 1)");
     } else if (!withDeleted) {
-      // فقط اکتیوها
       qb.andWhere(
         "(u.deletedAt IS NULL AND (u.isDeleted = 0 OR u.isDeleted IS NULL))"
       );

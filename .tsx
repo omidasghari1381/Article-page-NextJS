@@ -1,199 +1,265 @@
-"use client";
+import React from "react";
 
-import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-
-const ROLE_OPTIONS = [
-  { label: "ADMIN", value: "ADMIN" },
-  { label: "EDITOR", value: "EDITOR" },
-  { label: "CLIENT", value: "CLIENT" },
-];
-
-const SORT_BY = [
-  { label: "تاریخ ایجاد", value: "createdAt" },
-  { label: "نام", value: "firstName" },
-  { label: "نام‌خانوادگی", value: "lastName" },
-  { label: "تلفن", value: "phone" },
-  { label: "نقش", value: "role" },
-  { label: "تاریخ بروزرسانی", value: "updatedAt" },
-];
-
-export function UsersFilter() {
-  const router = useRouter();
-  const sp = useSearchParams();
-
-  const initial = useMemo(() => {
-    const get = (k: string, d = "") => sp.get(k) ?? d;
-
-    const selectedRoles = sp.getAll("role").length
-      ? sp.getAll("role")
-      : get("role")
-      ? get("role")!.split(",").filter(Boolean)
-      : [];
-
-    return {
-      q: get("q"),
-      roles: selectedRoles as string[],
-      createdFrom: get("createdFrom"),
-      createdTo: get("createdTo"),
-      sortBy: get("sortBy", "createdAt"),
-      sortDir: (get("sortDir", "DESC") || "DESC").toUpperCase(),
-      pageSize: get("pageSize", "20"),
-    };
-  }, [sp]);
-
-  const [roles, setRoles] = useState<string[]>(initial.roles);
-
-  const updateQuery = (patch: Record<string, string | string[] | undefined>) => {
-    const usp = new URLSearchParams(sp.toString());
-    Object.entries(patch).forEach(([k, v]) => {
-      usp.delete(k);
-      if (Array.isArray(v)) {
-        v.filter(Boolean).forEach((val) => usp.append(k, val));
-      } else if (v) {
-        usp.set(k, v);
-      }
-    });
-    usp.set("page", "1");
-    router.push(`?${usp.toString()}`);
-  };
-
-  const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-
-    const q = String(fd.get("q") || "");
-    const createdFrom = String(fd.get("createdFrom") || "");
-    const createdTo = String(fd.get("createdTo") || "");
-    const sortBy = String(fd.get("sortBy") || "createdAt");
-    const sortDir = String(fd.get("sortDir") || "DESC");
-    const pageSize = String(fd.get("pageSize") || "20");
-
-    updateQuery({
-      q: q || undefined,
-      role: roles.length ? roles : undefined,
-      createdFrom: createdFrom || undefined,
-      createdTo: createdTo || undefined,
-      sortBy,
-      sortDir,
-      pageSize,
-    });
-  };
-
-  const onClear = () => {
-    setRoles([]);
-    router.push(`?`);
-  };
-
-  const toggleRole = (value: string) => {
-    setRoles((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
-  };
-
+export default function HeroSection() {
   return (
-    <form onSubmit={onSubmit} className="grid gap-4 sm:gap-6 2xl:gap-8 md:grid-cols-12" dir="rtl">
-      <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">جستجو</label>
-        <input
-          name="q"
-          defaultValue={initial.q}
-          placeholder="نام / نام‌خانوادگی / تلفن"
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
-        />
-      </div>
+    <section className=" text-white w-full ">
+      {/* هدر بالایی */}
+      <div className="relative bg-black h-[479px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center overflow-hidden">
+        {/* لایه نویز + گرادینت */}
 
-      <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">از تاریخ</label>
-        <input
-          type="date"
-          name="createdFrom"
-          defaultValue={initial.createdFrom}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
-        />
-      </div>
+        {/* متن سمت راست */}
+        <div className="relative flex flex-col items-start space-y-6 pr-20 z-10">
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <span>سروش نوروزی</span>
+            <span>·</span>
+            <span>۳ روز پیش</span>
+          </div>
 
-      <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">تا تاریخ</label>
-        <input
-          type="date"
-          name="createdTo"
-          defaultValue={initial.createdTo}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
-        />
-      </div>
+          <h1 className="text-2xl md:text-3xl font-bold">
+            چگونه در فارکس ضرر نکنیم:
+            <br />
+            <span className="font-normal text-gray-300">
+              راهکارهای مؤثر برای معامله‌گران موفق
+            </span>
+          </h1>
 
-      <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">مرتب‌سازی</label>
-        <select
-          name="sortBy"
-          defaultValue={initial.sortBy}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
-        >
-          {SORT_BY.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-      </div>
+          <button className="bg-[#19CCA7] hover:bg-[#15b697] text-white px-6 py-3 rounded-lg font-medium transition">
+            ← مطالعه مقاله
+          </button>
+        </div>
 
-      <div className="md:col-span-6">
-        <label className="block text-sm text-gray-600 mb-2">نقش</label>
-        <div className="flex flex-wrap gap-3">
-          {ROLE_OPTIONS.map((o) => {
-            const active = roles.includes(o.value);
-            return (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => toggleRole(o.value)}
-                className={`px-3 py-1.5 rounded-lg border ${active ? "bg-black text-white border-black" : "bg-white text-gray-800 border-gray-200"}`}
-                aria-pressed={active}
-                title={o.label}
-              >
-                {o.label}
-              </button>
-            );
-          })}
+        {/* تصویر سمت چپ */}
+
+        <div className="relative ">
+          <div className="absolute inset-0">
+            {/* گرادینت پس‌زمینه */}
+            <div className="absolute inset-0 bg-gradient-to-l from-[#000A08] to-[#000A08]/0" />
+            {/* نویز با تکرار */}
+            <div
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: "url('/Image/noise.png')",
+                backgroundRepeat: "repeat",
+                backgroundSize: "auto",
+              }}
+            />
+          </div>
+          <img
+            src="/Image/hero1.jpg"
+            alt="Trading App"
+            className="h-[479px] w-[853.13px] rounded-lg shadow-lg object-cover"
+          />
         </div>
       </div>
 
-      <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">جهت</label>
-        <select
-          name="sortDir"
-          defaultValue={initial.sortDir}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
-        >
-          <option value="DESC">نزولی</option>
-          <option value="ASC">صعودی</option>
-        </select>
+      {/* بخش کارت‌ها */}
+
+      <div className="mx-auto p-6  grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6  -translate-y-20 h-[303px] w-[1280px] backdrop-blur-[70px] rounded-lg">
+        {[1, 2, 3, 4].map((item) => (
+          <div
+            key={item}
+            className="bg-white  rounded-lg shadow hover:shadow-lg transition overflow-hidden"
+          >
+            <img
+              src={`/Image/hero${item}.jpg`}
+              alt="Article"
+              className="w-full h-40 object-cover"
+            />
+            <div className="p-4">
+              <h3 className="text-base font-bold text-gray-800 ">
+                چگونه در فارکس ضرر نکنیم: راهکارهای مؤثر برای معامله‌گران موفق
+              </h3>
+              <div className="flex items-center justify-items-start gap-6 mt-3 text-xs text-gray-500">
+                <span>۳ روز پیش</span>
+                <span>۴۴ بازدید</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+
+
+-----------------------------------
+"use client";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import React from "react";
+import { timeAgoFa } from "@/app/utils/date";
+
+/** سازگار با ArticleLite در app/page.tsx */
+type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
+type CategoryLite = { id: string; name: string; slug?: string };
+type ArticleLite = {
+  id: string;
+  title: string;
+  subject: string | null;
+  createdAt: string; // ISO
+  viewCount: number;
+  thumbnail: string | null;
+  readingPeriod: number;
+  author?: AuthorDTO;
+  categories?: CategoryLite[];
+};
+
+export default function HeroSection({
+  article,
+  items,
+}: {
+  article: ArticleLite | null;
+  items: ArticleLite[] | null;
+}) {
+  const router = useRouter();
+  const handleRedirect = () => {
+    if (article?.id) router.push(`/article/${article.id}`);
+  };
+
+  return (
+    <section className="text-white w-full">
+      {/* Hero */}
+      <div className="relative bg-black mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-stretch overflow-hidden rounded-xl">
+        {/* متن سمت راست/چپ */}
+        <div className="relative flex flex-col justify-center space-y-4 md:space-y-6 py-8 md:py-10 z-10 order-2 md:order-1">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-300">
+            <Image src="/svg/write.svg" alt="نویسنده" width={22} height={22} />
+            <span>{article?.author?.firstName ?? ""}</span>
+            <span>{article?.author?.lastName ?? ""}</span>
+            <span className="opacity-60">·</span>
+            <Image
+              src="/svg/whiteCalender.svg"
+              alt="تاریخ"
+              width={22}
+              height={22}
+            />
+            <span>
+              {article?.createdAt ? timeAgoFa(article.createdAt) : "—"}
+            </span>
+          </div>
+
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-relaxed">
+            {article?.title ?? "—"}
+            <br />
+            <span className="font-normal text-gray-300">
+              {article?.subject ?? ""}
+            </span>
+          </h1>
+
+          <div className="flex w-full sm:w-auto">
+            <button
+              className="w-full sm:w-auto bg-[#19CCA7] hover:bg-[#15b697] disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 sm:px-6 py-3 rounded-lg font-medium transition"
+              onClick={handleRedirect}
+              disabled={!article?.id}
+            >
+              ← مطالعه مقاله
+            </button>
+          </div>
+        </div>
+
+        {/* تصویر بک‌گراند/کناری */}
+        <div className="relative min-h-[220px] sm:min-h-[300px] md:min-h-[420px] lg:min-h-[480px] order-1 md:order-2 rounded-xl overflow-hidden">
+          {/* گرین/نویز و گرادیانت */}
+          <div className="absolute inset-0 z-[1]">
+            <div className="absolute inset-0 bg-gradient-to-l md:bg-gradient-to-l from-[#000A08]/70 md:from-[#000A08] to-transparent" />
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage: "url('/Image/noise.png')",
+                backgroundRepeat: "repeat",
+                backgroundSize: "auto",
+              }}
+            />
+          </div>
+
+          {/* تصویر */}
+          <Image
+            src={article?.thumbnail ?? "/Image/hero1.jpg"}
+            alt={article?.title ?? "Hero"}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 50vw"
+            priority
+          />
+        </div>
       </div>
 
-      <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1 sm:mb-2">در صفحه</label>
-        <select
-          name="pageSize"
-          defaultValue={initial.pageSize}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
-        >
-          {[10,20,40,80,100].map(n => <option key={n} value={n}>{n}</option>)}
-        </select>
-      </div>
+      {/* لیست آخرین‌ها */}
+      <div className="mx-auto mt-6 sm:mt-8 lg:mt-10 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-5 md:p-6 lg:-translate-y-10">
+          {/* روی موبایل: اسلایدر افقی؛ از md به بالا: گرید */}
+          <div className="mx-auto p-6  grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6  -translate-y-20 h-[303px] w-[1280px] backdrop-blur-[100px] rounded-lg justify-center">
+            <div className="md:col-span-full md:hidden">
+              <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mb-2 align-middle">
+                {items?.map((item) => (
+                  <article
+                    key={item.id}
+                    className="min-w-[260px] max-w-[260px] snap-start bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden"
+                  >
+                    <div className="relative w-full h-40">
+                      <Image
+                        src={item.thumbnail ?? "/Image/placeholder.jpg"}
+                        alt={item.subject ?? item.title}
+                        fill
+                        className="object-cover"
+                        sizes="260px"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-sm font-bold text-gray-800 line-clamp-2">
+                        {item.subject ?? item.title}
+                      </h3>
+                      <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                        <span>
+                          {item.createdAt ? timeAgoFa(item.createdAt) : "—"}
+                        </span>
+                        <span>بازدید {item.viewCount}</span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
 
-      {/* Actions: موبایل زیر هم، فول‌عرض؛ از sm کنار هم. ارتفاع ثابت. */}
-      <div className="md:col-span-12 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-2">
-        <button
-          type="button"
-          onClick={onClear}
-          className="h-[44px] w-full sm:w-auto px-4 rounded-lg border text-gray-700 hover:bg-gray-50"
-        >
-          پاکسازی
-        </button>
-        <button
-          type="submit"
-          className="h-[44px] w-full sm:w-auto px-5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
-        >
-          اعمال فیلتر
-        </button>
+            {items?.map((item) => (
+              <article
+                key={`md-${item.id}`}
+                className="hidden md:block bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden"
+              >
+                <div className="relative w-full h-40 md:h-44 lg:h-48">
+                  <Image
+                    src={item.thumbnail ?? "/Image/placeholder.jpg"}
+                    alt={item.subject ?? item.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 50vw, 25vw"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="text-base font-bold text-gray-800 line-clamp-2">
+                    {item.subject ?? item.title}
+                  </h3>
+                  <div className="flex items-center gap-6 mt-3 text-xs text-gray-500">
+                    <span>
+                      {item.createdAt ? timeAgoFa(item.createdAt) : "—"}
+                    </span>
+                    <span>بازدید {item.viewCount}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+
+            {/* اگر آیتمی نبود */}
+            {!items?.length && (
+              <div className="col-span-full text-center text-sm text-gray-200 py-8">
+                محتوایی برای نمایش وجود ندارد.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </form>
+    </section>
   );
 }

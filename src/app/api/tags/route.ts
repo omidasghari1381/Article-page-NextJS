@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDataSource } from "@/server/db/typeorm.datasource"; // همونی که قبلاً ساختی
-import { TagsService } from "@/server/modules/articles/services/tag.service";
+import { TagsService } from "@/server/modules/tags/services/tag.service";
 
 const CreateTagSchema = z.object({
   name: z.string().min(2).max(150),

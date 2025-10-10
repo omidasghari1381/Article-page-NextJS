@@ -4,6 +4,7 @@ import { MediaItem } from "../entities/mediaItem.entity";
 import { SimpleMediaType } from "../enums/media.enums";
 import path from "path";
 import { promises as fsp } from "node:fs";
+import { sortOptionEnum } from "../enums/SortOption.enum";
 
 export const CreateMediaInput = z.object({
   name: z.string().min(1).max(255),
@@ -21,25 +22,18 @@ export const UpdateMediaInput = z.object({
   description: z.string().nullable().optional(),
 });
 export type UpdateMediaInputType = z.infer<typeof UpdateMediaInput>;
-type SortOption = "newest" | "oldest" | "name_asc" | "name_desc";
+type SortOption = sortOptionEnum;
 
 export class MediaService {
   constructor(private ds: DataSource) {}
 
   async listMedia(params?: {
-    /** جستجو در name/description. واژه‌ها با فاصله جدا شوند (AND). */
     q?: string;
-    /** فیلتر تک‌تایی نوع مدیا، برای سازگاری قدیمی */
     type?: SimpleMediaType;
-    /** فیلتر چندتایی نوع مدیا (ارجح بر type) */
     types?: SimpleMediaType[];
-    /** سورت نتایج */
     sort?: SortOption;
-    /** فیلتر از تاریخ ساخت (inclusive) */
     createdFrom?: Date | string;
-    /** فیلتر تا تاریخ ساخت (inclusive) */
     createdTo?: Date | string;
-    /** صفحه‌بندی */
     limit?: number;
     offset?: number;
   }) {
@@ -50,30 +44,25 @@ export class MediaService {
 
     const qb = repo.createQueryBuilder("m");
 
-    // --- Search (q) ---
     if (params?.q && params.q.trim().length > 0) {
       const words = params.q.trim().split(/\s+/).filter(Boolean);
 
-      // هر واژه باید در name یا description وجود داشته باشد (AND)
       words.forEach((w, i) => {
         const key = `q${i}`;
         const like = `%${w}%`;
-        // اگر Postgres دارید و می‌خواهید case-insensitive دقیق: از ILIKE استفاده کنید
-        // qb.andWhere(`(m.name ILIKE :${key} OR m.description ILIKE :${key})`, { [key]: like });
+
         qb.andWhere(`(m.name LIKE :${key} OR m.description LIKE :${key})`, {
           [key]: like,
         });
       });
     }
 
-    // --- Type filter ---
     if (params?.types && params.types.length > 0) {
       qb.andWhere("m.type IN (:...types)", { types: params.types });
     } else if (params?.type) {
       qb.andWhere("m.type = :type", { type: params.type });
     }
 
-    // --- Date range ---
     if (params?.createdFrom) {
       qb.andWhere("m.createdAt >= :from", {
         from:
@@ -92,7 +81,7 @@ export class MediaService {
     }
 
     // --- Sort ---
-    const sort: SortOption = params?.sort ?? "newest";
+    const sort: SortOption = params?.sort ?? sortOptionEnum.newest;
     switch (sort) {
       case "oldest":
         qb.orderBy("m.createdAt", "ASC");
@@ -137,14 +126,11 @@ export class MediaService {
     return item;
   }
 
-  /** ایجاد مدیا (با جلوگیری از ثبت URL تکراری) */
   async createMedia(input: CreateMediaInputType) {
-    // اگر در لایه API اعتبارسنجی می‌کنی، این خط لازم نیست:
     CreateMediaInput.parse(input);
 
     const repo = this.ds.getRepository(MediaItem);
 
-    // جلوگیری از URL تکراری (اختیاری اما توصیه‌شده)
     const urlExists = await repo.exists({ where: { url: input.url.trim() } });
     if (urlExists) throw new Error("این آدرس قبلاً ثبت شده است");
 
@@ -193,7 +179,7 @@ export class MediaService {
     const repo = this.ds.getRepository(MediaItem);
     const item = await repo.findOne({ where: { id } });
     if (!item) throw new Error("Media not found");
-    console.log(item)
+    console.log(item);
     // مسیر فایل قبل از حذف DB
     const fileUrl = item.url;
 

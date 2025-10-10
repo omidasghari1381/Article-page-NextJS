@@ -1,33 +1,7 @@
 import { DataSource, type FindOptionsWhere, ILike, Repository } from "typeorm";
 import { RedirectStatus } from "../enums/RedirectStatus.enum";
 import { Redirect } from "../entities/redirect.entity";
-import type { getRedirectEnum } from "../enums/getRedirect.enum";
-
-export type UpdateRedirectDto = Partial<{
-  fromPath: string;
-  toPath: string;
-  statusCode: RedirectStatus;
-  isActive: boolean;
-}>;
-
-export type ListRedirectsQuery = {
-  q?: string;
-  isActive?: boolean;
-  statusCode?: RedirectStatus | RedirectStatus[];
-  createdFrom?: Date;
-  createdTo?: Date;
-  sortBy?: getRedirectEnum;
-  sortDir?: "ASC" | "DESC";
-  page?: number;
-  pageSize?: number;
-};
-
-export type CreateRedirectDto = {
-  fromPath: string;
-  toPath: string;
-  statusCode?: RedirectStatus;
-  isActive?: boolean;
-};
+import type { CreateRedirectDto, ListRedirectsQuery, UpdateRedirectDto } from "../types/service.type";
 
 export class RedirectService {
   private repo: Repository<Redirect>;
@@ -136,7 +110,6 @@ export class RedirectService {
     return result.affected === 1;
   }
 
-  // اختیاری: upsert براساس fromPath (کارآمد برای سینک فایل/CSV)
   async upsertByFromPath(dto: CreateRedirectDto) {
     const existing = await this.getOneByFromPath(dto.fromPath);
     if (existing) {

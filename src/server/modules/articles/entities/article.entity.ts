@@ -9,9 +9,8 @@ import {
 } from "typeorm";
 import { AbstractEntity } from "@/server/core/abstracts/entity.base";
 import { User } from "../../users/entities/user.entity";
-import { ArticleCategory } from "./articleCategory.entity";
-import { MediaItem } from "../../media/entities/mediaItem.entity";
-import { ArticleTag } from "./articleTages.entity";
+import { ArticleCategory } from "../../categories/entities/category.entity";
+import { ArticleTag } from "../../tags/entities/tage.entity";
 
 @Entity({ name: "articles" })
 @Index("idx_articles_title", ["title"])
@@ -20,11 +19,9 @@ export class Article extends AbstractEntity {
   @Column({ type: "varchar", length: 200 })
   title!: string;
 
-  /** slug اختیاری اما بسیار توصیه‌شده برای سئو و مسیرها */
   @Column({ type: "varchar", length: 220, nullable: true })
   slug!: string | null;
 
-  /** فقط id نویسنده نگه‌داری می‌شود، حذف نویسنده مقاله را پاک نمی‌کند */
   @ManyToOne(() => User, {
     nullable: true,
     onDelete: "SET NULL",
@@ -76,11 +73,9 @@ export class Article extends AbstractEntity {
   @Column({ type: "int", default: 0 })
   viewCount!: number;
 
-  /** مدت مطالعه به دقیقه */
   @Column({ type: "int", unsigned: true, default: 0 })
   readingPeriod!: number;
 
-  /** خلاصه‌های گلوله‌ای/هایلایت‌ها */
   @Column({ type: "json", nullable: true })
   summery!: string[] | null;
 }

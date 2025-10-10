@@ -104,7 +104,11 @@ export async function POST(req: NextRequest) {
     const out =
       parsed.entityType === SeoEntityType.ARTICLE
         ? await service.createForArticle(parsed.entityId, fields, parsed.locale)
-        : await service.createForCategory(parsed.entityId, fields, parsed.locale);
+        : await service.createForCategory(
+            parsed.entityId,
+            fields,
+            parsed.locale
+          );
 
     return NextResponse.json(out, { status: 201 });
   } catch (err: any) {
@@ -112,7 +116,10 @@ export async function POST(req: NextRequest) {
     if (err?.name === "ZodError") {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message ?? "Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -135,16 +142,21 @@ export async function GET(req: NextRequest) {
         : await service.getForCategory(parsed.entityId, parsed.locale);
 
     if (!record) {
-      return NextResponse.json({ error: "SEO meta not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "SEO meta not found" },
+        { status: 404 }
+      );
     }
-
     return NextResponse.json(record, { status: 200 });
   } catch (err: any) {
     console.error("❌ SEO get error:", err);
     if (err?.name === "ZodError") {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message ?? "Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -162,7 +174,11 @@ export async function PATCH(req: NextRequest) {
     const out =
       parsed.entityType === SeoEntityType.ARTICLE
         ? await service.updateForArticle(parsed.entityId, fields, parsed.locale)
-        : await service.updateForCategory(parsed.entityId, fields, parsed.locale);
+        : await service.updateForCategory(
+            parsed.entityId,
+            fields,
+            parsed.locale
+          );
 
     return NextResponse.json(out, { status: 200 });
   } catch (err: any) {
@@ -170,7 +186,10 @@ export async function PATCH(req: NextRequest) {
     if (err?.name === "ZodError") {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message ?? "Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -199,6 +218,9 @@ export async function DELETE(req: NextRequest) {
     if (err?.name === "ZodError") {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    return NextResponse.json({ error: err?.message ?? "Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message ?? "Server Error" },
+      { status: 500 }
+    );
   }
 }

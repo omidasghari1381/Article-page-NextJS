@@ -1,24 +1,9 @@
-// src/server/modules/categories/CategoryService.ts
 import { DataSource, SelectQueryBuilder } from "typeorm";
-import { ArticleCategory } from "../entities/articleCategory.entity";
-import z from "zod";
-
-export type CategoryListFilters = {
-  q?: string;
-  parentId?: string;
-  hasParent?: "yes" | "no"; // yes=فقط زیرشاخه، no=فقط ریشه
-  depthMin?: number;
-  depthMax?: number;
-  createdFrom?: string; // ISO (YYYY-MM-DD)
-  createdTo?: string; // ISO
-  sortBy?: "createdAt" | "updatedAt" | "name" | "slug" | "depth";
-  sortDir?: "ASC" | "DESC";
-  page?: number;
-  pageSize?: number;
-};
+import { ArticleCategory } from "../entities/category.entity";
+import type { CategoryListFilters } from "../types/service.type";
 
 export class CategoryService {
-  constructor(private ds: DataSource) {}
+  constructor(private readonly ds: DataSource) {}
 
   private baseQB(): SelectQueryBuilder<ArticleCategory> {
     return this.ds
@@ -67,24 +52,20 @@ export class CategoryService {
         { q: `%${q}%` }
       );
     }
-
     if (parentId) {
       qb.andWhere("p.id = :parentId", { parentId });
     }
-
     if (hasParent === "yes") {
       qb.andWhere("c.parentId IS NOT NULL");
     } else if (hasParent === "no") {
       qb.andWhere("c.parentId IS NULL");
     }
-
     if (typeof depthMin === "number") {
       qb.andWhere("c.depth >= :depthMin", { depthMin });
     }
     if (typeof depthMax === "number") {
       qb.andWhere("c.depth <= :depthMax", { depthMax });
     }
-
     if (createdFrom) {
       qb.andWhere("DATE(c.createdAt) >= :createdFrom", { createdFrom });
     }
@@ -92,7 +73,6 @@ export class CategoryService {
       qb.andWhere("DATE(c.createdAt) <= :createdTo", { createdTo });
     }
 
-    // مرتب‌سازی امن بر اساس allowlist
     const sortColumnMap: Record<string, string> = {
       createdAt: "c.createdAt",
       updatedAt: "c.updatedAt",
@@ -105,7 +85,6 @@ export class CategoryService {
       sortDir === "ASC" ? "ASC" : "DESC"
     );
 
-    // صفحه‌بندی
     const take = Math.max(1, Math.min(100, pageSize));
     const skip = Math.max(0, (Math.max(1, page) - 1) * take);
 
@@ -124,21 +103,15 @@ export class CategoryService {
 
   async listCategories() {
     const repo = this.ds.getRepository(ArticleCategory);
-    // مرتب‌سازی معنادار: عمق سپس نام
-    const list = await repo.find({
+    return repo.find({
       relations: ["parent"],
       order: { depth: "ASC", name: "ASC" },
     });
-    return list;
   }
 
   async getCategoryById(id: string) {
     const repo = this.ds.getRepository(ArticleCategory);
-    const cat = await repo.findOne({
-      where: { id },
-      relations: ["parent", "children"],
-    });
-    return cat;
+    return repo.findOne({ where: { id }, relations: ["parent", "children"] });
   }
 
   async createCategory(input: {
@@ -166,8 +139,7 @@ export class CategoryService {
       depth: parent ? (parent.depth ?? 0) + 1 : 0,
     });
 
-    const saved = await repo.save(cat);
-    return saved;
+    return repo.save(cat);
   }
 
   async updateCategory(
@@ -210,11 +182,9 @@ export class CategoryService {
       if (newParent) {
         if (newParent.id === cat.id)
           throw new Error("نمی‌توانید والد را خود دسته قرار دهید");
-
         const ancestorsOfNewParent = await this.getAncestorsChain(newParent.id);
-        if (ancestorsOfNewParent.some((a) => a.id === cat.id)) {
+        if (ancestorsOfNewParent.some((a) => a.id === cat.id))
           throw new Error("والد نامعتبر است (ایجاد چرخه)");
-        }
       }
 
       const oldDepth = cat.depth ?? 0;
@@ -249,25 +219,18 @@ export class CategoryService {
       await repo.save(cat);
     }
 
-    const fresh = await repo.findOne({
+    return repo.findOne({
       where: { id: cat.id },
       relations: ["parent", "children"],
-    });
-    return fresh!;
+    }) as Promise<ArticleCategory>;
   }
 
   async deleteCategory(id: string) {
     const repo = this.ds.getRepository(ArticleCategory);
-    const cat = await repo.findOne({
-      where: { id },
-      relations: ["children"],
-    });
+    const cat = await repo.findOne({ where: { id }, relations: ["children"] });
     if (!cat) throw new Error("Category not found");
-
-    if (cat.children?.length) {
+    if (cat.children?.length)
       throw new Error("ابتدا زیردسته‌ها را حذف یا جابه‌جا کنید");
-    }
-
     await repo.remove(cat);
     return { ok: true };
   }

@@ -7,13 +7,13 @@ import { AbstractEntity } from "@/server/core/abstracts/entity.base";
 @Index(["name"])
 export class MediaItem extends AbstractEntity {
   @Column({ type: "varchar", length: 255 })
-  name!: string; // نام نمایشی
+  name!: string; 
 
   @Column({ type: "text", nullable: true })
-  description!: string | null; // توضیحات
+  description!: string | null; 
 
   @Column({ type: "varchar", length: 1000 })
-  url!: string; // آدرس فایل (می‌تونه local یا CDN باشه)
+  url!: string;
 
   @Column({ type: "enum", enum: SimpleMediaType })
   type!: SimpleMediaType;
