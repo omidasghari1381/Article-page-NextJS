@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Breadcrumb from "@/components/Breadcrumb";
-import SidebarLatest from "@/components/SidebarLatest";
 import HeroCard from "@/components/article/HeroCard";
 import ArticleBody from "@/components/article/ArticleBody";
 import InlineNextCard from "@/components/article/InlineNextCard";
@@ -10,6 +9,7 @@ import CommentsBlock from "@/components/article/CommentsBlock";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { absolute } from "@/app/utils/base-url";
+import SidebarLatest from "@/components/mainPage/SidebarLatest";
 // import type { Metadata } from "next"; // فعلاً استفاده نمی‌شود
 
 type Author = { id: string; firstName: string; lastName: string };

@@ -27,6 +27,17 @@ type ArticleLite = {
 };
 type ApiList<T> = { items: T[]; total?: number };
 
+/** ✅ نوعی که SidebarLatest انتظار دارد (همان LiteArticle صفحه جزئیات) */
+type LiteArticle = {
+  id: string;
+  title: string;
+  createdAt: string;
+  category: string;
+  author: { id: string; firstName: string; lastName: string };
+  thumbnail: string | null;
+  readingPeriod: string | number;
+};
+
 // ---- Fetchers (SSR) ----
 async function getLatest(): Promise<ArticleLite[]> {
   const res = await fetch(absolute("/api/articles?perPage=4&sortBy=createdAt&sortDir=DESC"), {
@@ -48,14 +59,34 @@ async function getHero(): Promise<ArticleLite | null> {
 
 // ✅ فچ مخصوص سکشن Educational
 async function getEducational(): Promise<ArticleLite[]> {
-  // در صورت نیاز می‌تونی به کوئری، فیلتر دسته/تگ اضافه کنی:
-  // /api/articles?perPage=5&sortBy=createdAt&sortDir=DESC&categoryId=... یا &tagId=...
   const res = await fetch(absolute("/api/articles?perPage=5&sortBy=createdAt&sortDir=DESC"), {
     cache: "no-store",
   });
   if (!res.ok) return [];
   const data: ApiList<ArticleLite> = await res.json();
   return data.items ?? [];
+}
+
+/** ✅ مبدل ArticleLite → LiteArticle برای SidebarLatest */
+function toSidebarLite(a: ArticleLite): LiteArticle {
+  const author =
+    a.author && a.author.firstName !== undefined
+      ? {
+          id: a.author.id,
+          firstName: a.author.firstName,
+          lastName: a.author.lastName,
+        }
+      : { id: "", firstName: "", lastName: "" };
+
+  return {
+    id: a.id,
+    title: a.title,
+    createdAt: a.createdAt,
+    category: a.categories?.[0]?.name ?? "",
+    author,
+    thumbnail: a.thumbnail ?? null,
+    readingPeriod: a.readingPeriod ?? 0,
+  };
 }
 
 export default async function HomePage() {
@@ -67,23 +98,8 @@ export default async function HomePage() {
 
   const categories = Object.values(articleCategoryEnum) as articleCategoryEnum[];
 
-  /** داده‌ی نمایشی sidebar – موقت؛ هر وقت APIش آماده شد جایگزین می‌کنیم */
-  const related = [
-    {
-      id: "1a591415-538a-462a-990d-ef3d390c1289",
-      title: "DSAFADSFASDF",
-      createdAt: "2025-09-10 14:10:52.900681",
-      category: "پراپ تریدینگ",
-      author: {
-        id: "1a591415-538a-466a-990d-ef3d390c1289",
-        firstName: "امید",
-        lastName: "اصغری",
-      },
-      thumbnail: "/image/a.png",
-      readingPeriod: "7 min",
-    },
-    // ...
-  ];
+  /** ✅ داده واقعی برای SidebarLatest (به‌جای دیتای موقتی) */
+  const sidebarPosts: LiteArticle[] = (latest ?? []).map(toSidebarLite);
 
   return (
     <main className="w-full">
@@ -96,7 +112,6 @@ export default async function HomePage() {
           <Markets />
         </section>
 
-        {/* ✅ اینجا داده‌ی واقعی را پاس می‌دهیم */}
         <section className="mt-12">
           <Educational items={educational} />
         </section>
@@ -117,11 +132,11 @@ export default async function HomePage() {
             <LatestArticle />
           </div>
           <aside className="lg:col-span-1">
-            <SidebarLatest posts={related} />
+            <SidebarLatest posts={sidebarPosts} />
           </aside>
         </section>
 
-        <section className="mt-16">
+        <section className="mt-25">
           <Video />
         </section>
       </div>

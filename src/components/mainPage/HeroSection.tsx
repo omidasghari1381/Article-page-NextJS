@@ -1,37 +1,31 @@
 "use client";
-import { timeAgoFa } from "@/app/utils/date";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { timeAgoFa } from "@/app/utils/date";
 
-type Article = {
+/** سازگار با ArticleLite در app/page.tsx */
+type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
+type CategoryLite = { id: string; name: string; slug?: string };
+type ArticleLite = {
   id: string;
   title: string;
-  subject: string;
-  category: string;
+  subject: string | null;
+  createdAt: string; // ISO
   viewCount: number;
   thumbnail: string | null;
-  Introduction: string | null;
-  author: { id: string; firstName: string; lastName: string };
-  createdAt: string;
-};
-
-type Latest = {
-  thumbnail: string | null;
-  viewCount: number;
-  subject: string;
-  createdAt: string;
+  readingPeriod: number;
+  author?: AuthorDTO;
+  categories?: CategoryLite[];
 };
 
 export default function HeroSection({
   article,
   items,
 }: {
-  article: Article | null;
-  items: Latest[] | null;
+  article: ArticleLite | null;
+  items: ArticleLite[] | null;
 }) {
-  console.log(items);
-
   const router = useRouter();
   const handleRedirect = () => {
     if (article?.id) router.push(`/article/${article.id}`);
@@ -45,18 +39,11 @@ export default function HeroSection({
         <div className="relative flex flex-col justify-center space-y-4 md:space-y-6 py-8 md:py-10 z-10 order-2 md:order-1">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-300">
             <Image src="/svg/write.svg" alt="نویسنده" width={22} height={22} />
-            <span>{article?.author.firstName}</span>
-            <span>{article?.author.lastName}</span>
+            <span>{article?.author?.firstName ?? ""}</span>
+            <span>{article?.author?.lastName ?? ""}</span>
             <span className="opacity-60">·</span>
-            <Image
-              src="/svg/whiteCalender.svg"
-              alt="تاریخ"
-              width={22}
-              height={22}
-            />
-            <span>
-              {article?.createdAt ? timeAgoFa(article.createdAt) : "—"}
-            </span>
+            <Image src="/svg/whiteCalender.svg" alt="تاریخ" width={22} height={22} />
+            <span>{article?.createdAt ? timeAgoFa(article.createdAt) : "—"}</span>
           </div>
 
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-relaxed">
@@ -99,41 +86,28 @@ export default function HeroSection({
             alt={article?.title ?? "Hero"}
             fill
             className="object-cover"
-            sizes="(max-width: 640px) 100vw,
-                   (max-width: 1024px) 50vw,
-                   50vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 50vw"
             priority
           />
         </div>
       </div>
 
       {/* لیست آخرین‌ها */}
-      <div
-        className="
-          mx-auto mt-6 sm:mt-8 lg:mt-10
-          px-4 sm:px-6 lg:px-8
-        "
-      >
-        <div
-          className="
-            bg-white/10 backdrop-blur-xl rounded-xl
-            p-4 sm:p-5 md:p-6
-            lg:-translate-y-10
-          "
-        >
+      <div className="mx-auto mt-6 sm:mt-8 lg:mt-10 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-5 md:p-6 lg:-translate-y-10">
           {/* روی موبایل: اسلایدر افقی؛ از md به بالا: گرید */}
           <div className="mx-auto p-6  grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6  -translate-y-20 h-[303px] w-[1280px] backdrop-blur-[100px] rounded-lg justify-center">
             <div className="md:col-span-full md:hidden">
               <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mb-2 align-middle">
-                {items?.map((item, idx) => (
+                {items?.map((item) => (
                   <article
-                    key={`${item.createdAt}-${idx}`}
+                    key={item.id}
                     className="min-w-[260px] max-w-[260px] snap-start bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden"
                   >
                     <div className="relative w-full h-40">
                       <Image
                         src={item.thumbnail ?? "/Image/placeholder.jpg"}
-                        alt={item.subject}
+                        alt={item.subject ?? item.title}
                         fill
                         className="object-cover"
                         sizes="260px"
@@ -141,12 +115,10 @@ export default function HeroSection({
                     </div>
                     <div className="p-4">
                       <h3 className="text-sm font-bold text-gray-800 line-clamp-2">
-                        {item.subject}
+                        {item.subject ?? item.title}
                       </h3>
                       <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                        <span>
-                          {item.createdAt ? timeAgoFa(item.createdAt) : "—"}
-                        </span>
+                        <span>{item.createdAt ? timeAgoFa(item.createdAt) : "—"}</span>
                         <span>بازدید {item.viewCount}</span>
                       </div>
                     </div>
@@ -155,15 +127,15 @@ export default function HeroSection({
               </div>
             </div>
 
-            {items?.map((item, idx) => (
+            {items?.map((item) => (
               <article
-                key={`md-${item.createdAt}-${idx}`}
+                key={`md-${item.id}`}
                 className="hidden md:block bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden"
               >
                 <div className="relative w-full h-40 md:h-44 lg:h-48">
                   <Image
                     src={item.thumbnail ?? "/Image/placeholder.jpg"}
-                    alt={item.subject}
+                    alt={item.subject ?? item.title}
                     fill
                     className="object-cover"
                     sizes="(max-width: 1024px) 50vw, 25vw"
@@ -171,12 +143,10 @@ export default function HeroSection({
                 </div>
                 <div className="p-4">
                   <h3 className="text-base font-bold text-gray-800 line-clamp-2">
-                    {item.subject}
+                    {item.subject ?? item.title}
                   </h3>
                   <div className="flex items-center gap-6 mt-3 text-xs text-gray-500">
-                    <span>
-                      {item.createdAt ? timeAgoFa(item.createdAt) : "—"}
-                    </span>
+                    <span>{item.createdAt ? timeAgoFa(item.createdAt) : "—"}</span>
                     <span>بازدید {item.viewCount}</span>
                   </div>
                 </div>

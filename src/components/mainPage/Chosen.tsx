@@ -5,18 +5,26 @@ import { useState } from "react";
 import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
 import { timeAgoFa } from "@/app/utils/date";
 
-type Latest = {
-  thumbnail: string | null;
-  viewCount: number;
-  subject: string;
+/** هماهنگ با ArticleLite صفحه اصلی */
+type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
+type CategoryLite = { id: string; name: string; slug?: string };
+type ArticleLite = {
+  id: string;
+  title: string;
+  subject: string | null;
   createdAt: string;
+  viewCount: number;
+  thumbnail: string | null;
+  readingPeriod: number;
+  author?: AuthorDTO;
+  categories?: CategoryLite[];
 };
 
 export default function Chosen({
   article,
   categories,
 }: {
-  article: Latest | null;
+  article: ArticleLite | null;
   categories: articleCategoryEnum[];
 }) {
   const [selected, setSelected] = useState<articleCategoryEnum | null>(null);
@@ -57,13 +65,13 @@ export default function Chosen({
   );
 }
 
-function ArticleCard({ article }: { article: Latest | null }) {
+function ArticleCard({ article }: { article: ArticleLite | null }) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
       <div className="relative w-full sm:w-48 md:w-56 aspect-[16/9] sm:aspect-[16/10]">
         <Image
           src={article?.thumbnail ?? "/image/a.png"}
-          alt="thumb"
+          alt={article?.subject ?? article?.title ?? "thumb"}
           fill
           className="rounded-md object-cover"
           sizes="(max-width: 640px) 100vw, 220px"
@@ -71,7 +79,7 @@ function ArticleCard({ article }: { article: Latest | null }) {
       </div>
       <div className="flex-1">
         <h4 className="text-base sm:text-lg font-semibold text-[#1C2121] line-clamp-2">
-          {article?.subject ?? "—"}
+          {article?.subject ?? article?.title ?? "—"}
         </h4>
         <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-[#373A41]">
           <div className="flex items-center gap-2">
