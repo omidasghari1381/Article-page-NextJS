@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getDataSource } from "@/server/db/typeorm.datasource"; // همونی که قبلاً ساختی
+import { getDataSource } from "@/server/db/typeorm.datasource";
 import { TagsService } from "@/server/modules/tags/services/tag.service";
 
 const CreateTagSchema = z.object({
@@ -12,7 +12,7 @@ const CreateTagSchema = z.object({
 const ListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   perPage: z.coerce.number().int().min(1).max(100).default(20),
-  q: z.string().trim().optional(), // جستجو روی name/slug (بسته به سرویس)
+  q: z.string().trim().optional(),
 });
 
 export async function POST(req: NextRequest) {

@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { timeAgoFa } from "@/app/utils/date";
 import Link from "next/link";
+import { timeAgoFa } from "@/app/utils/date";
+import { useState } from "react";
 
 type ArticleCardProps = {
   id: string;
@@ -15,18 +16,37 @@ type ArticleCardProps = {
   readingPeriod: number;
 };
 
-export default function ArticleCard({ article }: { article: ArticleCardProps }) {
+export default function ArticleCard({
+  article,
+}: {
+  article: ArticleCardProps;
+}) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   return (
     <div className="relative flex flex-col sm:flex-row bg-white border rounded-xl overflow-hidden hover:shadow-md transition">
-      {/* تصویر */}
-      <div className="w-full sm:w-56 h-48 sm:h-auto relative flex-shrink-0">
+      {/* تصویر → لینک به صفحه مقاله */}
+      <Link
+        href={`/articles/${article.id}`}
+        prefetch
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full sm:w-56 h-48 sm:h-auto relative flex-shrink-0 block"
+      >
         <Image
           src={article.thumbnail || "/image/default-thumb.jpg"}
           alt={article.title}
           fill
-          className="object-cover"
+          className={`object-cover transition-opacity ${
+            imgLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          onLoad={() => setImgLoaded(true)}
+          priority={false}
         />
-      </div>
+        {!imgLoaded && (
+          <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+        )}
+      </Link>
 
       {/* بدنه کارت */}
       <div className="p-4 flex flex-col justify-between flex-grow">
@@ -55,7 +75,7 @@ export default function ArticleCard({ article }: { article: ArticleCardProps }) 
         </div>
       </div>
 
-      {/* دکمه ویرایش - سمت چپ و وسط کارت */}
+      {/* دکمه ویرایش - دسکتاپ */}
       <div className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2">
         <Link
           href={`/articles/editor/${article.id}`}
@@ -65,7 +85,7 @@ export default function ArticleCard({ article }: { article: ArticleCardProps }) 
         </Link>
       </div>
 
-      {/* در موبایل زیر کارت */}
+      {/* موبایل */}
       <div className="flex sm:hidden justify-end p-3 border-t">
         <Link
           href={`/articles/editor/${article.id}`}

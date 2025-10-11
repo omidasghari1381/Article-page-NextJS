@@ -3,8 +3,8 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { getDataSource } from "@/server/db/typeorm.datasource";
-import { CategoryService } from "@/server/modules/articles/services/category.service";
 import { z } from "zod";
+import { CategoryService } from "@/server/modules/categories/services/category.service";
 
 // در Next 15، params باید awaited شود
 type ParamsPromise = Promise<{ id: string }>;

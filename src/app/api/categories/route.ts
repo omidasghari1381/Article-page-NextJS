@@ -1,6 +1,7 @@
 // src/app/api/categories/route.ts
 import { getDataSource } from "@/server/db/typeorm.datasource";
-import { CategoryService } from "@/server/modules/articles/services/category.service";
+import { sortByEnum } from "@/server/modules/categories/enums/sortBy.enum";
+import { CategoryService } from "@/server/modules/categories/services/category.service";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 
@@ -26,7 +27,7 @@ const ListQuerySchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   sortBy: z
-    .enum(["createdAt", "updatedAt", "name", "slug", "depth"])
+    .enum(sortByEnum)
     .optional(),
   sortDir: z.enum(["ASC", "DESC"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
