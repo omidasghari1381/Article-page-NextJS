@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 import axios from "axios";
 import { useCallback, useState } from "react";
@@ -8,7 +7,6 @@ import AddComment from "@/components/AddComment";
 import RepliesAccordion from "@/components/reply";
 import { SessionProvider } from "next-auth/react";
 
-/* ---------- Types ---------- */
 type Author = { id: string; firstName: string; lastName: string };
 
 type CommentWithReplies = {
@@ -28,7 +26,6 @@ type CommentWithReplies = {
   }[];
 };
 
-/* ---------- Public wrapper (with local SessionProvider) ---------- */
 export default function CommentsBlock({
   initialComments,
   articleId,
@@ -49,11 +46,10 @@ export default function CommentsBlock({
   );
 }
 
-/* ---------- Inner client component (original logic) ---------- */
 function CommentsInner({
   initialComments,
   articleId,
-  initialTotal, // اگر بعداً لازم شد (pagination/نمایش تعداد)، آماده‌ست
+  initialTotal, 
 }: {
   initialComments: CommentWithReplies[];
   articleId: string;
@@ -100,7 +96,6 @@ function CommentsInner({
   );
 }
 
-/* ---------- Item ---------- */
 function CommentItem({
   c,
   onSubmitted,
@@ -114,9 +109,7 @@ function CommentItem({
 
   return (
     <article className="rounded-2xl border border-slate-200 p-3 sm:p-4 md:p-5 shadow-xs bg-[#FBFBFB]" dir="rtl">
-      {/* Header row: responsive layout */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        {/* Author + time */}
         <div className="flex items-start sm:items-center gap-3 min-w-0">
           <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden ring-1 ring-slate-200 bg-slate-100 shrink-0">
             <Image
@@ -139,7 +132,6 @@ function CommentItem({
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 sm:gap-3 mt-1 md:mt-0">
           <button
             className="w-10 h-10 sm:w-[42.67px] sm:h-[42.67px] rounded-md flex justify-center items-center active:scale-95 transition"
@@ -167,19 +159,16 @@ function CommentItem({
             }}
             className="h-10 sm:h-[42.67px] px-3 sm:w-[84.27px] rounded-md flex justify-center items-center bg-[#E8FAF6] gap-1.5 active:scale-95 transition"
           >
-            {/* مخفی‌کردن متن در موبایل طبق درخواست */}
             <span className="hidden md:inline text-[#19CCA7] text-base">پاسخ</span>
             <Image src={"/svg/reply.svg"} alt="reply" width={18} height={17} />
           </button>
         </div>
       </div>
 
-      {/* Text */}
       <p className="mt-3 text-[15px] sm:text-[17px] md:text-[18px] font-semibold leading-7 text-[#3B3F3F] break-words">
         {c.text}
       </p>
 
-      {/* Replies */}
       {c.replies?.length ? (
         <div className="mt-3">
           <RepliesAccordion commentId={c.id} defaultOpen={false} className="mt-2" />
