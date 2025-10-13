@@ -47,7 +47,7 @@ export default function UserListItem({
       ? editHref
       : null;
 
-  const finalEditHref = providedEditLink ?? `/users/${id}`;
+  const finalEditHref = providedEditLink ?? `/admin/users/${id}`;
 
   const [copied, setCopied] = useState(false);
 
@@ -77,7 +77,6 @@ export default function UserListItem({
       }`}
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
-        {/* نام/نقش/وضعیت + تلفن؛ روی موبایل زیر هم */}
         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="min-w-0">
             <div className="text-[13px] text-gray-500 mb-1">نام و نقش</div>
@@ -116,7 +115,6 @@ export default function UserListItem({
           </div>
         </div>
 
-        {/* تاریخ‌ها: روی موبایل می‌آد زیر اطلاعات؛ روی دسکتاپ کنار اکشن‌ها */}
         {showDates && (createdAt || updatedAt) && (
           <div className="text-xs text-gray-500 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 md:order-none">
             {createdAt && (
@@ -134,7 +132,6 @@ export default function UserListItem({
           </div>
         )}
 
-        {/* اکشن‌ها: موبایل فول‌عرض و زیر هم؛ از sm کنار هم و ارتفاع ثابت */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:gap-4 md:shrink-0">
           {typeof onEditClick === "function" ? (
             <button

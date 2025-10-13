@@ -23,7 +23,6 @@ export default function DropBox({
       className={`rounded-sm border p-4 gap-4 ${
         open ? "border-[#304C49]" : "border-slate-200"
       } bg-white ${className}`}
-      dir="rtl"
     >
       <button
         type="button"

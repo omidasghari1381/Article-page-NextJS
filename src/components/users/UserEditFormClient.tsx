@@ -160,7 +160,7 @@ export default function UserEditFormClient({
   }
 
   return (
-    <section className="w-full" dir="rtl">
+    <section className="w-full">
       <form
         onSubmit={onSubmit}
         className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8 w-full mx-auto"
@@ -172,7 +172,6 @@ export default function UserEditFormClient({
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 2xl:gap-8">
-          {/* ستون چپ */}
           <div className="md:col-span-6 space-y-4 sm:space-y-6">
             <div>
               <label className="block text-sm text-black mb-2">نام</label>
@@ -215,7 +214,6 @@ export default function UserEditFormClient({
             </div>
           </div>
 
-          {/* ستون راست */}
           <div className="md:col-span-6 space-y-4 sm:space-y-6">
             <div>
               <label className="block text-sm text-black mb-2">
@@ -241,59 +239,59 @@ export default function UserEditFormClient({
                 onChange={handleChange("password")}
               />
             </div>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-end gap-2 sm:gap-2 md:gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, password: "" }))}
+                className="h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg border text-gray-700 hover:bg-gray-50 text-sm md:text-base whitespace-nowrap leading-none"
+              >
+                پاک‌سازی پسورد
+              </button>
 
-            {/* اکشن‌ها — موبایل زیر هم فول‌عرض، از sm کنار هم؛ ارتفاع ثابت */}
-{/* اکشن‌ها — موبایل زیر هم فول‌عرض، از sm کنار هم؛ روی تبلت wrap با هم‌تراز راست */}
-<div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-end gap-2 sm:gap-2 md:gap-3 pt-2">
-  <button
-    type="button"
-    onClick={() => setForm((f) => ({ ...f, password: "" }))}
-    className="h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg border text-gray-700 hover:bg-gray-50 text-sm md:text-base whitespace-nowrap leading-none"
-  >
-    پاک‌سازی پسورد
-  </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 text-sm md:text-base whitespace-nowrap leading-none"
+              >
+                {saving ? "در حال ذخیره…" : "ثبت تغییرات"}
+              </button>
 
-  <button
-    type="submit"
-    disabled={saving}
-    className="h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 text-sm md:text-base whitespace-nowrap leading-none"
-  >
-    {saving ? "در حال ذخیره…" : "ثبت تغییرات"}
-  </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting || form.isDeleted === 1}
+                title={
+                  form.isDeleted === 1 ? "این کاربر قبلاً حذف شده است" : ""
+                }
+                className={`h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg text-white disabled:opacity-50 text-sm md:text-base whitespace-nowrap leading-none ${
+                  form.isDeleted === 1
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-red-700 hover:bg-red-800"
+                }`}
+              >
+                {deleting ? "در حال حذف…" : "حذف کاربر"}
+              </button>
 
-  <button
-    type="button"
-    onClick={handleDelete}
-    disabled={deleting || form.isDeleted === 1}
-    title={form.isDeleted === 1 ? "این کاربر قبلاً حذف شده است" : ""}
-    className={`h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg text-white disabled:opacity-50 text-sm md:text-base whitespace-nowrap leading-none ${
-      form.isDeleted === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-red-700 hover:bg-red-800"
-    }`}
-  >
-    {deleting ? "در حال حذف…" : "حذف کاربر"}
-  </button>
-
-  {form.isDeleted === 1 ? (
-    <button
-      type="button"
-      onClick={handleRestore}
-      disabled={loading}
-      className="h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 text-sm md:text-base whitespace-nowrap leading-none"
-    >
-      {loading ? "در حال بازگردانی..." : "بازیابی کاربر"}
-    </button>
-  ) : (
-    <button
-      type="button"
-      disabled
-      className="h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg bg-gray-300 text-gray-600 cursor-not-allowed text-sm md:text-base whitespace-nowrap leading-none"
-      title="این کاربر حذف نشده است"
-    >
-      بازیابی کاربر
-    </button>
-  )}
-</div>
-
+              {form.isDeleted === 1 ? (
+                <button
+                  type="button"
+                  onClick={handleRestore}
+                  disabled={loading}
+                  className="h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 text-sm md:text-base whitespace-nowrap leading-none"
+                >
+                  {loading ? "در حال بازگردانی..." : "بازیابی کاربر"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="h-[44px] w-full sm:w-auto px-4 md:px-5 rounded-lg bg-gray-300 text-gray-600 cursor-not-allowed text-sm md:text-base whitespace-nowrap leading-none"
+                  title="این کاربر حذف نشده است"
+                >
+                  بازیابی کاربر
+                </button>
+              )}
+            </div>
 
             {problems.length > 0 && (
               <ul className="mt-4 text-xs text-red-600 list-disc pr-5 space-y-1">

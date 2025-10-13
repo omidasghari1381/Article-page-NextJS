@@ -61,9 +61,7 @@ export default function RedirectCard({
 
   return (
     <div className="rounded-2xl border shadow-sm bg-white p-4 sm:p-5 2xl:p-6 text-black">
-      {/* ریشه: موبایل ستونی، از md به بعد کنار هم */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
-        {/* ستون مسیرها */}
         <div className="flex-1 min-w-0">
           <div className="text-[13px] text-gray-500 mb-1">fromPath</div>
           <div className="flex items-center gap-2 min-w-0">
@@ -100,7 +98,6 @@ export default function RedirectCard({
           </div>
         </div>
 
-        {/* تاریخ‌ها: در موبایل بیاد زیر مسیرها؛ در دسکتاپ سمت چپ مسیرها */}
         {showDates && (createdAt || updatedAt) && (
           <div className="text-xs text-gray-500 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 md:order-none">
             {createdAt && (
@@ -118,9 +115,7 @@ export default function RedirectCard({
           </div>
         )}
 
-        {/* وضعیت و اکشن‌ها */}
         <div className="flex flex-col sm:flex-row sm:items-center md:gap-4 gap-3 md:shrink-0">
-          {/* کد و وضعیت: در موبایل بالا/اولِ این ستون نمایش داده می‌شن */}
           <div className="flex items-center gap-3">
             <div className="text-black">
               <span className="text-[13px] mx-1">کد:</span>
@@ -148,7 +143,6 @@ export default function RedirectCard({
           </div>
 
           {(editLink || onEditClick || onDeleteClick || onToggleActive) && (
-            // دکمه‌ها: موبایل فول‌عرض و زیر هم؛ از sm به بعد کنار هم. ارتفاع ثابت.
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2">
               {typeof onToggleActive === "function" && (
                 <button

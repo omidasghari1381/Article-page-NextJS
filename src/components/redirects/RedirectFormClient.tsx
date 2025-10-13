@@ -1,12 +1,11 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { RedirectDTO } from "@/app/redirects/editor/[[...id]]/page";
-import ActionsBar from "./ActionsBar";
 import ActiveCheckbox from "./ActiveCheckbox";
 import ProblemsList from "./ProblemsList";
 import StatusSelect, { STATUS_OPTIONS } from "./StatusSelect";
 import TextInput from "./TextInput";
+import type { RedirectDTO } from "./RedirectCard";
 
 export type RedirectCreatePayload = {
   fromPath: string;
@@ -121,7 +120,7 @@ export default function RedirectFormClient({
   };
 
   return (
-    <section className="w-full" dir="rtl">
+    <section className="w-full">
       <form
         onSubmit={onSubmit}
         className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8 w-full mx-auto"

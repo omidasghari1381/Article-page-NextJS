@@ -52,12 +52,12 @@ export default async function Page({
   } catch {}
 
   return (
-    <main className="pb-24 pt-6 px-4 sm:px-6 lg:px-16 xl:px-20 2xl:px-28" dir="rtl">
+    <main className="pb-24 pt-6">
       <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
         <Breadcrumb
           items={[
             { label: "مای پراپ", href: "/" },
-            { label: "کاربران", href: "/users" },
+            { label: "کاربران", href: "admin/users" },
             { label: "ویرایش کاربر", href: "" },
           ]}
         />

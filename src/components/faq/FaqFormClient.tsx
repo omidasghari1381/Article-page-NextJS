@@ -67,7 +67,7 @@ export default function FaqFormClient() {
 
       if (!res.ok) {
         const t = await res.text();
-        throw new Error(t || "خطا در ایجاد مقاله");
+        throw new Error(t || "خطا در ایجاد سوال");
       }
 
       alert("سوال با موفقیت ثبت شد ✅");
@@ -142,7 +142,7 @@ export default function FaqFormClient() {
                 type="submit"
                 className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
               >
-                ثبت مقاله
+                ثبت سوال
               </button>
             </div>
           </div>

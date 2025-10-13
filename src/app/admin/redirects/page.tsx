@@ -3,17 +3,16 @@ import { cookies, headers } from "next/headers";
 import { unstable_noStore as noStore } from "next/cache";
 import { cache } from "react";
 import RedirectsListClient from "@/components/redirects/RedirectsListClient";
-import { absolute } from "../utils/base-url";
+import { absolute } from "@/app/utils/base-url";
 
-// ---------- Types ----------
 export type RedirectDTO = {
   id: string;
   fromPath: string;
   toPath: string;
   statusCode: 301 | 302 | 307 | 308;
   isActive: boolean;
-  createdAt: string; // ISO
-  updatedAt: string; // ISO
+  createdAt: string; 
+  updatedAt: string;
 };
 
 export type ListResponse = {

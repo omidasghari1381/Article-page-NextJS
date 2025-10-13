@@ -43,13 +43,13 @@ export default function AdminLayout({
             "flex-col",
           ].join(" ")}
         >
-          <nav className="font-bold">
+          <nav className="">
             <SidebarLink href="/admin/users" label="کاربران" />
             <SidebarLink href="/admin/articles" label="مقالات" />
             <SidebarLink href="/admin/media" label="رسانه" />
             <SidebarLink href="/admin/redirects" label="ریدایرکت" />
             <SidebarLink href="/admin/tags" label="تگ ها" />
-            <SidebarLink href="/admin/faq" label="سوالات پرکاربرد" />
+            <SidebarLink href="/admin/faq/editor" label="سوالات پرکاربرد" />
             <SidebarLink href="/admin/langueges" label="زبان ها" />
           </nav>
         </aside>
@@ -68,10 +68,10 @@ function SidebarLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="flex gap-1 px-3 h-18 items-center rounded hover:bg-gray-100 border-b border-gray-100"
+      className="flex gap-1 px-3 h-14 items-center rounded hover:bg-gray-100 border-b border-gray-100"
     >
       <span className="h-2 w-2 rounded-full " aria-hidden />
-      <span className="text-xl">{label}</span>
+      <span className="text-lg">{label}</span>
     </Link>
   );
 }

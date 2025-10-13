@@ -2,7 +2,6 @@ import Breadcrumb from "@/components/Breadcrumb";
 import { absolute } from "@/app/utils/base-url";
 import RedirectFormClient from "@/components/redirects/RedirectFormClient";
 
-// ---------- Types ----------
 export type RedirectDTO = {
   id: string;
   fromPath: string;
@@ -11,38 +10,34 @@ export type RedirectDTO = {
   isActive: boolean;
 };
 
-export const dynamic = "force-dynamic"; // ادیتور بهتره تازه باشه
+export const dynamic = "force-dynamic"; 
 
 export default async function Page({
   params,
 }: {
-  params: Promise<{ id?: string[] }>; // NOTE: async params pattern
+  params: Promise<{ id?: string[] }>;
 }) {
   const p = await params;
   const id = Array.isArray(p?.id) && p.id.length ? p.id[0] : null;
-
   let initialRecord: RedirectDTO | null = null;
-
   if (id) {
     try {
       const res = await fetch(absolute(`/api/redirect/${id}`), { cache: "no-store" });
       if (res.ok) {
         initialRecord = (await res.json()) as RedirectDTO;
       }
-      // 404 or non-ok → بگذار کلاینت پیام مناسب نمایش بده
     } catch {
-      // سکوت: کلاینت خودش خطا/وضعیت را هندل می‌کند
     }
   }
 
   return (
-    <main className="pb-24 pt-6 px-4 sm:px-6 lg:px-16 xl:px-20 2xl:px-28" dir="rtl">
+    <main className="pb-24 pt-6">
       <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
         <Breadcrumb
           items={[
             { label: "مای پراپ", href: "/" },
-            { label: "ریدایرکت‌ها", href: "/redirects" },
-            { label: "افزودن/ویرایش ریدایرکت", href: "/redirects/new-redirect" },
+            { label: "ریدایرکت‌ها", href: "/admin/redirects" },
+            { label: "افزودن/ویرایش ریدایرکت", href: "/admin/redirects/new-redirect" },
           ]}
         />
 

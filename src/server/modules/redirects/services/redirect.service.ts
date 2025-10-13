@@ -1,7 +1,18 @@
-import { DataSource, type FindOptionsWhere, ILike, Repository } from "typeorm";
+import {
+  DataSource,
+  type FindOptionsWhere,
+  ILike,
+  Raw,
+  Repository,
+} from "typeorm";
 import { RedirectStatus } from "../enums/RedirectStatus.enum";
 import { Redirect } from "../entities/redirect.entity";
-import type { CreateRedirectDto, ListRedirectsQuery, UpdateRedirectDto } from "../types/service.type";
+import type {
+  CreateRedirectDto,
+  ListRedirectsQuery,
+  UpdateRedirectDto,
+} from "../types/service.type";
+import { escapeLike } from "@/server/core/utils/escapeLike";
 
 export class RedirectService {
   private repo: Repository<Redirect>;
@@ -22,9 +33,29 @@ export class RedirectService {
   async getOneById(id: string) {
     return await this.repo.findOne({ where: { id } });
   }
-  
+
   async getOneByFromPath(fromPath: string) {
-    return await this.repo.findOne({ where: { fromPath } });
+    try {
+      const term = (fromPath ?? "").trim();
+      if (!term) return [];
+      const pattern = `%${escapeLike(term)}%`;
+      const rows = await this.repo.find({
+        where: {
+          fromPath: Raw(
+            (alias) => `LOWER(${alias}) LIKE LOWER(:pattern) ESCAPE '\\'`,
+            { pattern }
+          ),
+        },
+        take: 10,
+        order: { fromPath: "ASC" },
+      });
+      console.log(rows);
+      return rows;
+    } catch (err) {
+      console.log(err);
+      return { status: 500, message: "server error" };
+    }
+    // return await this.repo.findOne({ where: { fromPath } });
   }
 
   async list(query: ListRedirectsQuery = {}) {
@@ -110,11 +141,11 @@ export class RedirectService {
     return result.affected === 1;
   }
 
-  async upsertByFromPath(dto: CreateRedirectDto) {
-    const existing = await this.getOneByFromPath(dto.fromPath);
-    if (existing) {
-      return this.update(existing.id, dto);
-    }
-    return this.create(dto);
-  }
+  // async upsertByFromPath(dto: CreateRedirectDto) {
+  //   const existing = await this.getOneByFromPath(dto.fromPath);
+  //   if (existing) {
+  //     return this.update(existing.id, dto);
+  //   }
+  //   return this.create(dto);
+  // }
 }

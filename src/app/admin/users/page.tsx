@@ -1,5 +1,3 @@
-// src/app/users/page.tsx
-import Link from "next/link";
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import { UsersFilter } from "./UsersFilter";
@@ -27,7 +25,6 @@ type UserDTO = {
   isDeleted?: number;
 };
 
-// ---- helpers ----
 async function getBaseUrl() {
   if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
   const h = headers();
@@ -93,28 +90,24 @@ export default async function UsersListPage({
   const data = await fetchUsers(sp);
 
   return (
-    <main className="pb-24 pt-6 px-4 sm:px-6 lg:px-16 xl:px-20 2xl:px-28" dir="rtl">
+    <main className="pb-24 pt-6">
       <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
-        <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "کاربران", href: "/users" }]} />
+        <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "کاربران", href: "/admin/users" }]} />
 
-        {/* Header */}
         <div className="mt-4 sm:mt-6 flex items-center justify-between text-gray-800">
           <h1 className="text-xl sm:text-2xl font-semibold">لیست کاربران</h1>
         </div>
 
-        {/* Filters */}
         <section className="mt-6 bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8">
           <Suspense fallback={null}>
             <UsersFilter />
           </Suspense>
         </section>
 
-        {/* Stats */}
         <div className="mt-4 text-sm text-gray-500">
           {data.total.toLocaleString("fa-IR")} کاربر • صفحه {data.page} از {data.pages}
         </div>
 
-        {/* List */}
         <section className="mt-6 space-y-4">
           {data.items.map((u) => (
             <UserListItem key={u.id} item={u} />
@@ -127,7 +120,6 @@ export default async function UsersListPage({
   );
 }
 
-/** ---- Pagination Component ---- */
 function Pagination({ total, page, pageSize }: { total: number; page: number; pageSize: number; }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   if (pages <= 1) return null;

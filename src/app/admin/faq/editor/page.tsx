@@ -1,6 +1,5 @@
 import Breadcrumb from "@/components/Breadcrumb";
 import FaqFormClient from "@/components/faq/FaqFormClient";
-import BannerWithBox from "@/components/faq/BannerWithBox";
 
 export const dynamic = "force-dynamic";
 
@@ -10,14 +9,13 @@ export default function Page() {
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
-          { label: "مقالات", href: "/articles" },
-          { label: "افزودن سوالات", href: "/articles/new" },
+          { label: "سوالات پرکاربرد", href: "/admin/faq" },
+          { label: "افزودن سوالات", href: "/admin/faq/editor" },
         ]}
       />
       <div className="mt-10">
         <FaqFormClient />
       </div>
-      {/* <div className="mt-10"><BannerWithBox /></div> */}
     </main>
   );
 }
