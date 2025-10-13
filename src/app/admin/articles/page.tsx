@@ -1,7 +1,8 @@
 // src/app/articles/article-list/page.tsx
 import { absolute } from "@/app/utils/base-url";
-import ArticleCard from "./ArticleCart";
-import ArticleFilters from "./ArticleFilter";
+import ArticleCard from "@/components/article/ArticleCart";
+import ArticleFilters from "@/components/article/ArticleFilter";
+import Breadcrumb from "@/components/Breadcrumb";
 
 type LiteArticle = {
   id: string;
@@ -65,9 +66,9 @@ export default async function Page({
   const articlesJson = await articlesRes.json();
   const catsJson = catsRes.ok ? await catsRes.json() : null;
 
-  const categories = asArray<{ id: string; name?: string; title?: string }>(catsJson).map(
-    (c) => ({ id: c.id, name: c.name ?? c.title ?? "بدون‌نام" })
-  );
+  const categories = asArray<{ id: string; name?: string; title?: string }>(
+    catsJson
+  ).map((c) => ({ id: c.id, name: c.name ?? c.title ?? "بدون‌نام" }));
 
   const articles: LiteArticle[] = asArray<LiteArticle>(articlesJson);
   const total =
@@ -76,7 +77,13 @@ export default async function Page({
       : articles.length;
 
   return (
-    <main className="px-10 sm:px-20 py-8" dir="rtl">
+    <main className="space-y-7">
+      <Breadcrumb
+        items={[
+          { label: "مای پراپ", href: "/" },
+          { label: "مقالات", href: "/articles" },
+        ]}
+      />
       <div className="text-black text-2xl font-semibold mb-4">
         <span>تعداد مقالات </span>
         <span>({total})</span>

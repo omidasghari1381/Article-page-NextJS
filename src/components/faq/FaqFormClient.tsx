@@ -9,7 +9,7 @@ export type ArticleCreatePayload = {
   category: faqCategory;
 };
 
-export default function ArticleFormClient() {
+export default function FaqFormClient() {
   const [form, setForm] = useState<{
     question: string;
     answer: string;

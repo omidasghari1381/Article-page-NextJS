@@ -7,7 +7,6 @@ export default function Page() {
   return (
     <main
       className={[
-        // keep original look but make padding responsive
         "mx-auto",
         "py-10",
         "px-4 sm:px-6 lg:px-12 xl:px-20",

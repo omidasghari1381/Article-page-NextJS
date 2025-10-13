@@ -25,7 +25,6 @@ export default function ArticleCard({
 
   return (
     <div className="relative flex flex-col sm:flex-row bg-white border rounded-xl overflow-hidden hover:shadow-md transition">
-      {/* تصویر → لینک به صفحه مقاله */}
       <Link
         href={`/articles/${article.id}`}
         prefetch
@@ -48,7 +47,6 @@ export default function ArticleCard({
         )}
       </Link>
 
-      {/* بدنه کارت */}
       <div className="p-4 flex flex-col justify-between flex-grow">
         <div>
           <h2 className="text-base sm:text-lg font-semibold text-black line-clamp-2 mb-1">
@@ -75,20 +73,18 @@ export default function ArticleCard({
         </div>
       </div>
 
-      {/* دکمه ویرایش - دسکتاپ */}
       <div className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2">
         <Link
-          href={`/articles/editor/${article.id}`}
+          href={`/admin/articles/editor/${article.id}`}
           className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50 transition text-sm"
         >
           ویرایش
         </Link>
       </div>
 
-      {/* موبایل */}
       <div className="flex sm:hidden justify-end p-3 border-t">
         <Link
-          href={`/articles/editor/${article.id}`}
+          href={`/admin/articles/editor/${article.id}`}
           className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50 transition text-sm"
         >
           ویرایش

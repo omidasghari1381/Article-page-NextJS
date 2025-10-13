@@ -37,7 +37,7 @@ export function MediaFilters(props: {
       sp.delete("offset");
 
       const qs = sp.toString();
-      return qs ? `/media?${qs}` : `/media`;
+      return qs ? `/admin/media?${qs}` : `/admin/media`;
     },
     [searchParams]
   );
@@ -54,7 +54,7 @@ export function MediaFilters(props: {
     setQ("");
     setType("all");
     setSort("newest");
-    startTransition(() => router.push("/media"));
+    startTransition(() => router.push("/admin/media"));
   }, [router]);
 
   useEffect(() => {
@@ -107,12 +107,10 @@ export function MediaFilters(props: {
             </select>
           </div>
         </div>
-
-        {/* Actions */}
       </div>{" "}
       <div className=" flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-7">
         <Link
-          href="/media/editor"
+          href="/admin/media/editor"
           className="px-5 py-2.5 rounded-lg bg-white text-black border-black border hover:bg-gray-100 text-center max-h-12 whitespace-nowrap  sm:w-auto  w-full"
         >
           + افزودن مدیا

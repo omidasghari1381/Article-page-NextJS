@@ -42,16 +42,27 @@ export default async function Page({
 }) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
-  const sortBy = (typeof sp.sortBy === "string" ? sp.sortBy : "createdAt") as TagFilterState["sortBy"];
-  const sortDir = (typeof sp.sortDir === "string" ? sp.sortDir : "DESC") as TagFilterState["sortDir"];
+  const sortBy = (
+    typeof sp.sortBy === "string" ? sp.sortBy : "createdAt"
+  ) as TagFilterState["sortBy"];
+  const sortDir = (
+    typeof sp.sortDir === "string" ? sp.sortDir : "DESC"
+  ) as TagFilterState["sortDir"];
   const page = typeof sp.page === "string" ? sp.page : "1";
   const perPageParam = typeof sp.perPage === "string" ? sp.perPage : "20";
   const debug = sp.__debug === "1";
 
-  const { items, total, pages, perPage, page: pageNum } = await fetchTags({ q, sortBy, sortDir, page, perPage: perPageParam });
+  const {
+    items,
+    total,
+    pages,
+    perPage,
+    page: pageNum,
+  } = await fetchTags({ q, sortBy, sortDir, page, perPage: perPageParam });
 
   const computedPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
-  const safePages = Number.isFinite(pages) && pages > 0 ? pages : computedPages || 1;
+  const safePages =
+    Number.isFinite(pages) && pages > 0 ? pages : computedPages || 1;
   const canPrev = pageNum > 1;
   const canNext = pageNum < safePages;
 
@@ -68,28 +79,56 @@ export default async function Page({
   };
 
   return (
-    <main className="pb-24 pt-6 px-4 sm:px-6 lg:px-16 xl:px-20 2xl:px-28" dir="rtl">
+    <main className="pb-24 pt-6" dir="rtl">
       <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
-        <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "تگ‌ها", href: "/tags" }]} />
+        <Breadcrumb
+          items={[
+            { label: "مای پراپ", href: "/" },
+            { label: "تگ‌ها", href: "/admin/tags" },
+          ]}
+        />
 
         <div className="mt-4 sm:mt-6 flex items-center justify-between text-gray-800">
           <h1 className="text-xl sm:text-2xl font-semibold">لیست تگ‌ها</h1>
         </div>
 
-        <TagFilters value={{ q, sortBy, sortDir, page: Number(page), pageSize: Number(perPageParam) }} />
+        <TagFilters
+          value={{
+            q,
+            sortBy,
+            sortDir,
+            page: Number(page),
+            pageSize: Number(perPageParam),
+          }}
+        />
 
         <section className="mt-6" dir="rtl">
           {debug ? (
             <pre className="mb-4 rounded bg-gray-50 p-3 text-xs text-gray-700 overflow-auto">
-              {JSON.stringify({ in: { q, sortBy, sortDir, page, perPageParam }, out: { total, perPage, pageNum, pages, safePages } }, null, 2)}
+              {JSON.stringify(
+                {
+                  in: { q, sortBy, sortDir, page, perPageParam },
+                  out: { total, perPage, pageNum, pages, safePages },
+                },
+                null,
+                2
+              )}
             </pre>
           ) : null}
 
           <div className="grid grid-cols-1 gap-3 sm:gap-4">
             {items.length === 0 ? (
-              <div className="px-4 py-10 text-center text-gray-500">آیتمی یافت نشد.</div>
+              <div className="px-4 py-10 text-center text-gray-500">
+                آیتمی یافت نشد.
+              </div>
             ) : (
-              items.map((t) => <TagCard key={t.id} item={t} editHref={`/tags/editor/${t.id}`} />)
+              items.map((t) => (
+                <TagCard
+                  key={t.id}
+                  item={t}
+                  editHref={`/admin/tags/editor/${t.id}`}
+                />
+              ))
             )}
           </div>
 
@@ -97,7 +136,12 @@ export default async function Page({
             <div className="text-sm text-gray-500 order-2 sm:order-1 text-center sm:text-right">
               {total > 0 ? (
                 <>
-                  نمایش <strong>{(pageNum - 1) * perPage + 1}–{Math.min(pageNum * perPage, total)}</strong> از <strong>{total}</strong>
+                  نمایش{" "}
+                  <strong>
+                    {(pageNum - 1) * perPage + 1}–
+                    {Math.min(pageNum * perPage, total)}
+                  </strong>{" "}
+                  از <strong>{total}</strong>
                 </>
               ) : (
                 "—"
@@ -106,21 +150,33 @@ export default async function Page({
 
             <div className="order-1 sm:order-2 flex items-center gap-2">
               {canPrev ? (
-                <Link className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 whitespace-nowrap" href={buildUrl(pageNum - 1)}>
+                <Link
+                  className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                  href={buildUrl(pageNum - 1)}
+                >
                   قبلی
                 </Link>
               ) : (
-                <span className="px-3 py-1.5 rounded-lg border text-gray-400 bg-gray-50 cursor-not-allowed whitespace-nowrap">قبلی</span>
+                <span className="px-3 py-1.5 rounded-lg border text-gray-400 bg-gray-50 cursor-not-allowed whitespace-nowrap">
+                  قبلی
+                </span>
               )}
 
-              <span className="text-sm text-gray-800">صفحه {pageNum} از {safePages}</span>
+              <span className="text-sm text-gray-800">
+                صفحه {pageNum} از {safePages}
+              </span>
 
               {canNext ? (
-                <Link className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 whitespace-nowrap" href={buildUrl(pageNum + 1)}>
+                <Link
+                  className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                  href={buildUrl(pageNum + 1)}
+                >
                   بعدی
                 </Link>
               ) : (
-                <span className="px-3 py-1.5 rounded-lg border text-gray-400 bg-gray-50 cursor-not-allowed whitespace-nowrap">بعدی</span>
+                <span className="px-3 py-1.5 rounded-lg border text-gray-400 bg-gray-50 cursor-not-allowed whitespace-nowrap">
+                  بعدی
+                </span>
               )}
             </div>
           </div>

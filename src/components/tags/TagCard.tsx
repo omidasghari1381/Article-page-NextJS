@@ -33,13 +33,12 @@ export default function TagCard({ item, editHref, showDates = true }: Props) {
       cache: "no-store",
     });
 
-    revalidatePath("/tags");
+    revalidatePath("/admin/tags");
   }
 
   return (
     <div className="rounded-2xl border shadow-sm bg-white p-4 sm:p-5 2xl:p-6 text-black">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="text-base font-semibold truncate">{name}</div>
           <div className="text-sm text-gray-500 mt-1 truncate">@{slug}</div>
@@ -48,7 +47,6 @@ export default function TagCard({ item, editHref, showDates = true }: Props) {
           )}
         </div>
 
-        {/* Dates (optional) */}
         {showDates && (createdAt || updatedAt) && (
           <div className="text-xs text-gray-500 flex flex-col text-left sm:text-right shrink-0">
             {createdAt && (
@@ -66,7 +64,6 @@ export default function TagCard({ item, editHref, showDates = true }: Props) {
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-2 shrink-0">
           {editLink ? (
             <Link href={editLink} className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50 text-center whitespace-nowrap">ویرایش</Link>

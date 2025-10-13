@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
 import { headers } from "next/headers";
-
 import ArticleForm from "@/components/article/ArticleForm";
 import SeoSettingsForm from "@/components/seo/ArticleSeoSettingsForm";
 
@@ -52,7 +51,10 @@ export function mediaAbsolute(pathOrUrl?: string | null) {
   if (!pathOrUrl) return "";
   const v = String(pathOrUrl);
   if (/^https?:\/\//i.test(v)) return v;
-  const mediaBase = (process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "").replace(/\/$/, "");
+  const mediaBase = (process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "").replace(
+    /\/$/,
+    ""
+  );
   const path = v.replace(/^\//, "");
   return mediaBase ? `${mediaBase}/${path}` : `/${path}`;
 }
@@ -70,19 +72,26 @@ async function fetchJSON<T>(
     },
     next:
       init?.revalidate !== undefined || init?.tag
-        ? { revalidate: init?.revalidate, tags: init?.tag ? [init.tag] : undefined }
+        ? {
+            revalidate: init?.revalidate,
+            tags: init?.tag ? [init.tag] : undefined,
+          }
         : undefined,
   });
-  if (!res.ok) throw new Error(await res.text().catch(() => `Fetch failed: ${url}`));
+  if (!res.ok)
+    throw new Error(await res.text().catch(() => `Fetch failed: ${url}`));
   return (await res.json()) as T;
 }
 
 async function getInitialData(articleId?: string) {
   const [cats, tags] = await Promise.all([
-    fetchJSON<ListResponse<CategoryDTO>>(absolute("/api/categories?perPage=100"), {
-      revalidate: 600,
-      tag: "categories",
-    }).catch(() => ({ items: [], total: 0, page: 1, pageSize: 100, pages: 1 })),
+    fetchJSON<ListResponse<CategoryDTO>>(
+      absolute("/api/categories?perPage=100"),
+      {
+        revalidate: 600,
+        tag: "categories",
+      }
+    ).catch(() => ({ items: [], total: 0, page: 1, pageSize: 100, pages: 1 })),
     fetchJSON<ListResponse<TagDTO>>(absolute("/api/tags?perPage=50"), {
       revalidate: 600,
       tag: "tags",
@@ -91,9 +100,12 @@ async function getInitialData(articleId?: string) {
 
   let article: ArticleDTO | null = null;
   if (articleId) {
-    article = await fetchJSON<ArticleDTO>(absolute(`/api/articles/${articleId}`), {
-      revalidate: 0,
-    }).catch(() => null);
+    article = await fetchJSON<ArticleDTO>(
+      absolute(`/api/articles/${articleId}`),
+      {
+        revalidate: 0,
+      }
+    ).catch(() => null);
   }
   return { cats: cats.items ?? [], tags: tags.items ?? [], article };
 }
@@ -107,7 +119,10 @@ export default async function Page(props: {
 
   const articleId = id?.[0];
   const tabParam = sp?.tab;
-  const tab = (Array.isArray(tabParam) ? tabParam[0] : tabParam) === "seo" ? "seo" : "article";
+  const tab =
+    (Array.isArray(tabParam) ? tabParam[0] : tabParam) === "seo"
+      ? "seo"
+      : "article";
 
   const { cats, tags, article } = await getInitialData(articleId);
   const canSeo = !!article?.id;
@@ -117,24 +132,19 @@ export default async function Page(props: {
   const seoHref = `${basePath}?tab=seo`;
 
   return (
-    <main
-      dir="rtl"
-      className={
-        // ★ Responsive paddings without changing desktop look
-        "pb-24 pt-6 px-4 sm:px-6 lg:px-12 xl:px-20"
-      }
-    >
+    <main className={"pb-24 pt-6  "}>
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
           { label: "مقالات", href: "/articles" },
-          { label: articleId ? "ویرایش مقاله" : "افزودن مقاله", href: basePath },
+          {
+            label: articleId ? "ویرایش مقاله" : "افزودن مقاله",
+            href: basePath,
+          },
         ]}
       />
 
-      {/* Tabs */}
       <div className="mt-5">
-        {/* ★ Make tabs horizontally scrollable on small screens */}
         <div className="mb-4 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto">
           <div className="inline-flex items-center gap-2 whitespace-nowrap">
             <a
@@ -184,7 +194,10 @@ export default async function Page(props: {
           </Suspense>
         ) : (
           <Suspense fallback={<div>در حال بارگذاری تب سئو…</div>}>
-            <SeoSettingsForm entityType="article" entityId={article?.id ?? null} />
+            <SeoSettingsForm
+              entityType="article"
+              entityId={article?.id ?? null}
+            />
           </Suspense>
         )}
       </div>

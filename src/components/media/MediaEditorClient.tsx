@@ -36,28 +36,23 @@ export default function MediaEditorClient({
   const id = initialId;
   const isEdit = !!id;
 
-  // فرم ساده
   const [name, setName] = useState("");
   const [type, setType] = useState<MediaType>("image");
   const [description, setDescription] = useState("");
 
-  // فایل و آپلود موقت
   const [temp, setTemp] = useState<TempUpload | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
-  // رکورد موجود (در حالت ویرایش)
   const [record, setRecord] = useState<MediaDTO | null>(initialRecord);
 
-  // وضعیت‌ها
   const [loading, setLoading] = useState<boolean>(isEdit && !initialRecord);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const hasUnsavedTempRef = useRef<boolean>(false); // برای Cleanup
+  const hasUnsavedTempRef = useRef<boolean>(false);
 
-  // اگر رکورد اولیه از سرور آمده، فرم را مقداردهی کن
   useEffect(() => {
     if (initialRecord) {
       setRecord(initialRecord);
@@ -66,12 +61,10 @@ export default function MediaEditorClient({
       setDescription(initialRecord.description ?? "");
       setTemp(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRecord?.id]);
 
-  // در صورت نبود initialRecord، مثل قبل از API کلاینتی بگیر
   useEffect(() => {
-    if (!isEdit || !id || initialRecord) return; // دیتای اولیه داریم
+    if (!isEdit || !id || initialRecord) return;
     let active = true;
 
     (async () => {
@@ -101,7 +94,6 @@ export default function MediaEditorClient({
     };
   }, [id, isEdit, initialRecord]);
 
-  // Cleanup فایل موقت روی خروج/تعویض صفحه
   useEffect(() => {
     hasUnsavedTempRef.current = !!temp && !saving;
   }, [temp, saving]);
@@ -110,16 +102,16 @@ export default function MediaEditorClient({
     const cleanTemp = async () => {
       if (hasUnsavedTempRef.current && temp?.tempId) {
         try {
-          await fetch(`/api/upload-temp/${encodeURIComponent(temp.tempId)}`, { method: "DELETE" });
+          await fetch(`/api/upload-temp/${encodeURIComponent(temp.tempId)}`, {
+            method: "DELETE",
+          });
         } catch {
           // silent
         }
       }
     };
 
-    const onBeforeUnload = () => {
-      // می‌تونی sendBeacon پیاده‌سازی کنی اگر بک‌اند ساپورت کند
-    };
+    const onBeforeUnload = () => {};
 
     const onPageHide = () => {
       cleanTemp();
@@ -133,10 +125,8 @@ export default function MediaEditorClient({
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("beforeunload", onBeforeUnload as any);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [temp?.tempId]);
 
-  // Handler: انتخاب فایل (کلیک یا دراپ)
   const handlePickFile = () => fileInputRef.current?.click();
 
   const handleFiles = async (files: FileList | null) => {
@@ -174,7 +164,8 @@ export default function MediaEditorClient({
               new Response(xhr.responseText, {
                 status: xhr.status,
                 headers: new Headers({
-                  "Content-Type": xhr.getResponseHeader("Content-Type") || "application/json",
+                  "Content-Type":
+                    xhr.getResponseHeader("Content-Type") || "application/json",
                 }),
               })
             );
@@ -271,7 +262,9 @@ export default function MediaEditorClient({
   const handleDeleteTemp = async () => {
     if (!temp?.tempId) return;
     try {
-      await fetch(`/api/upload-temp/${encodeURIComponent(temp.tempId)}`, { method: "DELETE" });
+      await fetch(`/api/upload-temp/${encodeURIComponent(temp.tempId)}`, {
+        method: "DELETE",
+      });
     } catch {}
     setTemp(null);
     hasUnsavedTempRef.current = false;
@@ -284,17 +277,13 @@ export default function MediaEditorClient({
   }
 
   return (
-    // 🔧 ریسپانسیو فقط برای موبایل و خیلی بزرگ‌ها
-    <main
-      className="pb-24 pt-10 px-4 sm:px-8 lg:px-16 xl:px-20 2xl:px-28 2xl:pb-28"
-      dir="rtl"
-    >
+    <main className="pb-24 pt-10 px-4 2xl:pb-28" dir="rtl">
       <div className="mx-auto w-full max-w-[92rem] 2xl:max-w-[110rem]">
         <Breadcrumb
           items={[
             { label: "مای پراپ", href: "/" },
-            { label: "مدیا", href: "/media" },
-            { label: "افزودن/ویرایش مدیا", href: "/media/editor" },
+            { label: "مدیا", href: "/admin/media" },
+            { label: "افزودن/ویرایش مدیا", href: "/admin/media/editor" },
           ]}
         />
 
@@ -304,10 +293,7 @@ export default function MediaEditorClient({
           </div>
         )}
 
-        <section
-          className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 2xl:gap-8 pt-8"
-        >
-          {/* ستون آپلود/پیش‌نمایش */}
+        <section className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 2xl:gap-8 pt-8">
           <div className="md:col-span-5 2xl:col-span-5 space-y-4">
             <div
               onDrop={onDrop}
@@ -318,10 +304,8 @@ export default function MediaEditorClient({
             >
               {previewUrl ? (
                 <div className="w-full">
-                  {/* در موبایل نسبت مربعی، روی خیلی بزرگ‌ها نسبت بازتر */}
                   <div className="rounded-xl overflow-hidden bg-gray-100 mb-3 aspect-square 2xl:aspect-[16/10]">
                     {type === "image" ? (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={previewUrl}
                         alt={name || "preview"}
@@ -340,7 +324,8 @@ export default function MediaEditorClient({
                       type="button"
                       className="text-black px-3 py-2 rounded-lg border hover:bg-gray-100"
                       onClick={() => {
-                        if (previewUrl) navigator.clipboard.writeText(previewUrl);
+                        if (previewUrl)
+                          navigator.clipboard.writeText(previewUrl);
                         alert("آدرس کپی شد!");
                       }}
                     >
@@ -368,7 +353,9 @@ export default function MediaEditorClient({
               ) : (
                 <div className="space-y-3">
                   <div className="text-gray-700">فایل را اینجا دراپ کنید</div>
-                  <div className="text-xs text-gray-500">فقط تصویر یا ویدئو</div>
+                  <div className="text-xs text-gray-500">
+                    فقط تصویر یا ویدئو
+                  </div>
                   <button
                     type="button"
                     onClick={handlePickFile}
@@ -394,16 +381,17 @@ export default function MediaEditorClient({
                 <div className="w-full h-2 bg-gray-200 rounded">
                   <div
                     className="h-2 bg-black rounded"
-                    style={{ width: `${uploadProgress ?? 0}%`, transition: "width .2s" }}
+                    style={{
+                      width: `${uploadProgress ?? 0}%`,
+                      transition: "width .2s",
+                    }}
                   />
                 </div>
               </div>
             )}
           </div>
 
-          {/* ستون فرم متادیتا */}
           <div className="md:col-span-7 2xl:col-span-7">
-            {/* نوار اکشن چسبان فقط در موبایل */}
             <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-t p-3 flex items-center gap-2 justify-end">
               <button
                 type="button"
@@ -468,7 +456,6 @@ export default function MediaEditorClient({
                 />
               </div>
 
-              {/* اکشن‌ها — روی دسکتاپ معمولی بدون تغییر؛ روی موبایل sticky bar داریم */}
               <div className="hidden md:flex items-center justify-end gap-3">
                 <button
                   type="button"
@@ -488,12 +475,15 @@ export default function MediaEditorClient({
                   className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
                   disabled={saving || uploading}
                 >
-                  {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت مدیا"}
+                  {saving
+                    ? "در حال ذخیره…"
+                    : isEdit
+                    ? "ثبت تغییرات"
+                    : "ثبت مدیا"}
                 </button>
               </div>
             </form>
 
-            {/* فاصله برای این‌که نوار چسبان موبایل روی محتوا نیفتد */}
             <div className="h-16 md:h-0" />
           </div>
         </section>

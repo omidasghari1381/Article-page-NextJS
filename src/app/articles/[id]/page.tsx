@@ -338,7 +338,6 @@ function JsonLd({ a }: { a: ReturnType<typeof normalize> }) {
   );
 }
 
-/* ====================== generateMetadata: تزریق SEO به <head> ====================== */
 export async function generateMetadata({
   params,
 }: {

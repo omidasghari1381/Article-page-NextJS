@@ -1,12 +1,12 @@
 import Breadcrumb from "@/components/Breadcrumb";
-import ArticleFormClient from "@/components/faq/ArticleFormClient";
+import FaqFormClient from "@/components/faq/FaqFormClient";
 import BannerWithBox from "@/components/faq/BannerWithBox";
 
-export const dynamic = "force-dynamic"; 
+export const dynamic = "force-dynamic";
 
 export default function Page() {
   return (
-    <main className="pb-24 px-20 py-10">
+    <main className="pb-24 py-10">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
@@ -15,7 +15,7 @@ export default function Page() {
         ]}
       />
       <div className="mt-10">
-        <ArticleFormClient />
+        <FaqFormClient />
       </div>
       {/* <div className="mt-10"><BannerWithBox /></div> */}
     </main>

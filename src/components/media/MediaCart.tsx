@@ -178,7 +178,7 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
 
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-2">
                   <Link
-                    href={`/media/editor/${selected.id}`}
+                    href={`/admin/media/editor/${selected.id}`}
                     className="px-4 py-2 rounded-xl bg-black text-white hover:bg-gray-800"
                   >
                     ویرایش

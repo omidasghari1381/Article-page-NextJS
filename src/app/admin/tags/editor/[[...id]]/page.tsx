@@ -25,7 +25,7 @@ export default async function Page({ params }: { params: { id?: string[] } }) {
   }
 
   return (
-    <main className="pb-24 pt-6 px-20">
+    <main className="pb-24 pt-6 ">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
