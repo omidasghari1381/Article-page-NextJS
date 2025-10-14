@@ -1,10 +1,6 @@
-import {
-  DataSource,
-  type FindOptionsWhere,
-  ILike,
-  Raw,
-  Repository,
-} from "typeorm";
+// src/server/modules/redirects/services/redirect.service.ts
+import { Repository } from "typeorm";
+import { getDataSource } from "@/server/db/typeorm.datasource";
 import { RedirectStatus } from "../enums/RedirectStatus.enum";
 import { Redirect } from "../entities/redirect.entity";
 import type {
@@ -15,52 +11,35 @@ import type {
 import { escapeLike } from "@/server/core/utils/escapeLike";
 
 export class RedirectService {
-  private repo: Repository<Redirect>;
-  constructor(private readonly ds: DataSource) {
-    this.repo = this.ds.getRepository(Redirect);
+  private repoP: Promise<Repository<Redirect>>;
+  constructor() {
+    this.repoP = (async () => {
+      const ds = await getDataSource();
+      return ds.getRepository(Redirect);
+    })();
   }
-
+  private async repo() {
+    return this.repoP;
+  }
   async create(dto: CreateRedirectDto) {
-    const entity = this.repo.create({
+    const repo = await this.repo();
+    const entity = repo.create({
       fromPath: dto.fromPath.trim(),
       toPath: dto.toPath.trim(),
       statusCode: dto.statusCode ?? RedirectStatus.M301,
       isActive: dto.isActive ?? true,
     });
-    return await this.repo.save(entity);
+    return await repo.save(entity);
   }
-
   async getOneById(id: string) {
-    return await this.repo.findOne({ where: { id } });
+    const repo = await this.repo();
+    return await repo.findOne({ where: { id } });
   }
-
-  async getOneByFromPath(fromPath: string) {
-    try {
-      const term = (fromPath ?? "").trim();
-      if (!term) return [];
-      const pattern = `%${escapeLike(term)}%`;
-      const rows = await this.repo.find({
-        where: {
-          fromPath: Raw(
-            (alias) => `LOWER(${alias}) LIKE LOWER(:pattern) ESCAPE '\\'`,
-            { pattern }
-          ),
-        },
-        take: 10,
-        order: { fromPath: "ASC" },
-      });
-      console.log(rows);
-      return rows;
-    } catch (err) {
-      console.log(err);
-      return { status: 500, message: "server error" };
-    }
-    // return await this.repo.findOne({ where: { fromPath } });
-  }
-
-  async list(query: ListRedirectsQuery = {}) {
+  async redirectList(query: ListRedirectsQuery = {}) {
+    const repo = await this.repo();
     const {
       q,
+      searchIn = "both",
       isActive,
       statusCode,
       createdFrom,
@@ -71,81 +50,79 @@ export class RedirectService {
       pageSize = 20,
     } = query;
 
-    const where: FindOptionsWhere<Redirect>[] = [];
+    const qb = repo.createQueryBuilder("r");
 
-    const base: FindOptionsWhere<Redirect> = {};
-
-    if (typeof isActive === "boolean") base.isActive = isActive;
+    if (typeof isActive === "boolean") {
+      qb.andWhere("r.isActive = :isActive", { isActive });
+    }
 
     if (Array.isArray(statusCode) && statusCode.length > 0) {
-      where.push({ ...base, statusCode: statusCode[0] });
-      for (let i = 1; i < statusCode.length; i++) {
-        where.push({ ...base, statusCode: statusCode[i] });
-      }
+      qb.andWhere("r.statusCode IN (:...codes)", { codes: statusCode });
     } else if (typeof statusCode === "number") {
-      base.statusCode = statusCode;
+      qb.andWhere("r.statusCode = :code", { code: statusCode });
     }
-
-    if (q && q.trim()) {
-      const like = ILike(`%${q.trim()}%`);
-      if (where.length > 0) {
-        for (const w of where) {
-          (w as any).fromPath = like;
-        }
-        const clones = where.map((w) => ({ ...w, toPath: like }));
-        where.push(...clones);
-      } else {
-        where.push({ ...base, fromPath: like });
-        where.push({ ...base, toPath: like });
-      }
-    } else if (where.length === 0) {
-      where.push(base);
-    }
-
-    const qb = this.repo
-      .createQueryBuilder("r")
-      .where(where.length === 1 ? where[0] : where)
-      .orderBy(`r.${sortBy}`, sortDir)
-      .skip((page - 1) * pageSize)
-      .take(pageSize);
 
     if (createdFrom)
       qb.andWhere("r.createdAt >= :createdFrom", { createdFrom });
     if (createdTo) qb.andWhere("r.createdAt < :createdTo", { createdTo });
 
-    const [items, total] = await qb.getManyAndCount();
+    if (q && q.trim()) {
+      const pattern = `%${escapeLike(q.trim())}%`;
+      if (searchIn === "fromPath") {
+        qb.andWhere("LOWER(r.fromPath) LIKE LOWER(:pattern) ESCAPE '\\'", {
+          pattern,
+        });
+      } else if (searchIn === "toPath") {
+        qb.andWhere("LOWER(r.toPath) LIKE LOWER(:pattern) ESCAPE '\\'", {
+          pattern,
+        });
+      } else {
+        qb.andWhere(
+          "(LOWER(r.fromPath) LIKE LOWER(:pattern) ESCAPE '\\' OR LOWER(r.toPath) LIKE LOWER(:pattern) ESCAPE '\\')",
+          { pattern }
+        );
+      }
+    }
 
+    const SORTABLE: Record<
+      NonNullable<ListRedirectsQuery["sortBy"]>,
+      string
+    > = {
+      createdAt: "r.createdAt",
+      updatedAt: "r.updatedAt",
+      fromPath: "r.fromPath",
+      toPath: "r.toPath",
+      statusCode: "r.statusCode",
+      isActive: "r.isActive",
+    };
+    const col = SORTABLE[sortBy] ?? SORTABLE.createdAt;
+
+    qb.orderBy(col, sortDir === "ASC" ? "ASC" : "DESC")
+      .skip((page - 1) * pageSize)
+      .take(pageSize);
+
+    const [items, total] = await qb.getManyAndCount();
     return {
       items,
       total,
       page,
       pageSize,
-      pages: Math.ceil(total / pageSize),
+      pages: Math.max(1, Math.ceil(total / pageSize)),
     };
   }
-
   async update(id: string, dto: UpdateRedirectDto) {
-    const entity = await this.repo.findOne({ where: { id } });
+    const repo = await this.repo();
+    const entity = await repo.findOne({ where: { id } });
     if (!entity) return null;
-
     if (dto.fromPath !== undefined) entity.fromPath = dto.fromPath.trim();
     if (dto.toPath !== undefined) entity.toPath = dto.toPath.trim();
     if (dto.statusCode !== undefined) entity.statusCode = dto.statusCode;
     if (dto.isActive !== undefined) entity.isActive = dto.isActive;
-
-    return await this.repo.save(entity);
+    return await repo.save(entity);
   }
-
   async remove(id: string) {
-    const result = await this.repo.delete(id);
+    const repo = await this.repo();
+    const result = await repo.delete(id);
     return result.affected === 1;
   }
-
-  // async upsertByFromPath(dto: CreateRedirectDto) {
-  //   const existing = await this.getOneByFromPath(dto.fromPath);
-  //   if (existing) {
-  //     return this.update(existing.id, dto);
-  //   }
-  //   return this.create(dto);
-  // }
 }

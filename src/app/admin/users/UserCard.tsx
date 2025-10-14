@@ -1,7 +1,6 @@
-"use client";
-
+// app/admin/users/UserCard.tsx
+import CopyPhone from "@/components/users/CopyPhone";
 import Link from "next/link";
-import { useState } from "react";
 
 export type UserDTO = {
   id: string;
@@ -48,26 +47,6 @@ export default function UserListItem({
       : null;
 
   const finalEditHref = providedEditLink ?? `/admin/users/${id}`;
-
-  const [copied, setCopied] = useState(false);
-
-  const copyPhone = async (text: string) => {
-    try {
-      if (navigator?.clipboard?.writeText)
-        await navigator.clipboard.writeText(text);
-      else {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-      }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    } catch {}
-  };
-
   const canDelete = typeof onDeleteClick === "function" && isDeleted !== 1;
 
   return (
@@ -98,19 +77,7 @@ export default function UserListItem({
           <div className="min-w-0">
             <div className="text-[13px] text-gray-500 mb-1">تلفن</div>
             <div className="flex items-center gap-2 min-w-0">
-              <button
-                type="button"
-                title={phone}
-                className="font-mono text-xs md:text-sm text-black truncate max-w-[24ch] text-left cursor-pointer hover:underline mt-1"
-                onClick={() => copyPhone(phone)}
-              >
-                {phone}
-              </button>
-              {copied && (
-                <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px]">
-                  کپی شد
-                </span>
-              )}
+              <CopyPhone text={phone} />
             </div>
           </div>
         </div>
@@ -169,7 +136,6 @@ export default function UserListItem({
   );
 }
 
-/* Helpers */
 function formatDateTime(iso?: string) {
   if (!iso) return "—";
   try {

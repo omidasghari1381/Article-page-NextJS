@@ -21,8 +21,6 @@ export class User extends AbstractEntity {
   @Column({ type: "varchar", length: 255, nullable: false })
   passwordHash!: string;
 
-  // فلگ کمکی برای یونیک بودن phone بین رکوردهای زنده
   @Column({ type: "tinyint", width: 1, default: 0 })
   isDeleted!: 0 | 1;
-  email: null;
 }

@@ -1,19 +1,32 @@
-import { DataSource, SelectQueryBuilder } from "typeorm";
+// src/server/modules/categories/services/category.service.ts
+import { DataSource, SelectQueryBuilder, Repository } from "typeorm";
+import { getDataSource } from "@/server/db/typeorm.datasource";
 import { ArticleCategory } from "../entities/category.entity";
 import type { CategoryListFilters } from "../types/service.type";
 
 export class CategoryService {
-  constructor(private readonly ds: DataSource) {}
+  private dsP: Promise<DataSource>;
+  private repoP: Promise<Repository<ArticleCategory>>;
 
-  private baseQB(): SelectQueryBuilder<ArticleCategory> {
-    return this.ds
-      .getRepository(ArticleCategory)
-      .createQueryBuilder("c")
-      .leftJoinAndSelect("c.parent", "p");
+  constructor() {
+    this.dsP = getDataSource();
+    this.repoP = this.dsP.then((ds) => ds.getRepository(ArticleCategory));
+  }
+
+  private async ds() {
+    return this.dsP;
+  }
+  private async repo() {
+    return this.repoP;
+  }
+
+  private async baseQB(): Promise<SelectQueryBuilder<ArticleCategory>> {
+    const r = await this.repo();
+    return r.createQueryBuilder("c").leftJoinAndSelect("c.parent", "p");
   }
 
   private async getAncestorsChain(catId: string): Promise<ArticleCategory[]> {
-    const repo = this.ds.getRepository(ArticleCategory);
+    const repo = await this.repo();
     const chain: ArticleCategory[] = [];
     let current = await repo.findOne({
       where: { id: catId },
@@ -44,7 +57,7 @@ export class CategoryService {
       pageSize = 20,
     } = f;
 
-    const qb = this.baseQB();
+    const qb = await this.baseQB();
 
     if (q) {
       qb.andWhere(
@@ -102,7 +115,7 @@ export class CategoryService {
   }
 
   async listCategories() {
-    const repo = this.ds.getRepository(ArticleCategory);
+    const repo = await this.repo();
     return repo.find({
       relations: ["parent"],
       order: { depth: "ASC", name: "ASC" },
@@ -110,7 +123,7 @@ export class CategoryService {
   }
 
   async getCategoryById(id: string) {
-    const repo = this.ds.getRepository(ArticleCategory);
+    const repo = await this.repo();
     return repo.findOne({ where: { id }, relations: ["parent", "children"] });
   }
 
@@ -120,7 +133,7 @@ export class CategoryService {
     description?: string | null;
     parentId?: string | null;
   }) {
-    const repo = this.ds.getRepository(ArticleCategory);
+    const repo = await this.repo();
 
     const slugExists = await repo.exists({
       where: { slug: input.slug.trim().toLowerCase() },
@@ -151,7 +164,9 @@ export class CategoryService {
       parentId?: string | null;
     }
   ) {
-    const repo = this.ds.getRepository(ArticleCategory);
+    const ds = await this.ds();
+    const repo = await this.repo();
+
     const cat = await repo.findOne({
       where: { id },
       relations: ["parent", "children"],
@@ -194,10 +209,11 @@ export class CategoryService {
       cat.parent = newParent ?? null;
       cat.depth = nextDepth;
 
-      await this.ds.transaction(async (manager) => {
-        await manager.getRepository(ArticleCategory).save(cat);
+      await ds.transaction(async (manager) => {
+        const mRepo = manager.getRepository(ArticleCategory);
+        await mRepo.save(cat);
 
-        const q = await manager.getRepository(ArticleCategory).find({
+        const q = await mRepo.find({
           where: { parent: { id: cat.id } },
           relations: ["parent"],
         });
@@ -206,9 +222,9 @@ export class CategoryService {
         while (queue.length) {
           const node = queue.shift()!;
           node.depth = (node.depth ?? 0) + delta;
-          await manager.getRepository(ArticleCategory).save(node);
+          await mRepo.save(node);
 
-          const children = await manager.getRepository(ArticleCategory).find({
+          const children = await mRepo.find({
             where: { parent: { id: node.id } },
             relations: ["parent"],
           });
@@ -226,7 +242,7 @@ export class CategoryService {
   }
 
   async deleteCategory(id: string) {
-    const repo = this.ds.getRepository(ArticleCategory);
+    const repo = await this.repo();
     const cat = await repo.findOne({ where: { id }, relations: ["children"] });
     if (!cat) throw new Error("Category not found");
     if (cat.children?.length)

@@ -1,16 +1,4 @@
 // src/server/db/entities.ts
-export { User } from "@/server/modules/users/entities/user.entity";
-export { Article } from "@/server/modules/articles/entities/article.entity";
-export { FAQ } from "@/server/modules/faq/entities/faq.entity";
-export { ReplyComment } from "@/server/modules/articles/entities/reply.entity";
-export { CommentArticle } from "@/server/modules/articles/entities/comment.entity";
-export { NewArticle } from "@/server/modules/articles/entities/innerArticle";
-export { ArticleCategory } from "@/server/modules/categories/entities/category.entity";
-export { ArticleTag } from "@/server/modules/tags/entities/tage.entity";
-export { Redirect } from "@/server/modules/redirects/entities/redirect.entity";
-export { SeoMeta } from "@/server/modules/metaData/entities/seoMeta.entity";
-export { MediaItem } from "@/server/modules/media/entities/mediaItem.entity";
-
 import { User } from "@/server/modules/users/entities/user.entity";
 import { Article } from "@/server/modules/articles/entities/article.entity";
 import { FAQ } from "@/server/modules/faq/entities/faq.entity";
@@ -35,4 +23,18 @@ export const ENTITIES = [
   ArticleCategory,
   SeoMeta,
   MediaItem,
-];
+] as const;
+
+export {
+  User,
+  Article,
+  FAQ,
+  ReplyComment,
+  CommentArticle,
+  NewArticle,
+  ArticleCategory,
+  ArticleTag,
+  Redirect,
+  SeoMeta,
+  MediaItem,
+};

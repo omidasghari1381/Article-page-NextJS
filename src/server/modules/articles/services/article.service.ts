@@ -1,4 +1,6 @@
-import { DataSource, In, Repository } from "typeorm";
+// src/server/modules/articles/services/article.service.ts
+import { In, Repository } from "typeorm";
+import { getDataSource } from "@/server/db/typeorm.datasource";
 import { Article } from "@/server/modules/articles/entities/article.entity";
 import { User } from "@/server/modules/users/entities/user.entity";
 import { CommentArticle } from "@/server/modules/articles/entities/comment.entity";
@@ -14,21 +16,34 @@ import type {
   UpdateArticleInput,
 } from "../types/service.types";
 
-export class ArticleService {
-  private readonly articleRepo: Repository<Article>;
-  private readonly userRepo: Repository<User>;
-  private readonly commentRepo: Repository<CommentArticle>;
-  private readonly replyRepo: Repository<ReplyComment>;
-  private readonly categoryRepo: Repository<ArticleCategory>;
-  private readonly tagRepo: Repository<ArticleTag>;
+type Repos = {
+  articleRepo: Repository<Article>;
+  userRepo: Repository<User>;
+  commentRepo: Repository<CommentArticle>;
+  replyRepo: Repository<ReplyComment>;
+  categoryRepo: Repository<ArticleCategory>;
+  tagRepo: Repository<ArticleTag>;
+};
 
-  constructor(private readonly ds: DataSource) {
-    this.articleRepo = ds.getRepository(Article);
-    this.userRepo = ds.getRepository(User);
-    this.commentRepo = ds.getRepository(CommentArticle);
-    this.replyRepo = ds.getRepository(ReplyComment);
-    this.categoryRepo = ds.getRepository(ArticleCategory);
-    this.tagRepo = ds.getRepository(ArticleTag);
+export class ArticleService {
+  private reposP: Promise<Repos>;
+
+  constructor() {
+    this.reposP = (async () => {
+      const ds = await getDataSource();
+      return {
+        articleRepo: ds.getRepository(Article),
+        userRepo: ds.getRepository(User),
+        commentRepo: ds.getRepository(CommentArticle),
+        replyRepo: ds.getRepository(ReplyComment),
+        categoryRepo: ds.getRepository(ArticleCategory),
+        tagRepo: ds.getRepository(ArticleTag),
+      };
+    })();
+  }
+
+  private async repos() {
+    return this.reposP;
   }
 
   private mapArticleToDTO(it: Article): ArticleDTO {
@@ -92,20 +107,22 @@ export class ArticleService {
   }
 
   async getByIdAndIncrementView(id: string): Promise<ArticleDTO | null> {
-    const item = await this.articleRepo.findOne({
+    const { articleRepo } = await this.repos();
+    const item = await articleRepo.findOne({
       where: { id },
       relations: ["author", "category", "tags"],
     });
     if (!item) return null;
 
-    await this.articleRepo.increment({ id }, "viewCount", 1);
+    await articleRepo.increment({ id }, "viewCount", 1);
     item.viewCount = (item.viewCount ?? 0) + 1;
 
     return this.mapArticleToDTO(item);
-  }
-
+    }
+  
   async getBySlug(slug: string): Promise<ArticleDTO | null> {
-    const item = await this.articleRepo.findOne({
+    const { articleRepo } = await this.repos();
+    const item = await articleRepo.findOne({
       where: { slug },
       relations: ["author", "category", "tags"],
     });
@@ -116,14 +133,16 @@ export class ArticleService {
     input: CreateArticleInput,
     authorId: string
   ): Promise<{ id: string }> {
+    const { articleRepo, userRepo, categoryRepo, tagRepo } = await this.repos();
+
     if (!input.categoryId) throw new Error("CategoryRequired");
 
     const [author, category, tags] = await Promise.all([
-      this.userRepo.findOne({ where: { id: authorId } }),
-      this.categoryRepo.findOne({ where: { id: input.categoryId } }),
+      userRepo.findOne({ where: { id: authorId } }),
+      categoryRepo.findOne({ where: { id: input.categoryId } }),
       input.tagIds?.length
-        ? this.tagRepo.findBy({ id: In(input.tagIds) })
-        : Promise.resolve([]),
+        ? tagRepo.findBy({ id: In(input.tagIds) })
+        : Promise.resolve([] as ArticleTag[]),
     ]);
 
     if (!author) throw new Error("AuthorNotFound");
@@ -131,7 +150,7 @@ export class ArticleService {
     if (input.tagIds?.length && tags.length !== input.tagIds.length)
       throw new Error("SomeTagIdsNotFound");
 
-    const article = this.articleRepo.create({
+    const article = articleRepo.create({
       title: input.title.trim(),
       slug: input.slug ?? null,
       subject: input.subject ?? null,
@@ -147,12 +166,14 @@ export class ArticleService {
       summery: Array.isArray(input.summery) ? input.summery : null,
     });
 
-    const saved = await this.articleRepo.save(article);
+    const saved = await articleRepo.save(article);
     return { id: saved.id };
   }
 
   async update(id: string, input: UpdateArticleInput): Promise<ArticleDTO> {
-    const article = await this.articleRepo.findOne({
+    const { articleRepo, categoryRepo, tagRepo } = await this.repos();
+
+    const article = await articleRepo.findOne({
       where: { id },
       relations: ["category", "tags", "author"],
     });
@@ -180,9 +201,7 @@ export class ArticleService {
 
     if (typeof input.categoryId !== "undefined") {
       if (!input.categoryId) throw new Error("CategoryRequired");
-      const cat = await this.categoryRepo.findOne({
-        where: { id: input.categoryId },
-      });
+      const cat = await categoryRepo.findOne({ where: { id: input.categoryId } });
       if (!cat) throw new Error("CategoryNotFound");
       (article as any).category = cat;
     }
@@ -191,30 +210,31 @@ export class ArticleService {
       if (input.tagIds.length === 0) {
         article.tags = [];
       } else {
-        const tgs = await this.tagRepo.findBy({ id: In(input.tagIds) });
+        const tgs = await tagRepo.findBy({ id: In(input.tagIds) });
         if (tgs.length !== input.tagIds.length)
           throw new Error("SomeTagIdsNotFound");
         article.tags = tgs;
       }
     }
 
-    const saved = await this.articleRepo.save(article);
+    const saved = await articleRepo.save(article);
     return this.mapArticleToDTO(saved);
   }
 
   async list(query: ListArticlesQuery): Promise<ListResult<ArticleDTO>> {
+    const { articleRepo } = await this.repos();
+
     const page = Math.max(1, query.page ?? 1);
     const perPage = Math.max(1, Math.min(100, query.perPage ?? 10));
     const skip = (page - 1) * perPage;
 
-    const qb = this.articleRepo
+    const qb = articleRepo
       .createQueryBuilder("a")
       .leftJoinAndSelect("a.author", "author")
       .leftJoinAndSelect("a.category", "cat")
       .leftJoinAndSelect("a.tags", "tag");
 
-    if (query.categoryId)
-      qb.andWhere("cat.id = :cid", { cid: query.categoryId });
+    if (query.categoryId) qb.andWhere("cat.id = :cid", { cid: query.categoryId });
     if (query.tagId) qb.andWhere("tag.id = :tid", { tid: query.tagId });
     if (query.q) qb.andWhere("a.title LIKE :q", { q: `%${query.q}%` });
 
@@ -232,24 +252,21 @@ export class ArticleService {
   async listWithFilters(
     query: ExtendedListArticlesQuery
   ): Promise<ListResult<ArticleDTO>> {
+    const { articleRepo } = await this.repos();
+
     const page = Math.max(1, query.page ?? 1);
-    const perPage = Math.max(
-      1,
-      Math.min(100, query.pageSize ?? query.perPage ?? 20)
-    );
+    const perPage = Math.max(1, Math.min(100, query.pageSize ?? query.perPage ?? 20));
     const skip = (page - 1) * perPage;
 
-    const qb = this.articleRepo
+    const qb = articleRepo
       .createQueryBuilder("a")
       .leftJoinAndSelect("a.author", "author")
       .leftJoinAndSelect("a.category", "cat")
       .leftJoinAndSelect("a.tags", "tag");
 
-    if (query.categoryId)
-      qb.andWhere("cat.id = :cid", { cid: query.categoryId });
+    if (query.categoryId) qb.andWhere("cat.id = :cid", { cid: query.categoryId });
     if (query.tagId) qb.andWhere("tag.id = :tid", { tid: query.tagId });
-    if (query.authorId)
-      qb.andWhere("author.id = :aid", { aid: query.authorId });
+    if (query.authorId) qb.andWhere("author.id = :aid", { aid: query.authorId });
 
     if (query.q) {
       qb.andWhere(
@@ -303,9 +320,10 @@ export class ArticleService {
   }
 
   async delete(id: string): Promise<boolean> {
-    const found = await this.articleRepo.findOne({ where: { id } });
+    const { articleRepo } = await this.repos();
+    const found = await articleRepo.findOne({ where: { id } });
     if (!found) return false;
-    await this.articleRepo.remove(found);
+    await articleRepo.remove(found);
     return true;
   }
 
@@ -313,14 +331,16 @@ export class ArticleService {
     articleId: string,
     opts?: { skip?: number; take?: number; withReplies?: boolean }
   ) {
+    const { articleRepo, commentRepo, replyRepo } = await this.repos();
+
     const skip = Math.max(0, opts?.skip ?? 0);
     const take = Math.min(Math.max(1, opts?.take ?? 10), 50);
     const withReplies = !!opts?.withReplies;
 
-    const exists = await this.articleRepo.exist({ where: { id: articleId } });
+    const exists = await articleRepo.exist({ where: { id: articleId } });
     if (!exists) throw new Error("ArticleNotFound");
 
-    const [comments, total] = await this.commentRepo.findAndCount({
+    const [comments, total] = await commentRepo.findAndCount({
       where: { article: { id: articleId } },
       relations: ["user"],
       order: { createdAt: "DESC" },
@@ -333,7 +353,7 @@ export class ArticleService {
     }
 
     const ids = comments.map((c) => c.id);
-    const replies = await this.replyRepo
+    const replies = await replyRepo
       .createQueryBuilder("reply")
       .leftJoinAndSelect("reply.user", "user")
       .leftJoinAndSelect("reply.comment", "comment")
@@ -356,22 +376,24 @@ export class ArticleService {
   }
 
   async addComment(articleId: string, userId: string, text: string) {
+    const { articleRepo, userRepo, commentRepo } = await this.repos();
+
     const [article, user] = await Promise.all([
-      this.articleRepo.findOne({ where: { id: articleId } }),
-      this.userRepo.findOne({ where: { id: userId } }),
+      articleRepo.findOne({ where: { id: articleId } }),
+      userRepo.findOne({ where: { id: userId } }),
     ]);
 
     if (!article) throw new Error("ArticleNotFound");
     if (!user) throw new Error("UserNotFound");
 
-    const comment = this.commentRepo.create({
+    const comment = commentRepo.create({
       text: text.trim(),
       user,
       article,
     });
 
-    const saved = await this.commentRepo.save(comment);
-    const withUser = await this.commentRepo.findOne({
+    const saved = await commentRepo.save(comment);
+    const withUser = await commentRepo.findOne({
       where: { id: saved.id },
       relations: ["user"],
     });

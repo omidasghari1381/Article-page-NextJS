@@ -1,5 +1,6 @@
 // src/server/modules/metaData/services/seoMeta.service.ts
-import { DataSource, DeleteResult } from "typeorm";
+import { DeleteResult, Repository } from "typeorm";
+import { getDataSource } from "@/server/db/typeorm.datasource";
 import {
   SeoMeta,
   SeoEntityType,
@@ -24,36 +25,43 @@ export type SeoFields = {
 };
 
 export class SeoMetaService {
-  constructor(private ds: DataSource) {}
-  private get repo() {
-    return this.ds.getRepository(SeoMeta);
+  private repoP: Promise<Repository<SeoMeta>>;
+
+  constructor() {
+    this.repoP = (async () => {
+      const ds = await getDataSource();
+      return ds.getRepository(SeoMeta);
+    })();
   }
+  private async repo() {
+    return this.repoP;
+  }
+
   async getBy(
     entityType: SeoEntityType,
     entityId: string,
     locale: string = ""
   ): Promise<SeoMeta | null> {
-    return this.repo.findOne({ where: { entityType, entityId, locale } });
+    const repo = await this.repo();
+    return repo.findOne({ where: { entityType, entityId, locale } });
   }
-  async getForArticle(
-    articleId: string,
-    locale: string = ""
-  ): Promise<SeoMeta | null> {
+
+  async getForArticle(articleId: string, locale = "") {
     return this.getBy(SeoEntityType.ARTICLE, articleId, locale);
   }
-  async getForCategory(
-    categoryId: string,
-    locale: string = ""
-  ): Promise<SeoMeta | null> {
+  async getForCategory(categoryId: string, locale = "") {
     return this.getBy(SeoEntityType.CATEGORY, categoryId, locale);
   }
+
   async createGeneric(
     entityType: SeoEntityType,
     entityId: string,
     fields: SeoFields,
     locale: string = ""
   ): Promise<SeoMeta> {
-    const exists = await this.repo.findOne({
+    const repo = await this.repo();
+
+    const exists = await repo.findOne({
       where: { entityType, entityId, locale },
       withDeleted: false,
     });
@@ -62,7 +70,8 @@ export class SeoMetaService {
         `SEO meta already exists for ${entityType}(${entityId}) locale="${locale}".`
       );
     }
-    const rec = this.repo.create({
+
+    const rec = repo.create({
       entityType,
       entityId,
       locale,
@@ -81,28 +90,14 @@ export class SeoMetaService {
       tags: fields.tags ?? null,
     });
 
-    return this.repo.save(rec);
+    return repo.save(rec);
   }
 
-  async createForArticle(
-    articleId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
+  async createForArticle(articleId: string, fields: SeoFields, locale = "") {
     return this.createGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
   }
-
-  async createForCategory(
-    categoryId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
-    return this.createGeneric(
-      SeoEntityType.CATEGORY,
-      categoryId,
-      fields,
-      locale
-    );
+  async createForCategory(categoryId: string, fields: SeoFields, locale = "") {
+    return this.createGeneric(SeoEntityType.CATEGORY, categoryId, fields, locale);
   }
 
   private assignIfProvided<T extends object, K extends keyof T>(
@@ -114,13 +109,16 @@ export class SeoMetaService {
       (obj as any)[key] = (source as any)[key] ?? null;
     }
   }
+
   async updateGeneric(
     entityType: SeoEntityType,
     entityId: string,
     fields: SeoFields,
     locale: string = ""
   ): Promise<SeoMeta> {
-    const existing = await this.repo.findOne({
+    const repo = await this.repo();
+
+    const existing = await repo.findOne({
       where: { entityType, entityId, locale },
     });
     if (!existing) {
@@ -144,31 +142,19 @@ export class SeoMetaService {
     this.assignIfProvided(existing, fields, "publishedTime");
     this.assignIfProvided(existing, fields, "modifiedTime");
     this.assignIfProvided(existing, fields, "authorName");
+
     if (Object.prototype.hasOwnProperty.call(fields, "tags")) {
       existing.tags = fields.tags ?? null;
     }
-    return this.repo.save(existing);
+
+    return repo.save(existing);
   }
 
-  async updateForArticle(
-    articleId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
+  async updateForArticle(articleId: string, fields: SeoFields, locale = "") {
     return this.updateGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
   }
-
-  async updateForCategory(
-    categoryId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
-    return this.updateGeneric(
-      SeoEntityType.CATEGORY,
-      categoryId,
-      fields,
-      locale
-    );
+  async updateForCategory(categoryId: string, fields: SeoFields, locale = "") {
+    return this.updateGeneric(SeoEntityType.CATEGORY, categoryId, fields, locale);
   }
 
   async upsertGeneric(
@@ -177,7 +163,9 @@ export class SeoMetaService {
     fields: SeoFields,
     locale: string = ""
   ): Promise<SeoMeta> {
-    const existing = await this.repo.findOne({
+    const repo = await this.repo();
+
+    const existing = await repo.findOne({
       where: { entityType, entityId, locale },
     });
     if (existing) {
@@ -186,37 +174,16 @@ export class SeoMetaService {
     return this.createGeneric(entityType, entityId, fields, locale);
   }
 
-  async upsertForArticle(
-    articleId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
+  async upsertForArticle(articleId: string, fields: SeoFields, locale = "") {
     return this.upsertGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
   }
-
-  async upsertForCategory(
-    categoryId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
-    return this.upsertGeneric(
-      SeoEntityType.CATEGORY,
-      categoryId,
-      fields,
-      locale
-    );
+  async upsertForCategory(categoryId: string, fields: SeoFields, locale = "") {
+    return this.upsertGeneric(SeoEntityType.CATEGORY, categoryId, fields, locale);
   }
 
-  async deleteBy(
-    entityType: SeoEntityType,
-    entityId: string,
-    locale: string = ""
-  ): Promise<void> {
-    const res: DeleteResult = await this.repo.delete({
-      entityType,
-      entityId,
-      locale,
-    });
+  async deleteBy(entityType: SeoEntityType, entityId: string, locale = ""): Promise<void> {
+    const repo = await this.repo();
+    const res: DeleteResult = await repo.delete({ entityType, entityId, locale });
     if (!res.affected) {
       throw new Error(
         `Nothing to delete for ${entityType}(${entityId}) locale="${locale}".`
@@ -224,17 +191,10 @@ export class SeoMetaService {
     }
   }
 
-  async deleteForArticle(
-    articleId: string,
-    locale: string = ""
-  ): Promise<void> {
+  async deleteForArticle(articleId: string, locale = "") {
     return this.deleteBy(SeoEntityType.ARTICLE, articleId, locale);
   }
-
-  async deleteForCategory(
-    categoryId: string,
-    locale: string = ""
-  ): Promise<void> {
+  async deleteForCategory(categoryId: string, locale = "") {
     return this.deleteBy(SeoEntityType.CATEGORY, categoryId, locale);
   }
 }

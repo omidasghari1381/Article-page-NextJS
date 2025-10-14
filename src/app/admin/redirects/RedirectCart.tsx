@@ -175,7 +175,6 @@ export default function RedirectCard({
   );
 }
 
-/* ===== Helpers ===== */
 function formatDateTime(iso?: string) {
   if (!iso) return "—";
   try {

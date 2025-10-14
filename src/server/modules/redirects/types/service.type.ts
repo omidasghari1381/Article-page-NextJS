@@ -1,4 +1,3 @@
-import type { getRedirectEnum } from "../enums/getRedirect.enum";
 import type { RedirectStatus } from "../enums/RedirectStatus.enum";
 
 export type UpdateRedirectDto = Partial<{
@@ -10,11 +9,12 @@ export type UpdateRedirectDto = Partial<{
 
 export type ListRedirectsQuery = {
   q?: string;
+  searchIn?: "fromPath" | "toPath" | "both";
   isActive?: boolean;
-  statusCode?: RedirectStatus | RedirectStatus[];
-  createdFrom?: Date;
-  createdTo?: Date;
-  sortBy?: getRedirectEnum;
+  statusCode?: number | number[];
+  createdFrom?: Date | string;
+  createdTo?: Date | string;
+  sortBy?: "createdAt" | "updatedAt" | "fromPath" | "toPath" | "statusCode" | "isActive";
   sortDir?: "ASC" | "DESC";
   page?: number;
   pageSize?: number;

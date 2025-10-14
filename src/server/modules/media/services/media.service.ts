@@ -1,9 +1,11 @@
-import { DataSource } from "typeorm";
+import { Repository } from "typeorm";
 import z from "zod";
-import { MediaItem } from "../entities/mediaItem.entity";
-import { SimpleMediaType } from "../enums/media.enums";
 import path from "path";
 import { promises as fsp } from "node:fs";
+
+import { getDataSource } from "@/server/db/typeorm.datasource";
+import { MediaItem } from "../entities/mediaItem.entity";
+import { SimpleMediaType } from "../enums/media.enums";
 import { sortOptionEnum } from "../enums/SortOption.enum";
 
 export const CreateMediaInput = z.object({
@@ -12,7 +14,6 @@ export const CreateMediaInput = z.object({
   type: z.enum(SimpleMediaType),
   description: z.string().nullable().optional(),
 });
-
 export type CreateMediaInputType = z.infer<typeof CreateMediaInput>;
 
 export const UpdateMediaInput = z.object({
@@ -22,10 +23,21 @@ export const UpdateMediaInput = z.object({
   description: z.string().nullable().optional(),
 });
 export type UpdateMediaInputType = z.infer<typeof UpdateMediaInput>;
+
 type SortOption = sortOptionEnum;
 
 export class MediaService {
-  constructor(private ds: DataSource) {}
+  private repoP: Promise<Repository<MediaItem>>;
+
+  constructor() {
+    this.repoP = (async () => {
+      const ds = await getDataSource();
+      return ds.getRepository(MediaItem);
+    })();
+  }
+  private async repo() {
+    return this.repoP;
+  }
 
   async listMedia(params?: {
     q?: string;
@@ -37,7 +49,7 @@ export class MediaService {
     limit?: number;
     offset?: number;
   }) {
-    const repo = this.ds.getRepository(MediaItem);
+    const repo = await this.repo();
 
     const limit = Math.min(Math.max(params?.limit ?? 24, 1), 100);
     const offset = Math.max(params?.offset ?? 0, 0);
@@ -46,11 +58,9 @@ export class MediaService {
 
     if (params?.q && params.q.trim().length > 0) {
       const words = params.q.trim().split(/\s+/).filter(Boolean);
-
       words.forEach((w, i) => {
         const key = `q${i}`;
         const like = `%${w}%`;
-
         qb.andWhere(`(m.name LIKE :${key} OR m.description LIKE :${key})`, {
           [key]: like,
         });
@@ -80,7 +90,6 @@ export class MediaService {
       });
     }
 
-    // --- Sort ---
     const sort: SortOption = params?.sort ?? sortOptionEnum.newest;
     switch (sort) {
       case "oldest":
@@ -119,25 +128,23 @@ export class MediaService {
     };
   }
 
-  /** دریافت یک مدیا با id */
   async getMediaById(id: string) {
-    const repo = this.ds.getRepository(MediaItem);
-    const item = await repo.findOne({ where: { id } });
-    return item;
+    const repo = await this.repo();
+    return repo.findOne({ where: { id } });
   }
 
   async createMedia(input: CreateMediaInputType) {
     CreateMediaInput.parse(input);
+    const repo = await this.repo();
 
-    const repo = this.ds.getRepository(MediaItem);
-
-    const urlExists = await repo.exists({ where: { url: input.url.trim() } });
+    const url = input.url.trim();
+    const urlExists = await repo.exists({ where: { url } });
     if (urlExists) throw new Error("این آدرس قبلاً ثبت شده است");
 
     const entity = repo.create({
       name: input.name.trim(),
       description: input.description ?? null,
-      url: input.url.trim(),
+      url,
       type: input.type,
     });
 
@@ -145,12 +152,10 @@ export class MediaService {
     return saved;
   }
 
-  /** بروزرسانی مدیا (نام، توضیح، نوع، URL با چک تکراری) */
   async updateMedia(id: string, updates: UpdateMediaInputType) {
-    // اگر در لایه API اعتبارسنجی می‌کنی، این خط لازم نیست:
     UpdateMediaInput.parse(updates);
+    const repo = await this.repo();
 
-    const repo = this.ds.getRepository(MediaItem);
     const item = await repo.findOne({ where: { id } });
     if (!item) throw new Error("Media not found");
 
@@ -169,31 +174,25 @@ export class MediaService {
     if (updates.type !== undefined) item.type = updates.type;
 
     await repo.save(item);
-
     const fresh = await repo.findOne({ where: { id: item.id } });
     return fresh!;
   }
 
-  /** حذف مدیا */
   async deleteMedia(id: string) {
-    const repo = this.ds.getRepository(MediaItem);
+    const repo = await this.repo();
+
     const item = await repo.findOne({ where: { id } });
     if (!item) throw new Error("Media not found");
-    console.log(item);
-    // مسیر فایل قبل از حذف DB
-    const fileUrl = item.url;
 
-    // حذف رکورد (delete مستقیم کفایت می‌کنه)
+    const fileUrl = item.url;
     await repo.delete(id);
 
-    // اگر فایل لوکالِ پروژه‌ست (نه CDN)، پاکش کن
     if (fileUrl && fileUrl.startsWith("/uploads/")) {
       const abs = path.join(
         process.cwd(),
         "public",
         fileUrl.replace(/^\/+/, "")
       );
-      // تلاش برای حذف فایل؛ خطاش رو ننداز بیرون
       await fsp.unlink(abs).catch(() => {});
     }
 

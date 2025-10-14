@@ -5,7 +5,7 @@ export type TagFilterState = {
   sortBy: "createdAt" | "updatedAt" | "name" | "slug";
   sortDir: "ASC" | "DESC";
   page: number;
-  pageSize: number; // mapped to perPage
+  pageSize: number; 
 };
 
 type Props = { value: TagFilterState };
@@ -17,7 +17,7 @@ export default function TagFilters({ value }: Props) {
       className="mt-6 bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8"
       dir="rtl"
     >
-      <form method="GET" action="/tags">
+      <form method="GET" action="/admin/tags">
         <input type="hidden" name="page" value={1} />
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 2xl:gap-8">
           <div className="md:col-span-4">

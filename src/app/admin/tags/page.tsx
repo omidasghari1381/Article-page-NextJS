@@ -1,8 +1,12 @@
 import Breadcrumb from "@/components/Breadcrumb";
-import { absolute } from "@/app/utils/base-url";
 import TagFilters, { type TagFilterState } from "@/components/tags/TagFilters";
 import TagCard, { type TagDTO } from "@/components/tags/TagCard";
 import Link from "next/link";
+import { TagsService } from "@/server/modules/tags/services/tag.service";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const revalidate = 0;
 
 export type ListResponse = {
   items: TagDTO[];
@@ -12,27 +16,46 @@ export type ListResponse = {
   pages: number;
 };
 
-async function fetchTags(search: {
+async function getTagsViaService(search: {
   q?: string;
   sortBy?: TagFilterState["sortBy"];
   sortDir?: TagFilterState["sortDir"];
   page?: string;
   perPage?: string;
 }): Promise<ListResponse> {
-  const qs = new URLSearchParams();
-  if (search.q) qs.set("q", search.q);
-  qs.set("page", search.page ?? "1");
-  qs.set("perPage", search.perPage ?? "20");
-  qs.set("sortBy", (search.sortBy ?? "createdAt") as string);
-  qs.set("sortDir", (search.sortDir ?? "DESC") as string);
+  const svc = new TagsService();
 
-  const url = absolute(`/api/tags?${qs.toString()}`);
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(t || "Failed to load tags");
-  }
-  return (await res.json()) as ListResponse;
+  const page = Math.max(1, Number(search.page ?? "1"));
+  const perPage = Math.max(1, Math.min(100, Number(search.perPage ?? "20")));
+  const q = typeof search.q === "string" ? search.q : "";
+  const sortBy = (search.sortBy ?? "createdAt") as TagFilterState["sortBy"];
+  const sortDir = (search.sortDir ?? "DESC") as TagFilterState["sortDir"];
+
+  const {
+    items,
+    total,
+    page: pageNum,
+    perPage: per,
+  } = await svc.listTags({
+    q,
+    page,
+    perPage,
+    sortBy,
+    sortDir,
+  });
+
+  const pages = per > 0 ? Math.max(1, Math.ceil(total / per)) : 1;
+
+  const normalizedItems: TagDTO[] = items.map((t) => ({
+    id: t.id,
+    name: t.name,
+    slug: t.slug,
+    description: t.description ?? null,
+    createdAt: t.createdAt?.toISOString(),
+    updatedAt: t.updatedAt?.toISOString(),
+  }));
+
+  return { items: normalizedItems, total, page: pageNum, perPage: per, pages };
 }
 
 export default async function Page({
@@ -58,11 +81,15 @@ export default async function Page({
     pages,
     perPage,
     page: pageNum,
-  } = await fetchTags({ q, sortBy, sortDir, page, perPage: perPageParam });
+  } = await getTagsViaService({
+    q,
+    sortBy,
+    sortDir,
+    page,
+    perPage: perPageParam,
+  });
 
-  const computedPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
-  const safePages =
-    Number.isFinite(pages) && pages > 0 ? pages : computedPages || 1;
+  const safePages = pages > 0 ? pages : 1;
   const canPrev = pageNum > 1;
   const canNext = pageNum < safePages;
 
@@ -75,7 +102,7 @@ export default async function Page({
     params.set("page", String(clamped));
     params.set("perPage", String(perPage));
     const qs = params.toString();
-    return qs ? `/tags?${qs}` : "/tags";
+    return qs ? `/admin/tags?${qs}` : "/admin/tags";
   };
 
   return (
@@ -126,7 +153,7 @@ export default async function Page({
                 <TagCard
                   key={t.id}
                   item={t}
-                  editHref={`/admin/tags/editor/${t.id}`}
+                  editHref={(id) => `/admin/tags/editor/${id}`}
                 />
               ))
             )}

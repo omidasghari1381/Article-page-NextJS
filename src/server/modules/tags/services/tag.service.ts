@@ -1,16 +1,58 @@
-import type { DataSource, Repository } from "typeorm";
+import { Repository } from "typeorm";
+import { getDataSource } from "@/server/db/typeorm.datasource";
 import { ArticleTag } from "../entities/tage.entity";
-import type {
-  TagListQuery,
-  TagListResult,
-  TagListItem,
-} from "../types/service.type";
+import { Article } from "@/server/modules/articles/entities/article.entity";
+
+export type TagListQuery = {
+  q?: string;
+  page?: number;
+  perPage?: number;
+  sortBy?: "createdAt" | "updatedAt" | "name" | "slug";
+  sortDir?: "ASC" | "DESC";
+};
+
+export type TagListItem = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type TagListResult = {
+  items: TagListItem[];
+  total: number;
+  page: number;
+  perPage: number;
+};
+
+type Repos = {
+  tagRepo: Repository<ArticleTag>;
+  articleRepo: Repository<Article>;
+};
+
+const SORTABLE: Record<NonNullable<TagListQuery["sortBy"]>, string> = {
+  createdAt: "tag.createdAt",
+  updatedAt: "tag.updatedAt",
+  name: "tag.name",
+  slug: "tag.slug",
+};
 
 export class TagsService {
-  private repo: Repository<ArticleTag>;
+  private reposP: Promise<Repos>;
 
-  constructor(private ds: DataSource) {
-    this.repo = this.ds.getRepository(ArticleTag);
+  constructor() {
+    this.reposP = (async () => {
+      const ds = await getDataSource();
+      return {
+        tagRepo: ds.getRepository(ArticleTag),
+        articleRepo: ds.getRepository(Article),
+      };
+    })();
+  }
+  private async repos() {
+    return this.reposP;
   }
 
   async createTag(input: {
@@ -18,33 +60,38 @@ export class TagsService {
     slug: string;
     description?: string | null;
   }) {
+    const { tagRepo } = await this.repos();
+
     const name = input.name.trim();
     const slug = input.slug.trim().toLowerCase();
     const description = input.description ?? null;
 
-    const exists = await this.repo.exists({ where: { slug } });
+    const exists = await tagRepo.exists({ where: { slug } });
     if (exists) {
       const err: any = new Error("DuplicateSlug");
       err.status = 409;
       throw err;
     }
 
-    const tag = this.repo.create({ name, slug, description });
-    return await this.repo.save(tag);
+    const tag = tagRepo.create({ name, slug, description });
+    return await tagRepo.save(tag);
   }
 
   async updateTag(
     id: string,
     updates: { name?: string; slug?: string; description?: string | null }
   ) {
-    const tag = await this.repo.findOne({ where: { id } });
+    const { tagRepo } = await this.repos();
+
+    const tag = await tagRepo.findOne({ where: { id } });
     if (!tag) throw new Error("Tag not found");
 
     if (typeof updates.name === "string") tag.name = updates.name.trim();
+
     if (typeof updates.slug === "string") {
       const nextSlug = updates.slug.trim().toLowerCase();
       if (nextSlug !== tag.slug) {
-        const exists = await this.repo.exists({ where: { slug: nextSlug } });
+        const exists = await tagRepo.exists({ where: { slug: nextSlug } });
         if (exists) {
           const err: any = new Error("DuplicateSlug");
           err.status = 409;
@@ -53,34 +100,36 @@ export class TagsService {
       }
       tag.slug = nextSlug;
     }
+
     if (updates.description !== undefined)
       tag.description = updates.description;
 
-    return await this.repo.save(tag);
+    return await tagRepo.save(tag);
   }
 
   async getTags(id?: string, name?: string) {
-    if (id) {
-      return await this.repo.findOne({ where: { id } });
-    }
-    if (typeof name === "string") {
-      return await this.repo.find({ where: { name } });
-    }
-    return await this.repo.find();
+    const { tagRepo } = await this.repos();
+    if (id) return await tagRepo.findOne({ where: { id } });
+    if (typeof name === "string")
+      return await tagRepo.find({ where: { name } });
+    return await tagRepo.find();
   }
 
   async getById(id: string) {
-    const tag = await this.repo.findOne({ where: { id } });
+    const { tagRepo } = await this.repos();
+    const tag = await tagRepo.findOne({ where: { id } });
     if (!tag) throw new Error("Tag not found");
     return tag;
   }
 
   async listTags(query: TagListQuery): Promise<TagListResult> {
+    const { tagRepo } = await this.repos();
+
     const page = Math.max(1, query.page ?? 1);
     const perPage = Math.max(1, Math.min(100, query.perPage ?? 20));
     const skip = (page - 1) * perPage;
 
-    const qb = this.repo.createQueryBuilder("tag");
+    const qb = tagRepo.createQueryBuilder("tag");
 
     if (query.q && query.q.trim()) {
       const q = query.q.trim().toLowerCase();
@@ -89,31 +138,47 @@ export class TagsService {
       });
     }
 
-    qb.orderBy("tag.createdAt", "DESC").skip(skip).take(perPage);
+    // مرتب‌سازی امن (ستون‌های سفیدلیست‌شده)
+    const sortBy =
+      query.sortBy && SORTABLE[query.sortBy]
+        ? SORTABLE[query.sortBy]
+        : SORTABLE.createdAt;
+    const sortDir = query.sortDir === "ASC" ? "ASC" : "DESC";
+    qb.orderBy(sortBy, sortDir as "ASC" | "DESC")
+      .addOrderBy("tag.id", "DESC") // برای پایداری
+      .skip(skip)
+      .take(perPage);
 
     const [rows, total] = await qb.getManyAndCount();
+
     const items: TagListItem[] = rows.map((t) => ({
       id: t.id,
       name: t.name,
       slug: t.slug,
       description: t.description ?? null,
+      createdAt: t.createdAt!,
+      updatedAt: t.updatedAt!,
     }));
 
     return { page, perPage, total, items };
   }
 
   async deleteTag(id: string) {
+    const { tagRepo, articleRepo } = await this.repos();
+
+    const relatedCount = await articleRepo
+      .createQueryBuilder("a")
+      .innerJoin("a.tags", "t", "t.id = :id", { id })
+      .getCount();
+
+    if (relatedCount > 0) {
+      const err: any = new Error("TagHasArticles");
+      err.status = 409;
+      throw err;
+    }
+
     try {
-      const raw = await this.ds.query(
-        'SELECT COUNT(*)::int AS c FROM "article_tags" WHERE "tag_id" = $1',
-        [id]
-      );
-      if ((raw?.[0]?.c ?? 0) > 0) {
-        const err: any = new Error("TagHasArticles");
-        err.status = 409;
-        throw err;
-      }
-      const effect = await this.repo.delete(id);
+      const effect = await tagRepo.delete(id);
       return effect;
     } catch (err: any) {
       const msg = String(err?.message || "");
