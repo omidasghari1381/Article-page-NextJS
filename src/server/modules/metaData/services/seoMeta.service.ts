@@ -1,4 +1,3 @@
-// src/server/modules/metaData/services/seoMeta.service.ts
 import { DeleteResult, Repository } from "typeorm";
 import { getDataSource } from "@/server/db/typeorm.datasource";
 import {

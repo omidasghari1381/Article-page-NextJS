@@ -14,7 +14,6 @@ export function parseMySQLDate(str: string): Date {
 }
 
 export function timeAgoFa(mysqlDate: string): string {
-  console.log(mysqlDate);
   const date = parseMySQLDate(mysqlDate);
   if (isNaN(date.getTime())) return "تاریخ نامعتبر";
 

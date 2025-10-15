@@ -1,17 +1,14 @@
-"use client";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import React from "react";
+import Link from "next/link";
 import { timeAgoFa } from "@/app/utils/date";
 
-/** سازگار با ArticleLite در app/page.tsx */
 type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
 type CategoryLite = { id: string; name: string; slug?: string };
 type ArticleLite = {
   id: string;
   title: string;
   subject: string | null;
-  createdAt: string; // ISO
+  createdAt: string;
   viewCount: number;
   thumbnail: string | null;
   readingPeriod: number;
@@ -26,16 +23,11 @@ export default function HeroSection({
   article: ArticleLite | null;
   items: ArticleLite[] | null;
 }) {
-  const router = useRouter();
-  const handleRedirect = () => {
-    if (article?.id) router.push(`/article/${article.id}`);
-  };
+  const articleUrl = article?.id ? `/articles/${article.id}` : "#";
 
   return (
     <section className="text-white w-full">
-      {/* Hero */}
       <div className="relative bg-black mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-stretch overflow-hidden rounded-xl">
-        {/* متن سمت راست/چپ */}
         <div className="relative flex flex-col justify-center space-y-4 md:space-y-6 py-8 md:py-10 z-10 order-2 md:order-1">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-300">
             <Image src="/svg/write.svg" alt="نویسنده" width={22} height={22} />
@@ -55,19 +47,17 @@ export default function HeroSection({
           </h1>
 
           <div className="flex w-full sm:w-auto">
-            <button
+            <Link
+              href={articleUrl}
               className="w-full sm:w-auto bg-[#19CCA7] hover:bg-[#15b697] disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 sm:px-6 py-3 rounded-lg font-medium transition"
-              onClick={handleRedirect}
-              disabled={!article?.id}
+              aria-disabled={!article?.id}
             >
               ← مطالعه مقاله
-            </button>
+            </Link>
           </div>
         </div>
 
-        {/* تصویر بک‌گراند/کناری */}
         <div className="relative min-h-[220px] sm:min-h-[300px] md:min-h-[420px] lg:min-h-[480px] order-1 md:order-2 rounded-xl overflow-hidden">
-          {/* گرین/نویز و گرادیانت */}
           <div className="absolute inset-0 z-[1]">
             <div className="absolute inset-0 bg-gradient-to-l md:bg-gradient-to-l from-[#000A08]/70 md:from-[#000A08] to-transparent" />
             <div
@@ -80,7 +70,6 @@ export default function HeroSection({
             />
           </div>
 
-          {/* تصویر */}
           <Image
             src={article?.thumbnail ?? "/Image/hero1.jpg"}
             alt={article?.title ?? "Hero"}
@@ -92,15 +81,14 @@ export default function HeroSection({
         </div>
       </div>
 
-      {/* لیست آخرین‌ها */}
       <div className="mx-auto mt-6 sm:mt-8 lg:mt-10 px-4 sm:px-6 lg:px-8">
         <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-5 md:p-6 lg:-translate-y-10">
-          {/* روی موبایل: اسلایدر افقی؛ از md به بالا: گرید */}
           <div className="mx-auto p-6  grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6  -translate-y-20 h-[303px] w-[1280px] backdrop-blur-[100px] rounded-lg justify-center">
             <div className="md:col-span-full md:hidden">
               <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mb-2 align-middle">
                 {items?.map((item) => (
-                  <article
+                  <Link
+                    href={`/article/${item.id}`}
                     key={item.id}
                     className="min-w-[260px] max-w-[260px] snap-start bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden"
                   >
@@ -122,13 +110,14 @@ export default function HeroSection({
                         <span>بازدید {item.viewCount}</span>
                       </div>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             </div>
 
             {items?.map((item) => (
-              <article
+              <Link
+                href={`/articles/${item.id}`}
                 key={`md-${item.id}`}
                 className="hidden md:block bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden"
               >
@@ -150,10 +139,9 @@ export default function HeroSection({
                     <span>بازدید {item.viewCount}</span>
                   </div>
                 </div>
-              </article>
+              </Link>
             ))}
 
-            {/* اگر آیتمی نبود */}
             {!items?.length && (
               <div className="col-span-full text-center text-sm text-gray-200 py-8">
                 محتوایی برای نمایش وجود ندارد.

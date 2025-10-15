@@ -1,11 +1,10 @@
 "use client";
-
+import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
 import { timeAgoFa } from "@/app/utils/date";
 
-/** هماهنگ با ArticleLite صفحه اصلی */
 type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
 type CategoryLite = { id: string; name: string; slug?: string };
 type ArticleLite = {
@@ -44,6 +43,7 @@ export default function Chosen({
 
       <div className="my-5 flex gap-2 overflow-x-auto no-scrollbar sm:flex-wrap sm:overflow-visible">
         <button
+          type="button"
           onClick={() => setSelected(null)}
           className={`${baseBtn} ${selected === null ? active : inactive}`}
         >
@@ -51,6 +51,7 @@ export default function Chosen({
         </button>
         {categories.map((cat) => (
           <button
+            type="button"
             key={cat}
             onClick={() => setSelected(cat)}
             className={`${baseBtn} ${selected === cat ? active : inactive}`}
@@ -66,8 +67,12 @@ export default function Chosen({
 }
 
 function ArticleCard({ article }: { article: ArticleLite | null }) {
+  const href = article?.id ? `/articles/${article.id}` : "#";
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+    <Link
+      href={href}
+      className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6"
+    >
       <div className="relative w-full sm:w-48 md:w-56 aspect-[16/9] sm:aspect-[16/10]">
         <Image
           src={article?.thumbnail ?? "/image/a.png"}
@@ -83,8 +88,15 @@ function ArticleCard({ article }: { article: ArticleLite | null }) {
         </h4>
         <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-[#373A41]">
           <div className="flex items-center gap-2">
-            <Image src={"/svg/calender.svg"} alt="date" width={20} height={20} />
-            <span>{article?.createdAt ? timeAgoFa(article.createdAt) : "—"}</span>
+            <Image
+              src={"/svg/calender.svg"}
+              alt="date"
+              width={20}
+              height={20}
+            />
+            <span>
+              {article?.createdAt ? timeAgoFa(article.createdAt) : "—"}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Image src={"/svg/eye.svg"} alt="views" width={18} height={14} />
@@ -92,6 +104,6 @@ function ArticleCard({ article }: { article: ArticleLite | null }) {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

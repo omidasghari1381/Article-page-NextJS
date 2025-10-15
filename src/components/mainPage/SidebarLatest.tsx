@@ -1,8 +1,8 @@
+import Link from "next/link";
 import Image from "next/image";
 
 type Author = { id: string; firstName: string; lastName: string };
 type CategoryObj = { id: string; name: string; slug: string };
-
 type CategoryLike = string | CategoryObj | CategoryObj[] | null | undefined;
 
 type LatestItem = {
@@ -10,7 +10,7 @@ type LatestItem = {
   title?: string;
   createdAt?: string;
   categories?: CategoryLike;
-  author?: Author;
+  author?: Author | null;
   thumbnail?: string | null;
   readingPeriod?: number | string | null;
 };
@@ -31,6 +31,7 @@ function getCategoryName(categories: CategoryLike): string | null {
 }
 
 export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
+  console.log(posts)
   return (
     <aside>
       <div className="flex items-center gap-3 px-2 sm:px-4 py-6">
@@ -55,9 +56,10 @@ export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
 
 function SidebarCard({ post }: { post: LatestItem }) {
   const categoryName = getCategoryName(post.categories);
+  const articleUrl = `/articles/${post.id}`; 
 
   return (
-    <article className="group">
+    <Link href={articleUrl} className="group block transition hover:opacity-95">
       <div className="relative w-full aspect-[16/10] sm:aspect-[3/2] rounded-md overflow-hidden">
         <Image
           src={post.thumbnail || "/image/hero1.jpg"}
@@ -96,6 +98,6 @@ function SidebarCard({ post }: { post: LatestItem }) {
           </h5>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

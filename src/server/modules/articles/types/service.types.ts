@@ -55,6 +55,6 @@ export type ArticleDTO = {
   author: { id: string; firstName: string; lastName: string } | null;
   categories: { id: string; name: string; slug: string }[];
   tags: { id: string; name: string; slug: string }[];
-  createdAt: Date;
+  createdAt: string;
   createdAtISO?: string;
 };

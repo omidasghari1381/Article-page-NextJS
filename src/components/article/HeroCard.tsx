@@ -4,7 +4,7 @@ import SummeryDropdown from "../Summery";
 
 type Props = {
   title?: string;
-  subject?: string;
+  subject?: string|null;
   introduction?: string | null;
   quotes?: string | null;
   thumbnail?: string | null;

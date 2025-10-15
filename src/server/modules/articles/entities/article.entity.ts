@@ -49,8 +49,8 @@ export class Article extends AbstractEntity {
   quotes!: string | null;
 
   @ManyToOne(() => ArticleCategory, {
-    nullable: false, 
-    onDelete: "RESTRICT", 
+    nullable: false,
+    onDelete: "RESTRICT",
     onUpdate: "CASCADE",
   })
   @JoinColumn({ name: "categoryId" })
@@ -78,4 +78,7 @@ export class Article extends AbstractEntity {
 
   @Column({ type: "json", nullable: true })
   summery!: string[] | null;
+
+  // @Column({ type: "boolean", default: false })
+  // isActive!: boolean;
 }

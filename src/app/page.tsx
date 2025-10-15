@@ -1,8 +1,5 @@
-// app/page.tsx
-
 import Image from "next/image";
 import { articleCategoryEnum } from "@/server/modules/articles/enums/articleCategory.enum";
-import { absolute } from "@/app/utils/base-url";
 import Chosen from "@/components/mainPage/Chosen";
 import Educational from "@/components/mainPage/Educational";
 import LatestArticle from "@/components/mainPage/LatestArticle";
@@ -10,96 +7,66 @@ import Markets from "@/components/mainPage/Markets";
 import Video from "@/components/mainPage/Video";
 import HeroSection from "@/components/mainPage/HeroSection";
 import SidebarLatest from "@/components/mainPage/SidebarLatest";
+import { ArticleService } from "@/server/modules/articles/services/article.service";
 
-// ---- Types ----
 type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
 type CategoryLite = { id: string; name: string; slug?: string };
 type ArticleLite = {
   id: string;
   title: string;
   subject: string | null;
-  createdAt: string; // ISO
+  createdAt: string;
   viewCount: number;
   thumbnail: string | null;
   readingPeriod: number;
   author?: AuthorDTO;
-  categories?: CategoryLite[];
+  category?: CategoryLite | null;
 };
-type ApiList<T> = { items: T[]; total?: number };
-
-/** ✅ نوعی که SidebarLatest انتظار دارد (همان LiteArticle صفحه جزئیات) */
-type LiteArticle = {
-  id: string;
-  title: string;
-  createdAt: string;
-  category: string;
-  author: { id: string; firstName: string; lastName: string };
-  thumbnail: string | null;
-  readingPeriod: string | number;
-};
-
-// ---- Fetchers (SSR) ----
-async function getLatest(): Promise<ArticleLite[]> {
-  const res = await fetch(absolute("/api/articles?perPage=4&sortBy=createdAt&sortDir=DESC"), {
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  const data: ApiList<ArticleLite> = await res.json();
-  return data.items ?? [];
-}
-
-async function getHero(): Promise<ArticleLite | null> {
-  const res = await fetch(absolute("/api/articles?perPage=1&sortBy=createdAt&sortDir=DESC"), {
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  const data: ApiList<ArticleLite> = await res.json();
-  return Array.isArray(data.items) ? data.items[0] ?? null : null;
-}
-
-// ✅ فچ مخصوص سکشن Educational
-async function getEducational(): Promise<ArticleLite[]> {
-  const res = await fetch(absolute("/api/articles?perPage=5&sortBy=createdAt&sortDir=DESC"), {
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  const data: ApiList<ArticleLite> = await res.json();
-  return data.items ?? [];
-}
-
-/** ✅ مبدل ArticleLite → LiteArticle برای SidebarLatest */
-function toSidebarLite(a: ArticleLite): LiteArticle {
-  const author =
-    a.author && a.author.firstName !== undefined
-      ? {
-          id: a.author.id,
-          firstName: a.author.firstName,
-          lastName: a.author.lastName,
-        }
-      : { id: "", firstName: "", lastName: "" };
-
-  return {
-    id: a.id,
-    title: a.title,
-    createdAt: a.createdAt,
-    category: a.categories?.[0]?.name ?? "",
-    author,
-    thumbnail: a.thumbnail ?? null,
-    readingPeriod: a.readingPeriod ?? 0,
-  };
-}
 
 export default async function HomePage() {
-  const [latest, hero, educational] = await Promise.all([
-    getLatest(),
-    getHero(),
-    getEducational(),
-  ]);
+  const categories = Object.values(
+    articleCategoryEnum
+  ) as articleCategoryEnum[];
+  const svc = new ArticleService();
+  const [latestRes, heroRes, educationalRes, sidebarLatestRes, mostViewedRes] =
+    await Promise.all([
+      svc.listArticles({
+        page: 1,
+        pageSize: 4,
+        sort: { by: "createdAt", dir: "DESC" },
+        variant: "lite",
+      }),
+      svc.listArticles({
+        page: 1,
+        pageSize: 1,
+        sort: { by: "createdAt", dir: "DESC" },
+        variant: "lite",
+      }),
+      svc.listArticles({
+        page: 1,
+        pageSize: 5,
+        sort: { by: "createdAt", dir: "DESC" },
+        variant: "lite",
+      }),
+      svc.listArticles({
+        page: 1,
+        pageSize: 3,
+        sort: { by: "createdAt", dir: "DESC" },
+        variant: "lite",
+      }),
+      svc.listArticles({
+        page: 1,
+        pageSize: 4,
+        sort: { by: "viewCount", dir: "DESC" },
+        variant: "lite",
+      }),
+    ]);
 
-  const categories = Object.values(articleCategoryEnum) as articleCategoryEnum[];
-
-  /** ✅ داده واقعی برای SidebarLatest (به‌جای دیتای موقتی) */
-  const sidebarPosts: LiteArticle[] = (latest ?? []).map(toSidebarLite);
+  const latest = latestRes.items as ArticleLite[];
+  const hero = heroRes.items?.[0] as ArticleLite | null;
+  const educational = educationalRes.items as ArticleLite[];
+  const sidebarLatest = sidebarLatestRes.items as ArticleLite[];
+  const mostViewed = mostViewedRes.items as ArticleLite[];
 
   return (
     <main className="w-full">
@@ -129,10 +96,10 @@ export default async function HomePage() {
 
         <section className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <LatestArticle />
+            <LatestArticle items={mostViewed} />
           </div>
           <aside className="lg:col-span-1">
-            <SidebarLatest posts={sidebarPosts} />
+            <SidebarLatest posts={sidebarLatest} />
           </aside>
         </section>
 

@@ -1,42 +1,27 @@
-// components/mainPage/LatestArticle.tsx
 import Image from "next/image";
-import { absolute } from "@/app/utils/base-url";
 import { timeAgoFa } from "@/app/utils/date";
+import Link from "next/link";
 
-// --- Types (هماهنگ با app/page.tsx) ---
 type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
 type CategoryLite = { id: string; name: string; slug?: string };
 type ArticleLite = {
   id: string;
   title: string;
   subject: string | null;
-  createdAt: string; // ISO
+  createdAt: string;
   viewCount: number;
   thumbnail: string | null;
   readingPeriod: number;
   author?: AuthorDTO;
-  categories?: CategoryLite[];
+  categories?: string | null;
 };
-
-// --- SSR fetch (fallback وقتی props ندادیم) ---
-async function fetchLatest(): Promise<ArticleLite[]> {
-  const res = await fetch(
-    absolute("/api/articles?perPage=4&sortBy=createdAt&sortDir=DESC"),
-    { cache: "no-store" }
-  );
-  if (!res.ok) return [];
-  const data = (await res.json()) as { items: ArticleLite[]; total?: number };
-  return Array.isArray(data.items) ? data.items : [];
-}
 
 export default async function LatestArticle({
   items,
 }: {
-  // اگر از صفحه اصلی چیزی پاس داده نشد، خودش SSR فچ می‌کند
   items?: ArticleLite[];
 }) {
-  const data = items ?? (await fetchLatest());
-
+  const data = items ?? [];
   return (
     <section>
       <div className="flex items-center gap-3 py-6">
@@ -69,9 +54,10 @@ export default async function LatestArticle({
 }
 
 function LateArticle({ item }: { item: ArticleLite }) {
-  const catName = item.categories?.[0]?.name ?? "—";
+  const catName = item.categories ?? "—";
+  const articleUrl = `/articles/${item.id}`;
   return (
-    <article className="mb-2">
+    <Link href={articleUrl} className="block mb-2 hover:opacity-90 transition">
       <div className="relative w-full aspect-[16/9]">
         <Image
           src={item.thumbnail ?? "/image/chart.png"}
@@ -104,7 +90,9 @@ function LateArticle({ item }: { item: ArticleLite }) {
         </div>
         <div className="flex items-center gap-2">
           <Image src={"/svg/eye.svg"} alt="views" width={18} height={14} />
-          <span className="text-sm text-[#373A41]">بازدید {item.viewCount}</span>
+          <span className="text-sm text-[#373A41]">
+            بازدید {item.viewCount}
+          </span>
         </div>
       </div>
 
@@ -114,16 +102,20 @@ function LateArticle({ item }: { item: ArticleLite }) {
       <p className="text-sm sm:text-base font-normal text-[#121212] mt-3 line-clamp-3">
         {item.subject ?? ""}
       </p>
-    </article>
+    </Link>
   );
 }
 
-// Placeholder برای وقتی دیتا تهی است (استایل دست‌نخورده)
 function LateArticlePlaceholder() {
   return (
     <article className="mb-2">
       <div className="relative w-full aspect-[16/9]">
-        <Image src="/image/chart.png" alt="thumb" fill className="rounded-md object-cover" />
+        <Image
+          src="/image/chart.png"
+          alt="thumb"
+          fill
+          className="rounded-md object-cover"
+        />
       </div>
 
       <div className="flex items-center justify-between mt-3">
@@ -138,10 +130,12 @@ function LateArticlePlaceholder() {
               priority
             />
             <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold">
-              — 
+              —
             </span>
           </div>
-          <span className="text-[#373A41] text-sm sm:text-base font-medium">—</span>
+          <span className="text-[#373A41] text-sm sm:text-base font-medium">
+            —
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <Image src={"/svg/eye.svg"} alt="views" width={18} height={14} />
@@ -149,7 +143,9 @@ function LateArticlePlaceholder() {
         </div>
       </div>
 
-      <p className="mt-2 text-base sm:text-lg text-[#121212] font-bold line-clamp-2">—</p>
+      <p className="mt-2 text-base sm:text-lg text-[#121212] font-bold line-clamp-2">
+        —
+      </p>
       <p className="text-sm sm:text-base font-normal text-[#121212] mt-3 line-clamp-3">
         —
       </p>

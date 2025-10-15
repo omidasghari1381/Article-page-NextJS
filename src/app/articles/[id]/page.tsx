@@ -3,123 +3,22 @@ import Breadcrumb from "@/components/Breadcrumb";
 import HeroCard from "@/components/article/HeroCard";
 import ArticleBody from "@/components/article/ArticleBody";
 import InlineNextCard from "@/components/article/InlineNextCard";
-import Thumbnail, { SideImage } from "@/components/article/Thumbnail";
+import { SideImage } from "@/components/article/Thumbnail";
 import RelatedArticles from "@/components/article/RelatedArticles";
 import CommentsBlock from "@/components/article/CommentsBlock";
+import SidebarLatest from "@/components/mainPage/SidebarLatest";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { absolute } from "@/app/utils/base-url";
-import SidebarLatest from "@/components/mainPage/SidebarLatest";
-import type { Metadata } from "next"; // ← فقط برای generateMetadata
+import type { Metadata } from "next";
 
-type Author = { id: string; firstName: string; lastName: string };
+import { ArticleService } from "@/server/modules/articles/services/article.service";
+import {
+  RobotsSetting,
+  TwitterCardType,
+  SeoEntityType,
+} from "@/server/modules/metaData/entities/seoMeta.entity";
+import { SeoMetaService } from "@/server/modules/metaData/services/seoMeta.service";
 
-type ApiCategory = { id: string; name: string; slug: string };
-type ApiTag = { id: string; name: string; slug: string };
-
-type ApiArticle = {
-  id: string;
-  title: string;
-  slug: string | null;
-  subject: string | null;
-  readingPeriod: number;
-  viewCount: number;
-  thumbnail: string | null;
-  introduction: string | null;
-  quotes: string | null;
-  summery: string[] | null;
-  mainText: string;
-  secondaryText: string | null;
-  author: Author;
-  categories: ApiCategory[];
-  tags: ApiTag[];
-  createdAt: string;
-  createdAtISO?: string;
-};
-
-type LiteArticle = {
-  id: string;
-  title: string;
-  createdAt: string;
-  category: string;
-  author: Author;
-  thumbnail: string | null;
-  readingPeriod: string | number;
-};
-
-type CommentWithReplies = {
-  id: string;
-  text: string;
-  createdAt: string;
-  updatedAt: string;
-  user: Author;
-  like: number;
-  dislike: number;
-  replies?: {
-    id: string;
-    text: string;
-    createdAt: string;
-    updatedAt: string;
-    user: Author;
-  }[];
-};
-
-/* ====================== SEO META TYPES & FETCHERS ====================== */
-export enum SeoEntityType {
-  ARTICLE = "article",
-  CATEGORY = "category",
-}
-export enum RobotsSetting {
-  INDEX_FOLLOW = "index,follow",
-  NOINDEX_FOLLOW = "noindex,follow",
-  INDEX_NOFOLLOW = "index,nofollow",
-  NOINDEX_NOFOLLOW = "noindex,nofollow",
-}
-export enum TwitterCardType {
-  summery = "summery",
-  summery_LARGE_IMAGE = "summery_large_image",
-}
-
-type SeoMetaDTO = {
-  id: string;
-  entityType: SeoEntityType;
-  entityId: string;
-  locale: string;
-  useAuto: boolean;
-  seoTitle: string | null;
-  seoDescription: string | null;
-  canonicalUrl: string | null;
-  robots: RobotsSetting | null;
-  ogTitle: string | null;
-  ogDescription: string | null;
-  ogImageUrl: string | null;
-  twitterCard: TwitterCardType | null;
-  publishedTime: string | null; // از API می‌آید (toISOString)
-  modifiedTime: string | null;
-  authorName: string | null;
-  tags: string[] | null;
-};
-
-async function getSeoMeta(
-  entityId: string,
-  locale?: string // فعلاً استفاده نمی‌کنیم
-): Promise<SeoMetaDTO | null> {
-  const qs = new URLSearchParams({
-    entityType: SeoEntityType.ARTICLE,
-    entityId,
-    // عمداً locale نمی‌فرستیم تا پیش‌فرض route که "" است استفاده شود
-  });
-
-  const res = await fetch(absolute(`/api/seo?${qs.toString()}`), { cache: "no-store" });
-  if (res.status === 404) return null;
-  if (!res.ok) return null;
-
-  const data = await res.json();
-  if (data?.error) return null;
-  return data ?? null;
-}
- 
-/** مپ کردن RobotsSetting به ساختار Metadata.robots */
 function robotsToMetadata(robots?: RobotsSetting | null): Metadata["robots"] {
   if (!robots) return undefined;
   switch (robots) {
@@ -136,13 +35,8 @@ function robotsToMetadata(robots?: RobotsSetting | null): Metadata["robots"] {
   }
 }
 
-/** ادغام متای سفارشی با داده‌های مقاله (fallback روی مقاله وقتی useAuto=true یا فیلدی تهی است). */
-function resolveSeoMetadata(
-  article: ApiArticle,
-  meta: SeoMetaDTO | null
-): Metadata {
-  // داده‌های پایه از خود مقاله
-  const articleUrl = absolute(`/article/${encodeURIComponent(article.id)}`);
+function resolveSeoMetadata(article: any, meta: any | null): Metadata {
+  const articleUrl = `/article/${encodeURIComponent(article.id)}`;
   const articleTitle = article.title;
   const articleDesc =
     (article.introduction ?? "").trim() || (article.subject ?? "").trim() || "";
@@ -153,37 +47,26 @@ function resolveSeoMetadata(
     }`.trim() || undefined;
   const published = article.createdAt || undefined;
   const modified = article.createdAtISO || article.createdAt || undefined;
-  const keywords = article.tags?.map((t) => t.name) ?? undefined;
+  const keywords = article.tags?.map((t: any) => t.name) ?? undefined;
 
   const useAuto = meta?.useAuto ?? true;
-
   const title =
-    !useAuto && meta?.seoTitle?.trim() ? meta!.seoTitle! : articleTitle;
-
+    !useAuto && meta?.seoTitle?.trim() ? meta.seoTitle! : articleTitle;
   const description =
     !useAuto && meta?.seoDescription?.trim()
-      ? meta!.seoDescription!
+      ? meta.seoDescription!
       : articleDesc;
-
   const canonical =
-    !useAuto && meta?.canonicalUrl?.trim() ? meta!.canonicalUrl! : articleUrl;
-
-  const ogTitle = !useAuto && meta?.ogTitle?.trim() ? meta!.ogTitle! : title;
-
+    !useAuto && meta?.canonicalUrl?.trim() ? meta.canonicalUrl! : articleUrl;
+  const ogTitle = !useAuto && meta?.ogTitle?.trim() ? meta.ogTitle! : title;
   const ogDescription =
-    !useAuto && meta?.ogDescription?.trim()
-      ? meta!.ogDescription!
-      : description;
-
+    !useAuto && meta?.ogDescription?.trim() ? meta.ogDescription! : description;
   const ogImage =
-    !useAuto && meta?.ogImageUrl?.trim() ? meta!.ogImageUrl! : articleImg;
-
+    !useAuto && meta?.ogImageUrl?.trim() ? meta.ogImageUrl! : articleImg;
   const twitterCard =
     (!useAuto && meta?.twitterCard) || TwitterCardType.summery_LARGE_IMAGE;
-
   const robots = robotsToMetadata(meta?.robots);
 
-  // تاریخ‌ها + نویسنده + تگ‌ها
   const publishedTime =
     (!useAuto && meta?.publishedTime) || published || undefined;
   const modifiedTime =
@@ -192,12 +75,10 @@ function resolveSeoMetadata(
   const tags =
     (!useAuto && meta?.tags?.length ? meta?.tags : keywords) || undefined;
 
-  const md: Metadata = {
+  return {
     title,
     description,
-    alternates: {
-      canonical,
-    },
+    alternates: { canonical },
     robots,
     openGraph: {
       type: "article",
@@ -205,7 +86,7 @@ function resolveSeoMetadata(
       title: ogTitle,
       description: ogDescription,
       images: ogImage ? [{ url: ogImage }] : undefined,
-      siteName: "MyProp", // در صورت نیاز تنظیم کنید
+      siteName: "MyProp",
       locale: meta?.locale || "fa_IR",
       authors: authorName ? [authorName] : undefined,
       publishedTime,
@@ -224,93 +105,9 @@ function resolveSeoMetadata(
     },
     keywords: tags,
   };
-
-  return md;
-}
-/* ====================== /SEO META ====================== */
-
-async function getArticle(id: string): Promise<ApiArticle | null> {
-  const res = await fetch(absolute(`/api/articles/${encodeURIComponent(id)}`), {
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  return res.json();
 }
 
-async function getLatest(): Promise<LiteArticle[]> {
-  const res = await fetch(absolute(`/api/articles?perPage=4`), {
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data?.items ?? [];
-}
-
-async function getRelated(firstCategorySlug?: string, excludeId?: string) {
-  if (!firstCategorySlug) return null;
-  const res = await fetch(
-    absolute(
-      `/api/articles?perPage=4&category=${encodeURIComponent(
-        firstCategorySlug
-      )}`
-    ),
-    { cache: "no-store" }
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  const items: LiteArticle[] = Array.isArray(data?.items) ? data.items : [];
-  return items.find((x) => x.id !== excludeId) ?? null;
-}
-
-async function getComments(
-  articleId: string
-): Promise<{ items: CommentWithReplies[]; total: number }> {
-  const res = await fetch(
-    absolute(
-      `/api/articles/${encodeURIComponent(
-        articleId
-      )}/comments?skip=0&take=10&withReplies=1`
-    ),
-    { cache: "no-store" }
-  );
-  if (!res.ok) return { items: [], total: 0 };
-  const data = await res.json();
-  return { items: data?.data ?? [], total: data?.total ?? 0 };
-}
-
-// نرمال‌سازی برای کم کردن if-else در JSX
-function normalize(article: ApiArticle) {
-  const firstCategory: ApiCategory | undefined = Array.isArray(
-    article.categories
-  )
-    ? article.categories[0]
-    : undefined;
-
-  return {
-    id: article.id,
-    title: article.title,
-    subject: article.subject ?? "",
-    introduction: article.introduction ?? "",
-    quotes: article.quotes ?? "",
-    mainText: article.mainText,
-    secondaryText: article.secondaryText ?? "",
-    readingPeriod: article.readingPeriod ?? 0,
-    viewCount: article.viewCount ?? 0,
-    thumbnail: article.thumbnail ?? null,
-    createdAt: article.createdAt,
-    author: article.author,
-    category: {
-      name: firstCategory?.name ?? "",
-      slug: firstCategory?.slug ?? "",
-      id: firstCategory?.id ?? "",
-    },
-    categories: article.categories,
-    tags: article.tags,
-    summery: Array.isArray(article.summery) ? article.summery : [],
-  };
-}
-
-function JsonLd({ a }: { a: ReturnType<typeof normalize> }) {
+function JsonLd({ a }: { a: any }) {
   const data = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -325,14 +122,13 @@ function JsonLd({ a }: { a: ReturnType<typeof normalize> }) {
         }
       : undefined,
     image: a.thumbnail ? [a.thumbnail] : undefined,
-    articleSection: a.category.name,
-    keywords: a.tags?.map((t) => t.name),
-    mainEntityOfPage: absolute(`/article/${encodeURIComponent(a.id)}`),
+    articleSection: a.category?.name,
+    keywords: a.tags?.map((t: any) => t.name),
+    mainEntityOfPage: `/article/${encodeURIComponent(a.id)}`,
   };
   return (
     <script
       type="application/ld+json"
-      // @ts-ignore
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
     />
   );
@@ -344,27 +140,32 @@ export async function generateMetadata({
   params: { id: string };
 }): Promise<Metadata> {
   const { id } = await params;
+  const articleSrv = new ArticleService();
+  const seoSrv = new SeoMetaService();
 
-  // مقاله برای fallback خودکار
-  const article = await getArticle(id);
+  const article = await articleSrv.getById(id);
   if (!article) {
-    return {
-      title: "مقاله پیدا نشد",
-      robots: { index: false, follow: false },
-    };
+    return { title: "مقاله پیدا نشد", robots: { index: false, follow: false } };
   }
-
-  // لوکال اگر دارید از روتر/کوکی/هدر بخوانید. فعلاً fa-IR
-  const locale = "fa-IR";
-  const meta = await getSeoMeta(id, locale);
-
+  const meta = await seoSrv.getForArticle(id, "fa-IR");
   return resolveSeoMetadata(article, meta);
 }
-/* ====================== /generateMetadata ====================== */
 
 export default async function Page({ params }: { params: { id: string } }) {
-  const { id } = await params; // Next.js 15
-  const apiArticle = await getArticle(id);
+  const { id } = await params;
+  const articleSrv = new ArticleService();
+
+  const [apiArticle, latestRes, commentsRes, session] = await Promise.all([
+    articleSrv.getById(id),
+    articleSrv.listArticles({
+      page: 1,
+      pageSize: 4,
+      sort: { by: "createdAt", dir: "DESC" },
+      variant: "lite",
+    }),
+    articleSrv.listComments(id, { skip: 0, take: 10, withReplies: true }),
+    getServerSession(authOptions),
+  ]);
 
   if (!apiArticle) {
     return (
@@ -374,17 +175,40 @@ export default async function Page({ params }: { params: { id: string } }) {
     );
   }
 
-  const a = normalize(apiArticle);
+  const firstCategory = Array.isArray(apiArticle.categories)
+    ? apiArticle.categories[0]
+    : undefined;
 
-  const [latest, related, commentsRes, session] = await Promise.all([
-    getLatest(),
-    getRelated(a.category.slug, a.id),
-    getComments(a.id),
-    getServerSession(authOptions),
-  ]);
+  const relatedRes = firstCategory?.id
+    ? await articleSrv.listArticles({
+        page: 1,
+        pageSize: 4,
+        sort: { by: "createdAt", dir: "DESC" },
+        filters: { categoryId: firstCategory.id },
+        variant: "lite",
+      })
+    : { items: [] as any[] };
+
+  const related = Array.isArray(relatedRes.items)
+    ? (relatedRes.items as any[]).find((x) => x.id !== apiArticle.id) || null
+    : null;
+
+  const latest = Array.isArray(latestRes.items) ? latestRes.items : [];
 
   const role = (session?.user as any)?.role;
   const isAdmin = role === "admin";
+
+  const a = {
+    ...apiArticle,
+    category: firstCategory
+      ? {
+          id: firstCategory.id,
+          name: firstCategory.name,
+          slug: firstCategory.slug,
+        }
+      : { id: "", name: "", slug: "" },
+    summery: Array.isArray(apiArticle.summery) ? apiArticle.summery : [],
+  };
 
   return (
     <main className="px-7 sm:px-6 lg:px-20 py-6 mx-auto ">
@@ -443,17 +267,20 @@ export default async function Page({ params }: { params: { id: string } }) {
         </section>
 
         <aside className="lg:col-span-3 space-y-9 ">
-          <SidebarLatest posts={latest} />
+          <SidebarLatest posts={latest as any} />
         </aside>
       </div>
 
       <CommentsBlock
-        initialComments={commentsRes.items}
+        initialComments={(commentsRes?.data as any[]) || []}
         articleId={a.id}
-        initialTotal={commentsRes.total}
+        initialTotal={(commentsRes as any)?.total || 0}
       />
 
-      <RelatedArticles post={related} fallbackCategory={a.category.name} />
+      <RelatedArticles
+        post={related as any}
+        fallbackCategory={a.category.name}
+      />
 
       {isAdmin ? (
         <div className="mt-10 flex justify-end">
