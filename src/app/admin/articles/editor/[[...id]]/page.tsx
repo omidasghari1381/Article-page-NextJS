@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
-import { headers } from "next/headers";
 import ArticleForm from "@/components/article/ArticleForm";
 import SeoSettingsForm from "@/components/seo/ArticleSeoSettingsForm";
 
@@ -29,24 +28,6 @@ export type ArticleDTO = {
   createdAt: string;
 };
 
-export type ListResponse<T> = {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  pages: number;
-};
-
-export function getBaseUrl(): string {
-  const fromPublic = process.env.NEXT_PUBLIC_BASE_URL;
-  if (fromPublic) return fromPublic.replace(/\/+$/, "");
-  const vercel = process.env.VERCEL_URL;
-  if (vercel) return `https://${vercel}`.replace(/\/+$/, "");
-  return "http://localhost:3000";
-}
-export function absolute(path: string): string {
-  return new URL(path, getBaseUrl()).toString();
-}
 export function mediaAbsolute(pathOrUrl?: string | null) {
   if (!pathOrUrl) return "";
   const v = String(pathOrUrl);
@@ -59,55 +40,39 @@ export function mediaAbsolute(pathOrUrl?: string | null) {
   return mediaBase ? `${mediaBase}/${path}` : `/${path}`;
 }
 
-async function fetchJSON<T>(
-  url: string,
-  init?: RequestInit & { revalidate?: number; tag?: string }
-) {
-  const h = await headers();
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      ...(init?.headers || {}),
-      cookie: h.get("cookie") || "",
-    },
-    next:
-      init?.revalidate !== undefined || init?.tag
-        ? {
-            revalidate: init?.revalidate,
-            tags: init?.tag ? [init.tag] : undefined,
-          }
-        : undefined,
-  });
-  if (!res.ok)
-    throw new Error(await res.text().catch(() => `Fetch failed: ${url}`));
-  return (await res.json()) as T;
-}
+import { ArticleService } from "@/server/modules/articles/services/article.service";
+import { CategoryService } from "@/server/modules/categories/services/category.service";
+import { TagsService } from "@/server/modules/tags/services/tag.service";
 
 async function getInitialData(articleId?: string) {
-  const [cats, tags] = await Promise.all([
-    fetchJSON<ListResponse<CategoryDTO>>(
-      absolute("/api/categories?perPage=100"),
-      {
-        revalidate: 600,
-        tag: "categories",
-      }
-    ).catch(() => ({ items: [], total: 0, page: 1, pageSize: 100, pages: 1 })),
-    fetchJSON<ListResponse<TagDTO>>(absolute("/api/tags?perPage=50"), {
-      revalidate: 600,
-      tag: "tags",
-    }).catch(() => ({ items: [], total: 0, page: 1, pageSize: 50, pages: 1 })),
+  const categorySvc = new CategoryService();
+  const tagSvc = new TagsService();
+  const articleSvc = new ArticleService();
+
+  const [catEntities, tagList] = await Promise.all([
+    categorySvc.listCategories(),
+    tagSvc.listTags({ perPage: 50, sortBy: "name", sortDir: "ASC" }),
   ]);
+
+  const cats: CategoryDTO[] = (catEntities ?? []).map((c: any) => ({
+    id: String(c.id),
+    name: String(c.name),
+    slug: String(c.slug),
+  }));
+
+  const tags: TagDTO[] = (tagList?.items ?? []).map((t: any) => ({
+    id: String(t.id),
+    name: String(t.name),
+    slug: String(t.slug),
+  }));
 
   let article: ArticleDTO | null = null;
   if (articleId) {
-    article = await fetchJSON<ArticleDTO>(
-      absolute(`/api/articles/${articleId}`),
-      {
-        revalidate: 0,
-      }
-    ).catch(() => null);
+    const a = await articleSvc.getById(articleId);
+    article = (a ?? null) as unknown as ArticleDTO;
   }
-  return { cats: cats.items ?? [], tags: tags.items ?? [], article };
+
+  return { cats, tags, article };
 }
 
 export default async function Page(props: {
@@ -132,7 +97,7 @@ export default async function Page(props: {
   const seoHref = `${basePath}?tab=seo`;
 
   return (
-    <main className={"pb-24 pt-6  "}>
+    <main className="pb-24 pt-6">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },

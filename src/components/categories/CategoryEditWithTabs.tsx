@@ -58,7 +58,6 @@ export default function CategoryEditWithTabs({
         ]}
       />
 
-      {/* Tabs */}
       <div className="mt-5">
         <div
           role="tablist"

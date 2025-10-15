@@ -1,10 +1,18 @@
 // src/app/articles/article-list/page.tsx
-import { absolute } from "@/app/utils/base-url";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import ArticleCard from "@/components/article/ArticleCart";
 import ArticleFilters from "@/components/article/ArticleFilter";
 import Breadcrumb from "@/components/Breadcrumb";
+import { ArticleService } from "@/server/modules/articles/services/article.service";
+import type {
+  SortDir,
+  Sortable,
+} from "@/server/modules/articles/services/article.service";
+import { CategoryService } from "@/server/modules/categories/services/category.service";
 
-type LiteArticle = {
+type LiteArticleCardShape = {
   id: string;
   title: string;
   subject: string | null;
@@ -15,12 +23,23 @@ type LiteArticle = {
   readingPeriod: number;
 };
 
-function asArray<T = any>(data: any): T[] {
-  if (!data) return [];
-  if (Array.isArray(data)) return data as T[];
-  if (Array.isArray(data.items)) return data.items as T[];
-  if (Array.isArray(data.data)) return data.data as T[];
-  return [];
+function coerceSortBy(v: string | undefined): Sortable {
+  const allow: Sortable[] = [
+    "createdAt",
+    "updatedAt",
+    "viewCount",
+    "readingPeriod",
+    "title",
+    "slug",
+  ];
+  return allow.includes(v as Sortable) ? (v as Sortable) : "createdAt";
+}
+function coerceSortDir(v: string | undefined): SortDir {
+  return v === "ASC" ? "ASC" : "DESC";
+}
+function toInt(v: string | undefined, def: number) {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : def;
 }
 
 export default async function Page({
@@ -31,50 +50,56 @@ export default async function Page({
   const sp = await searchParams;
 
   const q = (sp.q as string) || "";
-  const category = (sp.category as string) || "";
+  const categoryId = (sp.category as string) || "";
   const createdFrom = (sp.createdFrom as string) || "";
   const createdTo = (sp.createdTo as string) || "";
-  const sortBy = (sp.sortBy as string) || "createdAt";
-  const sortDir = (sp.sortDir as string) || "DESC";
-  const page = (sp.page as string) || "1";
-  const pageSize = (sp.pageSize as string) || "20";
+  const sortBy = coerceSortBy(sp.sortBy as string);
+  const sortDir = coerceSortDir(sp.sortDir as string);
+  const page = toInt(sp.page as string, 1);
+  const pageSize = Math.min(toInt(sp.pageSize as string, 20), 100);
 
-  const qs = new URLSearchParams({
-    q,
-    category,
-    createdFrom,
-    createdTo,
-    sortBy,
-    sortDir,
-    page,
-    pageSize,
-  });
+  // خدمات
+  const articleSvc = new ArticleService();
+  const categorySvc = new CategoryService();
 
-  const [articlesRes, catsRes] = await Promise.all([
-    fetch(absolute(`/api/articles?${qs.toString()}`), { cache: "no-store" }),
-
-    fetch(absolute(`/api/categories?sortBy=depth&sortDir=ASC&pageSize=100`), {
-      cache: "no-store",
+  // مقالات + کتگوری‌ها از سرویس
+  const [{ items, total }, catEntities] = await Promise.all([
+    articleSvc.listArticles({
+      page,
+      pageSize,
+      sort: { by: sortBy, dir: sortDir },
+      filters: {
+        q: q || undefined,
+        categoryId: categoryId || undefined,
+        createdFrom: createdFrom || undefined,
+        createdTo: createdTo || undefined,
+      },
+      variant: "lite",
     }),
+    categorySvc.listCategories(),
   ]);
 
-  if (!articlesRes.ok) {
-    const err = await articlesRes.text().catch(() => "");
-    throw new Error(`Failed to load articles (${articlesRes.status}) ${err}`);
-  }
+  const categories = catEntities.map((c) => ({
+    id: String(c.id),
+    name: String(c.name ?? "بدون‌نام"),
+  }));
 
-  const articlesJson = await articlesRes.json();
-  const catsJson = catsRes.ok ? await catsRes.json() : null;
-
-  const categories = asArray<{ id: string; name?: string; title?: string }>(
-    catsJson
-  ).map((c) => ({ id: c.id, name: c.name ?? c.title ?? "بدون‌نام" }));
-
-  const articles: LiteArticle[] = asArray<LiteArticle>(articlesJson);
-  const total =
-    typeof (articlesJson as any)?.total === "number"
-      ? (articlesJson as any).total
-      : articles.length;
+  const articles: LiteArticleCardShape[] = items.map((a: any) => ({
+    id: a.id,
+    title: a.title,
+    subject: a.subject ?? null,
+    createdAt: a.createdAt,
+    category: a.categories ? { id: "", name: a.categories } : null, // خروجی لایت: name رشته‌ای
+    author: a.author
+      ? {
+          id: a.author.id,
+          firstName: a.author.firstName,
+          lastName: a.author.lastName,
+        }
+      : null,
+    thumbnail: a.thumbnail ?? null,
+    readingPeriod: a.readingPeriod ?? 0,
+  }));
 
   return (
     <main className="space-y-7">
@@ -84,6 +109,7 @@ export default async function Page({
           { label: "مقالات", href: "/articles" },
         ]}
       />
+
       <div className="text-black text-2xl font-semibold mb-4">
         <span>تعداد مقالات </span>
         <span>({total})</span>

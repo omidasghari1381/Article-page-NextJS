@@ -1,7 +1,9 @@
+// src/app/categories/page.tsx
 import Breadcrumb from "@/components/Breadcrumb";
 import CategoryRow from "./CategoryCart";
 import { type CategoryNode } from "./CategoryCart";
 import { CategoryFilters } from "./CategoryFilters";
+import { CategoryService } from "@/server/modules/categories/services/category.service";
 
 type MaybeWrapped<T> =
   | T[]
@@ -13,7 +15,6 @@ type MaybeWrapped<T> =
       pages?: number;
     };
 
-// نرمال‌سازی داده برای تطبیق با CategoryNode
 function normalizeCategory(raw: any): CategoryNode {
   return {
     id: raw.id,
@@ -41,46 +42,72 @@ function normalizeCategory(raw: any): CategoryNode {
   };
 }
 
-async function fetchCategories() {
-  const res = await fetch("http://localhost:3000/api/categories", {
-    cache: "no-store",
+async function fetchCategoriesFromService(
+  sp: Record<string, string | string[] | undefined>
+) {
+  const get = (k: string, d = "") => {
+    const v = sp[k];
+    return Array.isArray(v) ? v[0] ?? d : v ?? d;
+  };
+
+  const q = get("q");
+  const parentId = get("parentId");
+  const hasParent = get("hasParent") as "" | "yes" | "no";
+  const createdFrom = get("createdFrom");
+  const createdTo = get("createdTo");
+  const sortBy = get("sortBy", "createdAt");
+  const sortDir =
+    (get("sortDir", "DESC") || "DESC").toUpperCase() === "ASC" ? "ASC" : "DESC";
+  const pageSize = Math.min(
+    Math.max(parseInt(get("pageSize", "20") || "20", 10) || 20, 1),
+    100
+  );
+  const page = Math.max(parseInt(get("page", "1") || "1", 10) || 1, 1);
+
+  const svc = new CategoryService();
+  const res = await svc.listWithFilters({
+    q: q || undefined,
+    parentId: parentId || undefined,
+    hasParent: hasParent || undefined,
+    createdFrom: createdFrom || undefined,
+    createdTo: createdTo || undefined,
+    sortBy: (
+      ["createdAt", "updatedAt", "name", "slug", "depth"] as const
+    ).includes(sortBy as any)
+      ? (sortBy as any)
+      : "createdAt",
+    sortDir,
+    page,
+    pageSize,
   });
-  if (!res.ok) {
-    try {
-      console.error("Failed to load categories:", await res.text());
-    } catch {}
-    throw new Error("Failed to load categories");
-  }
 
-  const payload = (await res.json()) as MaybeWrapped<any>;
-
-  // هم حالت آرایه‌ی خالی، هم آبجکت با items، هر دو ساپورت میشن
-  const rawItems = Array.isArray(payload) ? payload : payload.items ?? [];
-  const items: CategoryNode[] = rawItems.map(normalizeCategory);
-  const total = Array.isArray(payload)
-    ? payload.length
-    : payload.total ?? items.length;
+  const items: CategoryNode[] = (res.items ?? []).map(normalizeCategory);
+  const total = typeof res.total === "number" ? res.total : items.length;
 
   return { items, total };
 }
 
-export default async function Page() {
-  const { items: categories, total } = await fetchCategories();
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const { items: categories, total } = await fetchCategoriesFromService(sp);
 
   return (
     <main className="pb-24 pt-6 px-20">
-      {" "}
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
           { label: "دسته ها", href: "/categories" },
         ]}
-      />{" "}
+      />
       <div className="mt-6 flex items-center justify-between text-gray-800">
         <h1 className="text-2xl font-semibold">لیست دسته ها</h1>
       </div>
       <section className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8">
-        <CategoryFilters />{" "}
+        <CategoryFilters />
       </section>
       <div className=" py-4 my-10">
         <div className="text-black text-2xl">

@@ -3,13 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-/** ---------- Types ---------- */
 export type CategoryNode = {
   id: string;
   name: string;
   slug: string;
   description?: string | null;
-  createdAt?: string; // ISO
+  createdAt?: string;
   updatedAt?: string;
   depth?: number;
   parent?:
@@ -30,7 +29,6 @@ type Props = {
   showDates?: boolean;
 };
 
-/** ---------- Helpers ---------- */
 function formatDateTime(iso?: string) {
   if (!iso) return "—";
   try {
@@ -85,7 +83,6 @@ const ChevronDown: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-/** ---------- Recursive Tree ---------- */
 function TreeList({
   node,
   level = 0,
@@ -127,7 +124,6 @@ function TreeList({
   );
 }
 
-/** ---------- Card-style (RedirectCard-like) ---------- */
 export default function CategoryRow({
   item,
   href,
@@ -184,7 +180,6 @@ export default function CategoryRow({
   return (
     <div  ref={rowRef} className="rounded-2xl border mt-4 shadow-sm bg-white p-4">
       <div className="flex items-center justify-between gap-4">
-        {/* info */}
         <div className="flex gap-10 flex-1 min-w-0">
           <div className="min-w-0">
             <div className="text-[13px] text-gray-500 mb-1">نام</div>

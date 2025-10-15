@@ -1,16 +1,17 @@
 import Breadcrumb from "@/components/Breadcrumb";
-import { absolute } from "@/app/utils/base-url";
 import RedirectFormClient from "@/components/redirects/RedirectFormClient";
+import type { RedirectStatus } from "@/server/modules/redirects/enums/RedirectStatus.enum";
+import { RedirectService } from "@/server/modules/redirects/services/redirect.service";
 
 export type RedirectDTO = {
   id: string;
   fromPath: string;
   toPath: string;
-  statusCode: 301 | 302 | 307 | 308;
+  statusCode: RedirectStatus;
   isActive: boolean;
 };
 
-export const dynamic = "force-dynamic"; 
+export const dynamic = "force-dynamic";
 
 export default async function Page({
   params,
@@ -19,14 +20,19 @@ export default async function Page({
 }) {
   const p = await params;
   const id = Array.isArray(p?.id) && p.id.length ? p.id[0] : null;
+
   let initialRecord: RedirectDTO | null = null;
   if (id) {
-    try {
-      const res = await fetch(absolute(`/api/redirect/${id}`), { cache: "no-store" });
-      if (res.ok) {
-        initialRecord = (await res.json()) as RedirectDTO;
-      }
-    } catch {
+    const svc = new RedirectService();
+    const rec = await svc.getOneById(id);
+    if (rec) {
+      initialRecord = {
+        id: String(rec.id),
+        fromPath: String(rec.fromPath),
+        toPath: String(rec.toPath),
+        statusCode: Number(rec.statusCode) as 301 | 302 | 307 | 308,
+        isActive: !!rec.isActive,
+      };
     }
   }
 
@@ -37,10 +43,12 @@ export default async function Page({
           items={[
             { label: "مای پراپ", href: "/" },
             { label: "ریدایرکت‌ها", href: "/admin/redirects" },
-            { label: "افزودن/ویرایش ریدایرکت", href: "/admin/redirects/new-redirect" },
+            {
+              label: "افزودن/ویرایش ریدایرکت",
+              href: "/admin/redirects/new-redirect",
+            },
           ]}
         />
-
         <div className="mt-5">
           <RedirectFormClient id={id} initialRecord={initialRecord} />
         </div>

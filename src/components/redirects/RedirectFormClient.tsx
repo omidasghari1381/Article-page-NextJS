@@ -71,14 +71,12 @@ export default function RedirectFormClient({
     if (!confirm("آیا از حذف این ریدایرکت مطمئن هستید؟")) return;
     try {
       setDeleting(true);
-      const res = await fetch("/api/redirect", {
+      const res = await fetch(`/api/redirect/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
       });
       if (!res.ok) throw new Error("حذف ناموفق بود");
       alert("حذف شد ✅");
-      router.push("/redirects");
+      router.push("/admin/redirects");
       router.refresh();
     } catch (e: any) {
       alert(e.message);
@@ -110,7 +108,7 @@ export default function RedirectFormClient({
       });
       if (!res.ok) throw new Error("ذخیره ناموفق بود");
       alert(isEdit ? "ویرایش شد ✅" : "ایجاد شد ✅");
-      router.push("/redirects");
+      router.push("/admin/redirects");
       router.refresh();
     } catch (e: any) {
       setError(e.message);

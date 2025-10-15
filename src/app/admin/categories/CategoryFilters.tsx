@@ -45,7 +45,7 @@ export function CategoryFilters() {
         usp.set(k, v);
       }
     });
-    usp.set("page", "1"); // هر بار فیلتر، برگرد صفحه ۱
+    usp.set("page", "1"); 
     router.push(`?${usp.toString()}`);
   };
 
@@ -64,7 +64,7 @@ export function CategoryFilters() {
     updateQuery({
       q: q || undefined,
       parentId: parentId || undefined,
-      hasParent: hasParent || undefined, // فقط وقتی انتخاب شده
+      hasParent: hasParent || undefined,
       createdFrom: createdFrom || undefined,
       createdTo: createdTo || undefined,
       sortBy,
