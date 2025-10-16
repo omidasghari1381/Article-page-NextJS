@@ -1,4 +1,3 @@
-// src/app/categories/page.tsx
 import Breadcrumb from "@/components/Breadcrumb";
 import CategoryRow from "./CategoryCart";
 import { type CategoryNode } from "./CategoryCart";

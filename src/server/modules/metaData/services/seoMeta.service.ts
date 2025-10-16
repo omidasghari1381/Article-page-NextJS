@@ -17,15 +17,36 @@ export type SeoFields = {
   ogDescription?: string | null;
   ogImageUrl?: string | null;
   twitterCard?: TwitterCardType | null;
-  publishedTime?: Date | null;
-  modifiedTime?: Date | null;
+  publishedTime?: Date | string | null;
+  modifiedTime?: Date | string | null;
   authorName?: string | null;
   tags?: string[] | null;
 };
 
+export type SeoMetaDTO = {
+  id: string;
+  entityType: SeoEntityType;
+  entityId: string;
+  locale: string;
+  useAuto: boolean;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: RobotsSetting | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  ogImageUrl: string | null;
+  twitterCard: TwitterCardType | null;
+  publishedTime: string | null;
+  modifiedTime: string | null;
+  authorName: string | null;
+  tags: string[] | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export class SeoMetaService {
   private repoP: Promise<Repository<SeoMeta>>;
-
   constructor() {
     this.repoP = (async () => {
       const ds = await getDataSource();
@@ -36,44 +57,70 @@ export class SeoMetaService {
     return this.repoP;
   }
 
+  private toISO(v: unknown) {
+    if (!v) return null;
+    const d = typeof v === "string" ? new Date(v) : (v as Date);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  }
+
+  private toDTO(e: SeoMeta): SeoMetaDTO {
+    return {
+      id: e.id,
+      entityType: e.entityType,
+      entityId: e.entityId,
+      locale: e.locale ?? "",
+      useAuto: !!e.useAuto,
+      seoTitle: e.seoTitle ?? null,
+      seoDescription: e.seoDescription ?? null,
+      canonicalUrl: e.canonicalUrl ?? null,
+      robots: e.robots ?? null,
+      ogTitle: e.ogTitle ?? null,
+      ogDescription: e.ogDescription ?? null,
+      ogImageUrl: e.ogImageUrl ?? null,
+      twitterCard: e.twitterCard ?? null,
+      publishedTime: this.toISO(e.publishedTime) ?? null,
+      modifiedTime: this.toISO(e.modifiedTime) ?? null,
+      authorName: e.authorName ?? null,
+      tags: e.tags ?? null,
+      createdAt: this.toISO((e as any).createdAt) ?? undefined,
+      updatedAt: this.toISO((e as any).updatedAt) ?? undefined,
+    };
+  }
+
   async getBy(
     entityType: SeoEntityType,
     entityId: string,
-    locale: string = ""
-  ): Promise<SeoMeta | null> {
+    locale = ""
+  ): Promise<SeoMetaDTO | null> {
     const repo = await this.repo();
-    return repo.findOne({ where: { entityType, entityId, locale } });
+    const ent = await repo.findOne({
+      where: { entityType, entityId, locale: locale.trim() },
+    });
+    return ent ? this.toDTO(ent) : null;
   }
 
-  async getForArticle(articleId: string, locale = "") {
-    return this.getBy(SeoEntityType.ARTICLE, articleId, locale);
-  }
-  async getForCategory(categoryId: string, locale = "") {
-    return this.getBy(SeoEntityType.CATEGORY, categoryId, locale);
-  }
-
-  async createGeneric(
+  async create(
     entityType: SeoEntityType,
     entityId: string,
     fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
+    locale = ""
+  ) {
     const repo = await this.repo();
+    const lc = locale.trim();
 
     const exists = await repo.findOne({
-      where: { entityType, entityId, locale },
+      where: { entityType, entityId, locale: lc },
       withDeleted: false,
     });
-    if (exists) {
+    if (exists)
       throw new Error(
-        `SEO meta already exists for ${entityType}(${entityId}) locale="${locale}".`
+        `SEO meta already exists for ${entityType}(${entityId}) locale="${lc}".`
       );
-    }
 
-    const rec = repo.create({
+    const payload: Partial<SeoMeta> = {
       entityType,
       entityId,
-      locale,
+      locale: lc,
       useAuto: fields.useAuto ?? true,
       seoTitle: fields.seoTitle ?? null,
       seoDescription: fields.seoDescription ?? null,
@@ -83,117 +130,87 @@ export class SeoMetaService {
       ogDescription: fields.ogDescription ?? null,
       ogImageUrl: fields.ogImageUrl ?? null,
       twitterCard: fields.twitterCard ?? null,
-      publishedTime: fields.publishedTime ?? null,
-      modifiedTime: fields.modifiedTime ?? null,
+      publishedTime: toDateOrNull(fields.publishedTime),
+      modifiedTime: toDateOrNull(fields.modifiedTime),
       authorName: fields.authorName ?? null,
       tags: fields.tags ?? null,
-    });
+    };
 
-    return repo.save(rec);
+    const saved = await repo.save(repo.create(payload));
+    return this.toDTO(saved);
   }
 
-  async createForArticle(articleId: string, fields: SeoFields, locale = "") {
-    return this.createGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
-  }
-  async createForCategory(categoryId: string, fields: SeoFields, locale = "") {
-    return this.createGeneric(SeoEntityType.CATEGORY, categoryId, fields, locale);
-  }
-
-  private assignIfProvided<T extends object, K extends keyof T>(
-    obj: T,
-    source: Partial<T>,
-    key: K
+  async update(
+    entityType: SeoEntityType,
+    entityId: string,
+    fields: SeoFields,
+    locale = ""
   ) {
-    if (Object.prototype.hasOwnProperty.call(source, key)) {
-      (obj as any)[key] = (source as any)[key] ?? null;
-    }
-  }
+    const repo = await this.repo();
+    const lc = locale.trim();
 
-  async updateGeneric(
+    const existing = await repo.findOne({
+      where: { entityType, entityId, locale: lc },
+    });
+    if (!existing)
+      throw new Error(
+        `SEO meta not found for ${entityType}(${entityId}) locale="${lc}".`
+      );
+
+    if (has(fields, "useAuto")) existing.useAuto = !!fields.useAuto;
+    if (has(fields, "seoTitle")) existing.seoTitle = fields.seoTitle ?? null;
+    if (has(fields, "seoDescription"))
+      existing.seoDescription = fields.seoDescription ?? null;
+    if (has(fields, "canonicalUrl"))
+      existing.canonicalUrl = fields.canonicalUrl ?? null;
+    if (has(fields, "robots")) existing.robots = fields.robots ?? null;
+    if (has(fields, "ogTitle")) existing.ogTitle = fields.ogTitle ?? null;
+    if (has(fields, "ogDescription"))
+      existing.ogDescription = fields.ogDescription ?? null;
+    if (has(fields, "ogImageUrl"))
+      existing.ogImageUrl = fields.ogImageUrl ?? null;
+    if (has(fields, "twitterCard"))
+      existing.twitterCard = fields.twitterCard ?? null;
+    if (has(fields, "publishedTime"))
+      existing.publishedTime = toDateOrNull(fields.publishedTime);
+    if (has(fields, "modifiedTime"))
+      existing.modifiedTime = toDateOrNull(fields.modifiedTime);
+    if (has(fields, "authorName"))
+      existing.authorName = fields.authorName ?? null;
+    if (has(fields, "tags")) existing.tags = fields.tags ?? null;
+
+    const saved = await repo.save(existing);
+    return this.toDTO(saved);
+  }
+  async upsert(
     entityType: SeoEntityType,
     entityId: string,
     fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
+    locale = ""
+  ): Promise<SeoMetaDTO> {
     const repo = await this.repo();
-
+    const lc = locale.trim();
     const existing = await repo.findOne({
-      where: { entityType, entityId, locale },
+      where: { entityType, entityId, locale: lc },
     });
-    if (!existing) {
-      throw new Error(
-        `SEO meta not found for ${entityType}(${entityId}) locale="${locale}".`
-      );
-    }
-
-    if (Object.prototype.hasOwnProperty.call(fields, "useAuto")) {
-      existing.useAuto = Boolean(fields.useAuto);
-    }
-
-    this.assignIfProvided(existing, fields, "seoTitle");
-    this.assignIfProvided(existing, fields, "seoDescription");
-    this.assignIfProvided(existing, fields, "canonicalUrl");
-    this.assignIfProvided(existing, fields, "robots");
-    this.assignIfProvided(existing, fields, "ogTitle");
-    this.assignIfProvided(existing, fields, "ogDescription");
-    this.assignIfProvided(existing, fields, "ogImageUrl");
-    this.assignIfProvided(existing, fields, "twitterCard");
-    this.assignIfProvided(existing, fields, "publishedTime");
-    this.assignIfProvided(existing, fields, "modifiedTime");
-    this.assignIfProvided(existing, fields, "authorName");
-
-    if (Object.prototype.hasOwnProperty.call(fields, "tags")) {
-      existing.tags = fields.tags ?? null;
-    }
-
-    return repo.save(existing);
+    if (existing) return this.update(entityType, entityId, fields, lc);
+    return this.create(entityType, entityId, fields, lc);
   }
 
-  async updateForArticle(articleId: string, fields: SeoFields, locale = "") {
-    return this.updateGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
-  }
-  async updateForCategory(categoryId: string, fields: SeoFields, locale = "") {
-    return this.updateGeneric(SeoEntityType.CATEGORY, categoryId, fields, locale);
-  }
-
-  async upsertGeneric(
+  async delete(
     entityType: SeoEntityType,
     entityId: string,
-    fields: SeoFields,
-    locale: string = ""
-  ): Promise<SeoMeta> {
+    locale = ""
+  ): Promise<void> {
     const repo = await this.repo();
-
-    const existing = await repo.findOne({
-      where: { entityType, entityId, locale },
+    const res: DeleteResult = await repo.delete({
+      entityType,
+      entityId,
+      locale: locale.trim(),
     });
-    if (existing) {
-      return this.updateGeneric(entityType, entityId, fields, locale);
-    }
-    return this.createGeneric(entityType, entityId, fields, locale);
-  }
-
-  async upsertForArticle(articleId: string, fields: SeoFields, locale = "") {
-    return this.upsertGeneric(SeoEntityType.ARTICLE, articleId, fields, locale);
-  }
-  async upsertForCategory(categoryId: string, fields: SeoFields, locale = "") {
-    return this.upsertGeneric(SeoEntityType.CATEGORY, categoryId, fields, locale);
-  }
-
-  async deleteBy(entityType: SeoEntityType, entityId: string, locale = ""): Promise<void> {
-    const repo = await this.repo();
-    const res: DeleteResult = await repo.delete({ entityType, entityId, locale });
-    if (!res.affected) {
+    if (!res.affected)
       throw new Error(
-        `Nothing to delete for ${entityType}(${entityId}) locale="${locale}".`
+        `Nothing to delete for ${entityType}(${entityId}) locale="${locale.trim()}".`
       );
-    }
-  }
-
-  async deleteForArticle(articleId: string, locale = "") {
-    return this.deleteBy(SeoEntityType.ARTICLE, articleId, locale);
-  }
-  async deleteForCategory(categoryId: string, locale = "") {
-    return this.deleteBy(SeoEntityType.CATEGORY, categoryId, locale);
   }
 }

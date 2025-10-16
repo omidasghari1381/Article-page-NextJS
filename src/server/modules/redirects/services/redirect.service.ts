@@ -30,6 +30,7 @@ export class RedirectService {
   private async repo() {
     return this.repoP;
   }
+
   private toDTO(ent: Redirect): RedirectDTO {
     return {
       id: ent.id,
@@ -41,6 +42,7 @@ export class RedirectService {
       updatedAt: ent.updatedAt ? ent.updatedAt.toISOString() : undefined,
     };
   }
+
   async create(dto: CreateRedirectDto): Promise<RedirectDTO> {
     const repo = await this.repo();
     const ent = repo.create({
@@ -53,12 +55,9 @@ export class RedirectService {
     return this.toDTO(saved);
   }
 
-  async getOneById(id: string): Promise<Redirect | null> {
+  async getById(id: string): Promise<RedirectDTO | null> {
     const repo = await this.repo();
-    return repo.findOne({ where: { id } });
-  }
-  async getOneByIdDTO(id: string): Promise<RedirectDTO | null> {
-    const ent = await this.getOneById(id);
+    const ent = await repo.findOne({ where: { id } });
     return ent ? this.toDTO(ent) : null;
   }
 
@@ -81,10 +80,12 @@ export class RedirectService {
 
     if (typeof isActive === "boolean")
       qb.andWhere("r.isActive = :isActive", { isActive });
-    if (Array.isArray(statusCode) && statusCode.length > 0)
+
+    if (Array.isArray(statusCode) && statusCode.length) {
       qb.andWhere("r.statusCode IN (:...codes)", { codes: statusCode });
-    else if (typeof statusCode === "number")
+    } else if (typeof statusCode === "number") {
       qb.andWhere("r.statusCode = :code", { code: statusCode });
+    }
 
     if (createdFrom)
       qb.andWhere("r.createdAt >= :createdFrom", { createdFrom });
@@ -92,42 +93,48 @@ export class RedirectService {
 
     if (q && q.trim()) {
       const pattern = `%${escapeLike(q.trim())}%`;
-      if (searchIn === "fromPath")
+      if (searchIn === "fromPath") {
         qb.andWhere("LOWER(r.fromPath) LIKE LOWER(:pattern) ESCAPE '\\'", {
           pattern,
         });
-      else if (searchIn === "toPath")
+      } else if (searchIn === "toPath") {
         qb.andWhere("LOWER(r.toPath) LIKE LOWER(:pattern) ESCAPE '\\'", {
           pattern,
         });
-      else
+      } else {
         qb.andWhere(
           "(LOWER(r.fromPath) LIKE LOWER(:pattern) ESCAPE '\\' OR LOWER(r.toPath) LIKE LOWER(:pattern) ESCAPE '\\')",
           { pattern }
         );
+      }
     }
 
-    const sortable = {
+    const sortMap: Record<string, string> = {
       createdAt: "r.createdAt",
       updatedAt: "r.updatedAt",
       fromPath: "r.fromPath",
       toPath: "r.toPath",
       statusCode: "r.statusCode",
       isActive: "r.isActive",
-    } as const;
-    const col = sortable[sortBy] ?? sortable.createdAt;
+    };
+    qb.orderBy(
+      sortMap[sortBy] ?? "r.createdAt",
+      sortDir === "ASC" ? "ASC" : "DESC"
+    );
 
-    qb.orderBy(col, sortDir === "ASC" ? "ASC" : "DESC")
-      .skip((page - 1) * pageSize)
-      .take(pageSize);
+    const take = Math.max(1, Math.min(100, pageSize || 20));
+    const currentPage = Math.max(1, page || 1);
+    const skip = (currentPage - 1) * take;
+
+    qb.take(take).skip(skip);
 
     const [rows, total] = await qb.getManyAndCount();
     return {
       items: rows.map((r) => this.toDTO(r)),
       total,
-      page,
-      pageSize,
-      pages: Math.max(1, Math.ceil(total / pageSize)),
+      page: currentPage,
+      pageSize: take,
+      pages: Math.max(1, Math.ceil(total / take)),
     };
   }
 
@@ -138,10 +145,22 @@ export class RedirectService {
     const repo = await this.repo();
     const ent = await repo.findOne({ where: { id } });
     if (!ent) return null;
-    if (dto.fromPath !== undefined) ent.fromPath = dto.fromPath.trim();
-    if (dto.toPath !== undefined) ent.toPath = dto.toPath.trim();
-    if (dto.statusCode !== undefined) ent.statusCode = dto.statusCode;
-    if (dto.isActive !== undefined) ent.isActive = dto.isActive;
+
+    if (Object.prototype.hasOwnProperty.call(dto, "fromPath"))
+      ent.fromPath = dto.fromPath?.trim() ?? ent.fromPath;
+    if (Object.prototype.hasOwnProperty.call(dto, "toPath"))
+      ent.toPath = dto.toPath?.trim() ?? ent.toPath;
+    if (
+      Object.prototype.hasOwnProperty.call(dto, "statusCode") &&
+      dto.statusCode !== undefined
+    )
+      ent.statusCode = dto.statusCode;
+    if (
+      Object.prototype.hasOwnProperty.call(dto, "isActive") &&
+      dto.isActive !== undefined
+    )
+      ent.isActive = dto.isActive;
+
     const saved = await repo.save(ent);
     return this.toDTO(saved);
   }
@@ -152,7 +171,7 @@ export class RedirectService {
 
   async remove(id: string): Promise<boolean> {
     const repo = await this.repo();
-    const result = await repo.delete(id);
-    return result.affected === 1;
+    const res = await repo.delete(id);
+    return (res.affected ?? 0) > 0;
   }
 }

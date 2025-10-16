@@ -1,4 +1,3 @@
-// src/server/db/entities.ts
 import { User } from "@/server/modules/users/entities/user.entity";
 import { Article } from "@/server/modules/articles/entities/article.entity";
 import { FAQ } from "@/server/modules/faq/entities/faq.entity";
@@ -10,8 +9,9 @@ import { ArticleTag } from "@/server/modules/tags/entities/tage.entity";
 import { Redirect } from "@/server/modules/redirects/entities/redirect.entity";
 import { SeoMeta } from "@/server/modules/metaData/entities/seoMeta.entity";
 import { MediaItem } from "@/server/modules/media/entities/mediaItem.entity";
+import type { EntitySchema } from "typeorm";
 
-export const ENTITIES = [
+export const ENTITIES: (Function | EntitySchema<any> | string)[] = [
   Redirect,
   ArticleTag,
   User,
@@ -23,7 +23,7 @@ export const ENTITIES = [
   ArticleCategory,
   SeoMeta,
   MediaItem,
-] as const;
+];
 
 export {
   User,

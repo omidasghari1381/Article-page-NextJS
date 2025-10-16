@@ -1,28 +1,47 @@
-// src/server/modules/categories/services/category.service.ts
-import { DataSource, SelectQueryBuilder, Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import { getDataSource } from "@/server/db/typeorm.datasource";
 import { ArticleCategory } from "../entities/category.entity";
 import type { CategoryListFilters } from "../types/service.type";
+import { escapeLike } from "@/server/core/utils/escapeLike";
+
+export type CategoryDTO = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  depth: number;
+  parent?: { id: string; name: string } | null;
+  children?: { id: string; name: string }[] | null;
+};
 
 export class CategoryService {
-  private dsP: Promise<DataSource>;
   private repoP: Promise<Repository<ArticleCategory>>;
 
   constructor() {
-    this.dsP = getDataSource();
-    this.repoP = this.dsP.then((ds) => ds.getRepository(ArticleCategory));
+    this.repoP = getDataSource().then((ds: DataSource) =>
+      ds.getRepository(ArticleCategory)
+    );
   }
 
-  private async ds() {
-    return this.dsP;
-  }
   private async repo() {
     return this.repoP;
   }
 
-  private async baseQB(): Promise<SelectQueryBuilder<ArticleCategory>> {
-    const r = await this.repo();
-    return r.createQueryBuilder("c").leftJoinAndSelect("c.parent", "p");
+  private toDTO(
+    c: ArticleCategory,
+    opts?: { withChildren?: boolean }
+  ): CategoryDTO {
+    return {
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      description: c.description ?? null,
+      depth: c.depth ?? 0,
+      parent: c.parent ? { id: c.parent.id, name: c.parent.name } : null,
+      children: opts?.withChildren
+        ? (c.children ?? [])?.map((ch) => ({ id: ch.id, name: ch.name }))
+        : undefined,
+    };
   }
 
   private async getAncestorsChain(catId: string): Promise<ArticleCategory[]> {
@@ -57,36 +76,29 @@ export class CategoryService {
       pageSize = 20,
     } = f;
 
-    const qb = await this.baseQB();
+    const repo = await this.repo();
+    const qb = repo.createQueryBuilder("c").leftJoinAndSelect("c.parent", "p");
 
-    if (q) {
+    if (q?.trim()) {
+      const like = `%${escapeLike(q.trim())}%`;
       qb.andWhere(
-        "(c.name LIKE :q OR c.slug LIKE :q OR c.description LIKE :q)",
-        { q: `%${q}%` }
+        "(c.name LIKE :q ESCAPE '\\' OR c.slug LIKE :q ESCAPE '\\' OR c.description LIKE :q ESCAPE '\\')",
+        { q: like }
       );
     }
-    if (parentId) {
-      qb.andWhere("p.id = :parentId", { parentId });
-    }
-    if (hasParent === "yes") {
-      qb.andWhere("c.parentId IS NOT NULL");
-    } else if (hasParent === "no") {
-      qb.andWhere("c.parentId IS NULL");
-    }
-    if (typeof depthMin === "number") {
+    if (parentId) qb.andWhere("p.id = :parentId", { parentId });
+    if (hasParent === "yes") qb.andWhere("c.parentId IS NOT NULL");
+    else if (hasParent === "no") qb.andWhere("c.parentId IS NULL");
+    if (typeof depthMin === "number")
       qb.andWhere("c.depth >= :depthMin", { depthMin });
-    }
-    if (typeof depthMax === "number") {
+    if (typeof depthMax === "number")
       qb.andWhere("c.depth <= :depthMax", { depthMax });
-    }
-    if (createdFrom) {
+    if (createdFrom)
       qb.andWhere("DATE(c.createdAt) >= :createdFrom", { createdFrom });
-    }
-    if (createdTo) {
+    if (createdTo)
       qb.andWhere("DATE(c.createdAt) <= :createdTo", { createdTo });
-    }
 
-    const sortColumnMap: Record<string, string> = {
+    const sortMap: Record<string, string> = {
       createdAt: "c.createdAt",
       updatedAt: "c.updatedAt",
       name: "c.name",
@@ -94,19 +106,17 @@ export class CategoryService {
       depth: "c.depth",
     };
     qb.orderBy(
-      sortColumnMap[sortBy] ?? "c.createdAt",
+      sortMap[sortBy] ?? "c.createdAt",
       sortDir === "ASC" ? "ASC" : "DESC"
     );
 
     const take = Math.max(1, Math.min(100, pageSize));
     const skip = Math.max(0, (Math.max(1, page) - 1) * take);
-
     qb.take(take).skip(skip);
 
-    const [items, total] = await qb.getManyAndCount();
-
+    const [rows, total] = await qb.getManyAndCount();
     return {
-      items,
+      items: rows.map((r) => this.toDTO(r)),
       total,
       page: Math.max(1, page),
       pageSize: take,
@@ -116,15 +126,20 @@ export class CategoryService {
 
   async listCategories() {
     const repo = await this.repo();
-    return repo.find({
+    const rows = await repo.find({
       relations: ["parent"],
       order: { depth: "ASC", name: "ASC" },
     });
+    return rows.map((r) => this.toDTO(r));
   }
 
   async getCategoryById(id: string) {
     const repo = await this.repo();
-    return repo.findOne({ where: { id }, relations: ["parent", "children"] });
+    const ent = await repo.findOne({
+      where: { id },
+      relations: ["parent", "children"],
+    });
+    return ent ? this.toDTO(ent, { withChildren: true }) : null;
   }
 
   async createCategory(input: {
@@ -135,24 +150,27 @@ export class CategoryService {
   }) {
     const repo = await this.repo();
 
-    const slugExists = await repo.exists({
-      where: { slug: input.slug.trim().toLowerCase() },
-    });
-    if (slugExists) throw new Error("این اسلاگ قبلاً استفاده شده است");
+    const slug = input.slug.trim().toLowerCase();
+    const exists = await repo.exists({ where: { slug } });
+    if (exists) throw new Error("این اسلاگ قبلاً استفاده شده است");
 
     const parent = input.parentId
       ? await repo.findOne({ where: { id: input.parentId } })
       : null;
-
     const cat = repo.create({
       name: input.name.trim(),
-      slug: input.slug.trim().toLowerCase(),
+      slug,
       description: input.description ?? null,
       parent,
       depth: parent ? (parent.depth ?? 0) + 1 : 0,
     });
 
-    return repo.save(cat);
+    const saved = await repo.save(cat);
+    const withRels = await repo.findOne({
+      where: { id: saved.id },
+      relations: ["parent"],
+    });
+    return this.toDTO(withRels!);
   }
 
   async updateCategory(
@@ -164,9 +182,7 @@ export class CategoryService {
       parentId?: string | null;
     }
   ) {
-    const ds = await this.ds();
     const repo = await this.repo();
-
     const cat = await repo.findOne({
       where: { id },
       relations: ["parent", "children"],
@@ -197,8 +213,8 @@ export class CategoryService {
       if (newParent) {
         if (newParent.id === cat.id)
           throw new Error("نمی‌توانید والد را خود دسته قرار دهید");
-        const ancestorsOfNewParent = await this.getAncestorsChain(newParent.id);
-        if (ancestorsOfNewParent.some((a) => a.id === cat.id))
+        const ancestors = await this.getAncestorsChain(newParent.id);
+        if (ancestors.some((a) => a.id === cat.id))
           throw new Error("والد نامعتبر است (ایجاد چرخه)");
       }
 
@@ -209,21 +225,19 @@ export class CategoryService {
       cat.parent = newParent ?? null;
       cat.depth = nextDepth;
 
-      await ds.transaction(async (manager) => {
-        const mRepo = manager.getRepository(ArticleCategory);
+      await repo.manager.transaction(async (tm) => {
+        const mRepo = tm.getRepository(ArticleCategory);
         await mRepo.save(cat);
 
         const q = await mRepo.find({
           where: { parent: { id: cat.id } },
           relations: ["parent"],
         });
-
         const queue = [...q];
         while (queue.length) {
           const node = queue.shift()!;
           node.depth = (node.depth ?? 0) + delta;
           await mRepo.save(node);
-
           const children = await mRepo.find({
             where: { parent: { id: node.id } },
             relations: ["parent"],
@@ -235,10 +249,11 @@ export class CategoryService {
       await repo.save(cat);
     }
 
-    return repo.findOne({
+    const updated = await repo.findOne({
       where: { id: cat.id },
       relations: ["parent", "children"],
-    }) as Promise<ArticleCategory>;
+    });
+    return this.toDTO(updated!, { withChildren: true });
   }
 
   async deleteCategory(id: string) {

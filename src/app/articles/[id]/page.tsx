@@ -147,7 +147,7 @@ export async function generateMetadata({
   if (!article) {
     return { title: "مقاله پیدا نشد", robots: { index: false, follow: false } };
   }
-  const meta = await seoSrv.getForArticle(id, "fa-IR");
+  const meta = await seoSrv.getBy(SeoEntityType.ARTICLE, id, "fa-IR");
   return resolveSeoMetadata(article, meta);
 }
 
@@ -211,7 +211,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   };
 
   return (
-    <main className="px-7 sm:px-6 lg:px-20 py-6 mx-auto ">
+    <main className="px-4 sm:px-6 lg:px-20 py-6 mx-auto ">
       <JsonLd a={a} />
 
       <Breadcrumb
@@ -226,7 +226,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         ]}
       />
 
-      <div className="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-13">
+      <div className="grid grid-cols-1 mt-6 lg:grid-cols-12">
         <section className="lg:col-span-9 space-y-8">
           <div>
             <HeroCard
@@ -266,7 +266,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           </div>
         </section>
 
-        <aside className="lg:col-span-3 space-y-9 ">
+        <aside className="lg:col-span-3 space-y-9 lg:mr-6 lg:w-[105%]">
           <SidebarLatest posts={latest as any} />
         </aside>
       </div>

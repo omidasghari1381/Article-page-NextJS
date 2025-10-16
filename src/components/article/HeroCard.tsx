@@ -4,7 +4,7 @@ import SummeryDropdown from "../Summery";
 
 type Props = {
   title?: string;
-  subject?: string|null;
+  subject?: string | null;
   introduction?: string | null;
   quotes?: string | null;
   thumbnail?: string | null;
@@ -15,7 +15,7 @@ type Props = {
 };
 
 function formatMinutes(v?: number | string | null) {
-  const n = typeof v === "string" ? Number(v) : (v ?? 0);
+  const n = typeof v === "string" ? Number(v) : v ?? 0;
   if (!n || Number.isNaN(n) || n <= 1) return "یک دقیقه";
   const faNum = n.toLocaleString("fa-IR");
   return `${faNum} دقیقه`;
@@ -31,16 +31,24 @@ export default function HeroCard({
   category,
   summery,
 }: Props) {
-  const items = (summery?.length ? summery : ["چکیده ۱", "چکیده ۲", "چکیده ۳"]).map((t, i) => ({
+  const items = (
+    summery?.length ? summery : ["چکیده ۱", "چکیده ۲", "چکیده ۳"]
+  ).map((t, i) => ({
     id: i + 1,
     text: t,
   }));
 
   return (
     <article className="overflow-hidden">
-      {title ? <h3 className="my-3 text-base font-medium leading-9 text-slate-900">{title}</h3> : null}
+      {title ? (
+        <h3 className="my-3 text-base font-medium leading-9 text-slate-900">
+          {title}
+        </h3>
+      ) : null}
 
-      <h1 className="my-3 text-2xl font-bold leading-9 text-slate-900">{subject || "—"}</h1>
+      <h1 className="my-3 text-2xl font-bold leading-9 text-slate-900">
+        {subject || "—"}
+      </h1>
 
       <div className="relative">
         <div className="flex flex-wrap items-center gap-3 my-3 text-xs text-[#2E3232]">
@@ -51,13 +59,14 @@ export default function HeroCard({
           <span>{(viewCount ?? 0).toLocaleString("fa-IR")} بازدید</span>
         </div>
 
-        {/* — تصویر: تمام عرض + نسبت 16:9 */}
         <Thumbnail thumbnail={thumbnail} category={category ?? "—"} />
       </div>
 
       {introduction ? (
         <div className="my-6">
-          <p className="mt-3 text-[#4A5054] text-lg leading-7">{introduction}</p>
+          <p className="mt-3 text-[#4A5054] text-lg leading-7">
+            {introduction}
+          </p>
         </div>
       ) : null}
 
@@ -76,12 +85,16 @@ function Thumbnail({
   const src = thumbnail?.trim().length ? thumbnail! : "/image/a.png";
 
   return (
-    // ظرف تمام‌عرض با نسبت 16:9
     <div className="relative w-full overflow-hidden rounded-xl">
       <div className="relative w-full aspect-[16/9]">
-        <Image src={src} alt="cover" fill className="object-cover" sizes="100vw" />
+        <Image
+          src={src}
+          alt="cover"
+          fill
+          className="object-cover"
+          sizes="100vw"
+        />
 
-        {/* بدج پایین راست؛ ریسپانسیو */}
         <Image
           src="/svg/Rectangle3.svg"
           alt=""

@@ -5,23 +5,9 @@ import {
   Unique,
 } from "typeorm";
 import { AbstractEntity } from "@/server/core/abstracts/entity.base";
+import { SeoEntityType, TwitterCardType,  RobotsSetting } from "../enums/entity.enum";
 
-export enum SeoEntityType {
-  ARTICLE = "article",
-  CATEGORY = "category",
-}
 
-export enum RobotsSetting {
-  INDEX_FOLLOW = "index,follow",
-  NOINDEX_FOLLOW = "noindex,follow",
-  INDEX_NOFOLLOW = "index,nofollow",
-  NOINDEX_NOFOLLOW = "noindex,nofollow",
-}
-
-export enum TwitterCardType {
-  summery = "summery",
-  summery_LARGE_IMAGE = "summery_large_image",
-}
 
 @Entity({ name: "seo_meta" })
 @Unique("uniq_entity_locale", ["entityType", "entityId", "locale"])
@@ -76,3 +62,5 @@ export class SeoMeta extends AbstractEntity {
   @Column({ type: "json", nullable: true })
   tags!: string[] | null;
 }
+export { TwitterCardType, SeoEntityType, RobotsSetting };
+
