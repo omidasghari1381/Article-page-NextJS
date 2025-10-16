@@ -5,7 +5,6 @@ import PhoneInput from "@/components/PhoneInput";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-// نوع استیت فرم
 type FormState = {
   phone: string;
   dial: string;
@@ -63,7 +62,6 @@ export default function LoginFormClient() {
 
   return (
     <div className="p-6 sm:p-10">
-      {/* نوار بالای مسیر */}
       <div className="flex items-center mb-6 justify-end gap-2.5">
         <a href="/" className="text-sm text-gray-500 hover:text-gray-700">
           صفحه اصلی
@@ -75,7 +73,6 @@ export default function LoginFormClient() {
         </div>
       </div>
 
-      {/* هدر لوگین */}
       <div className="justify-center items-center flex-col flex">
         <div className="w-[60px] h-[60px] bg-[#19C9A4] rounded-[14px] flex justify-center items-center my-8">
           <Image src="/image/mainLogo.png" alt="logo" height={39} width={34} />
@@ -88,7 +85,6 @@ export default function LoginFormClient() {
         </p>
       </div>
 
-      {/* فرم */}
       <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
         <div
           className={[
@@ -134,7 +130,6 @@ export default function LoginFormClient() {
           />
         </div>
 
-        {/* مرا به خاطر بسپار */}
         <label className="flex items-center gap-2 text-base text-[#1C2120]">
           <input
             type="checkbox"
@@ -147,7 +142,6 @@ export default function LoginFormClient() {
           مرا به خاطر بسپار
         </label>
 
-        {/* دکمه ورود */}
         <button
           type="submit"
           disabled={!canSubmit}
@@ -164,7 +158,6 @@ export default function LoginFormClient() {
           </span>
         </button>
 
-        {/* جداکننده */}
         <div className="relative text-center">
           <div className="h-px bg-[#DEDFDE]" />
           <span className="absolute inset-0 -top-3 mx-auto bg-white px-3 text-sm font-normal text-gray-400 w-fit">
@@ -172,7 +165,6 @@ export default function LoginFormClient() {
           </span>
         </div>
 
-        {/* گوگل (ماک) */}
         <button
           type="button"
           onClick={() => alert("ورود با گوگل - بعداً اتصال واقعی")}
@@ -189,14 +181,12 @@ export default function LoginFormClient() {
           </span>
         </button>
 
-        {/* خطای کلی */}
         {errors.general && (
           <div className="text-sm text-red-600 text-center">
             {errors.general}
           </div>
         )}
 
-        {/* لینک ثبت‌نام */}
         <p className="text-sm text-gray-600 text-center">
           حساب ندارید؟
           <a

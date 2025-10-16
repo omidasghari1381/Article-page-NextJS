@@ -1,13 +1,12 @@
-export default function SignUpLayout({
+// src/app/(auth)/layout.tsx
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fa" dir="rtl">
-      <body className="bg-white text-gray-900 antialiased">
-        {children}
-      </body>
-    </html>
+    <div className="min-h-dvh flex items-center justify-center bg-[#F7F8FA] text-[#1C2121]">
+      {children}
+    </div>
   );
 }
