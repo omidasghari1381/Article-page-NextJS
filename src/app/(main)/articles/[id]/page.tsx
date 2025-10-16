@@ -19,6 +19,8 @@ import {
 } from "@/server/modules/metaData/entities/seoMeta.entity";
 import { SeoMetaService } from "@/server/modules/metaData/services/seoMeta.service";
 
+import Reveal from "@/components/transitions/Reveal";
+
 function robotsToMetadata(robots?: RobotsSetting | null): Metadata["robots"] {
   if (!robots) return undefined;
   switch (robots) {
@@ -214,20 +216,22 @@ export default async function Page({ params }: { params: { id: string } }) {
     <main className="px-4 sm:px-6 lg:px-20 py-6 mx-auto ">
       <JsonLd a={a} />
 
-      <Breadcrumb
-        items={[
-          { label: "مای پراپ", href: "/" },
-          { label: "مقالات", href: "/articles" },
-          {
-            label: a.category.name || "_",
-            href: `/categories/${a.category.slug || ""}`,
-          },
-          { label: a.title || "..." },
-        ]}
-      />
+      <Reveal as="div" mode="mount">
+        <Breadcrumb
+          items={[
+            { label: "مای پراپ", href: "/" },
+            { label: "مقالات", href: "/articles" },
+            {
+              label: a.category.name || "_",
+              href: `/categories/${a.category.slug || ""}`,
+            },
+            { label: a.title || "..." },
+          ]}
+        />
+      </Reveal>
 
       <div className="grid grid-cols-1 mt-6 lg:grid-cols-12">
-        <section className="lg:col-span-9 space-y-8">
+        <Reveal as="section" className="lg:col-span-9 space-y-8" mode="mount">
           <div>
             <HeroCard
               title={a.title}
@@ -246,7 +250,11 @@ export default async function Page({ params }: { params: { id: string } }) {
               secondryText={a.secondaryText}
             />
 
-            <div className="flex flex-col gap-4 my-6 lg:flex-row lg:items-stretch">
+            <Reveal
+              as="div"
+              className="flex flex-col gap-4 my-6 lg:flex-row lg:items-stretch"
+              once={false}
+            >
               <SideImage
                 thumbnail={a.thumbnail || undefined}
                 category={a.category.name}
@@ -262,38 +270,44 @@ export default async function Page({ params }: { params: { id: string } }) {
                 subject={a.subject}
                 readingPeriod={a.readingPeriod}
               />
-            </div>
+            </Reveal>
           </div>
-        </section>
+        </Reveal>
 
         <aside className="lg:col-span-3 space-y-9 lg:mr-6 lg:w-[105%]">
           <SidebarLatest posts={latest as any} />
         </aside>
       </div>
 
-      <CommentsBlock
-        initialComments={(commentsRes?.data as any[]) || []}
-        articleId={a.id}
-        initialTotal={(commentsRes as any)?.total || 0}
-      />
+      <Reveal as="section">
+        <CommentsBlock
+          initialComments={(commentsRes?.data as any[]) || []}
+          articleId={a.id}
+          initialTotal={(commentsRes as any)?.total || 0}
+        />
+      </Reveal>
 
-      <RelatedArticles
-        post={related as any}
-        fallbackCategory={a.category.name}
-      />
+      <Reveal as="section">
+        <RelatedArticles
+          post={related as any}
+          fallbackCategory={a.category.name}
+        />
+      </Reveal>
 
       {isAdmin ? (
-        <div className="mt-10 flex justify-end">
+        <Reveal as="div" className="mt-10 flex justify-end">
           <Link
             href={`/article/editor/new-article/${encodeURIComponent(a.id)}`}
             className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
           >
             ویرایش این مقاله
           </Link>
-        </div>
+        </Reveal>
       ) : null}
 
-      <Divider />
+      <Reveal as="div">
+        <Divider />
+      </Reveal>
     </main>
   );
 }

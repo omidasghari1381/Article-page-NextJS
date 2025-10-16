@@ -8,6 +8,7 @@ import Video from "@/components/mainPage/Video";
 import HeroSection from "@/components/mainPage/HeroSection";
 import SidebarLatest from "@/components/mainPage/SidebarLatest";
 import { ArticleService } from "@/server/modules/articles/services/article.service";
+import Reveal from "@/components/transitions/Reveal";
 
 type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
 type CategoryLite = { id: string; name: string; slug?: string };
@@ -70,20 +71,24 @@ export default async function HomePage() {
 
   return (
     <main className="w-full">
-      <HeroSection article={hero} items={latest} />
+      <Reveal as="section" mode="mount">
+        <HeroSection article={hero} items={latest} />
+      </Reveal>
 
       <div className="px-4 sm:px-6 lg:px-10 xl:px-20 pb-10">
-        <Chosen categories={categories} article={latest[0] ?? null} />
+        <Reveal as="section" once={false}>
+          <Chosen categories={categories} article={latest[0] ?? null} />
+        </Reveal>
 
-        <section className="mt-10">
+        <Reveal as="section" className="mt-10" once={false}>
           <Markets />
-        </section>
+        </Reveal>
 
-        <section className="mt-12">
+        <Reveal as="section" className="mt-12" once={false}>
           <Educational items={educational} />
-        </section>
+        </Reveal>
 
-        <section className="mt-10">
+        <Reveal as="section" className="mt-10" once={false}>
           <Image
             src="/image/banner.png"
             alt="thumb"
@@ -92,20 +97,21 @@ export default async function HomePage() {
             className="rounded-lg w-full h-auto"
             priority
           />
-        </section>
+        </Reveal>
 
         <section className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <Reveal as="div" className="lg:col-span-2" once={false}>
             <LatestArticle items={mostViewed} />
-          </div>
-          <aside className="lg:col-span-1">
+          </Reveal>
+
+          <Reveal as="aside" className="lg:col-span-1" once={false}>
             <SidebarLatest posts={sidebarLatest} />
-          </aside>
+          </Reveal>
         </section>
 
-        <section className="mt-25">
+        <Reveal as="section" className="mt-25" once={false}>
           <Video />
-        </section>
+        </Reveal>
       </div>
     </main>
   );
