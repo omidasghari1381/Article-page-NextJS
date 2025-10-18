@@ -23,7 +23,10 @@ export default function Educational({ items }: { items: ArticleLite[] }) {
     <section>
       <div className="flex items-center gap-3">
         <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
-        <h3 className="text-xl font-semibold text-[#1C2121]">مقالات آموزشی</h3>
+        {/* فقط این خط تغییر کرده: */}
+        <h3 className="text-xl font-semibold text-[#1C2121] dark:text-white">
+          مقالات آموزشی
+        </h3>
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[540px]">
@@ -36,10 +39,7 @@ export default function Educational({ items }: { items: ArticleLite[] }) {
             <Image src="/svg/share.svg" alt="share" width={26} height={26} />
           </button>
 
-          <Link
-            href={articleHref(main)}
-            className="block relative w-full h-full"
-          >
+          <Link href={articleHref(main)} className="block relative w-full h-full">
             <Image
               src={main?.thumbnail?.trim() || "/image/a.png"}
               alt={main ? main.subject || main.title : "cover"}
@@ -52,21 +52,11 @@ export default function Educational({ items }: { items: ArticleLite[] }) {
             <div className="absolute bottom-3 right-3 left-3">
               <div className="flex flex-wrap items-center gap-6 text-xs sm:text-sm text-white">
                 <div className="flex items-center gap-2">
-                  <Image
-                    src={"/svg/whiteCalender.svg"}
-                    alt="date"
-                    width={22}
-                    height={22}
-                  />
+                  <Image src={"/svg/whiteCalender.svg"} alt="date" width={22} height={22} />
                   <span>{main ? timeAgoFa(main.createdAt) : "—"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Image
-                    src={"/svg/whiteEye.svg"}
-                    alt="views"
-                    width={20}
-                    height={16}
-                  />
+                  <Image src={"/svg/whiteEye.svg"} alt="views" width={20} height={16} />
                   <span>{main ? `${main.viewCount} بازدید` : "—"}</span>
                 </div>
               </div>
@@ -113,21 +103,11 @@ function SmallCard({ item }: { item: ArticleLite }) {
       <div className="absolute bottom-3 right-3 left-3">
         <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-white">
           <div className="flex items-center gap-2">
-            <Image
-              src={"/svg/whiteCalender.svg"}
-              alt="date"
-              width={20}
-              height={20}
-            />
+            <Image src={"/svg/whiteCalender.svg"} alt="date" width={20} height={20} />
             <span>{timeAgoFa(item.createdAt)}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Image
-              src={"/svg/whiteEye.svg"}
-              alt="views"
-              width={18}
-              height={14}
-            />
+            <Image src={"/svg/whiteEye.svg"} alt="views" width={18} height={14} />
             <span>{item.viewCount} بازدید</span>
           </div>
         </div>

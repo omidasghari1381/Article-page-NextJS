@@ -22,8 +22,8 @@ export default function Logo({ className = "" }: Props) {
         </div>
 
         <div className="leading-tight">
-          <b className="text-base sm:text-xl text-black">مای پراپ</b>
-          <div className="text-[9px] sm:text-[10px] text-gray-500">
+          <b className="text-base sm:text-xl text-black dark:text-white">مای پراپ</b>
+          <div className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-200">
             معتبرترین سایت پراپ ایرانی
           </div>
         </div>

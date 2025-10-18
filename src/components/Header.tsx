@@ -6,7 +6,7 @@ import Logo from "./Logo";
 import { useTheme } from "next-themes";
 
 const navLink =
-  "flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 transition text-black";
+  "flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-skin-base hover:bg-skin-card/60 transition";
 
 function DD({
   title,
@@ -24,14 +24,14 @@ function DD({
       <summary
         className={`${navLink} cursor-pointer list-none flex items-center ${summeryClassName}`}
       >
-        <span className="dark:text-white">{title}</span>
-        <span className="text-xs opacity-60 pr-1 dark:text-white">▾</span>
+        <span className="text-skin-base">{title}</span>
+        <span className="text-xs opacity-60 pr-1">▾</span>
       </summary>
       <div
-        className={`absolute top-[110%] right-0 w-56 rounded-sm border border-gray-200 bg-white shadow-xl p-2 z-30
-                    invisible opacity-0 group-open:visible group-open:opacity-100 transition ${menuClassName} `}
+        className={`absolute top-[110%] right-0 w-56 rounded-md border border-skin-border bg-skin-card shadow-xl p-2 z-30
+                    invisible opacity-0 group-open:visible group-open:opacity-100 transition ${menuClassName}`}
       >
-        <div className="flex flex-col ">{children}</div>
+        <div className="flex flex-col text-skin-base">{children}</div>
       </div>
     </details>
   );
@@ -99,17 +99,15 @@ export default function Header() {
   }, []);
 
   return (
-    <header
-      className="sticky top-0 z-40  border-b border-gray-200 backdrop-blur-none lg:backdrop-blur dark:border-blue-900 bg-white dark:bg-[rgb15 23 42]"
-    >
+    <header className="sticky top-0 z-40 border-b border-skin-border bg-skin-bg">
       <div className="h-[72px] lg:h-[122px] flex items-center justify-between px-4 sm:px-6 lg:px-20 mx-auto">
         <div className="flex items-center gap-2 lg:gap-3">
           <Logo />
 
-          <nav className="hidden lg:flex items-center gap-1 ">
+          <nav className="hidden lg:flex items-center gap-1">
             <DD
               title={
-                <span className="flex gap-2 items-center justify-center whitespace-nowrap text-sm leading-6 dark:text-white">
+                <span className="flex gap-2 items-center justify-center whitespace-nowrap text-sm leading-6">
                   <Image
                     src="/svg/money.svg"
                     alt="money"
@@ -120,12 +118,12 @@ export default function Header() {
                 </span>
               }
             />
-            <span className="inline-flex justify-center items-center whitespace-nowrap bg-[#19CCA7] border border-gray-300 px-4 py-2 rounded-sm text-xs font-medium hover:bg-gray-50 transition w-[64px] h-[28px]">
+            <span className="inline-flex justify-center items-center whitespace-nowrap bg-[#19CCA7] border border-skin-border px-4 py-2 rounded-sm text-xs font-medium transition w-[64px] h-[28px] text-black">
               اپدیت شده
             </span>
             <DD
               title={
-                <span className="flex items-center text-sm whitespace-nowrap dark:text-white">
+                <span className="flex items-center text-sm whitespace-nowrap">
                   <Image
                     src="/svg/plan.svg"
                     alt="plan"
@@ -138,7 +136,7 @@ export default function Header() {
             />
             <Link
               href="/careers"
-              className={`${navLink} flex items-center text-sm leading-6 whitespace-nowrap`}
+              className={`${navLink} text-sm leading-6 whitespace-nowrap`}
             >
               <Image
                 src="/svg/groupmen.svg"
@@ -175,20 +173,21 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <button
             onClick={toggleTheme}
-            className="flex items-center justify-center w-11 h-11 lg:w-[51px] lg:h-[51px] !bg-gray-100 rounded-full hover:bg-gray-200 transition dark:!bg-gray-700 dark:hover:!bg-gray-600"
+            className="flex items-center justify-center w-11 h-11 lg:w-[51px] lg:h-[51px] bg-skin-card rounded-full hover:bg-skin-card/70 border border-skin-border transition"
             aria-label="theme"
           >
             {mounted && current === "dark" ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                className="text-skin-base"
               >
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
@@ -200,7 +199,7 @@ export default function Header() {
           <div className="hidden lg:flex items-center gap-2">
             <Link
               href="/contact"
-              className="flex items-center justify-center leading-6 text-base gap-2 border border-gray-300 px-4 py-2 rounded-sm font-medium hover:bg-gray-50 transition text-black w-[150px] h-[51px] dark:bg-gray-400"
+              className="flex items-center justify-center leading-6 text-base gap-2 border border-skin-border px-4 py-2 rounded-sm font-medium hover:bg-skin-card/60 transition text-skin-base w-[150px] h-[51px]"
             >
               <Image src="/svg/phone2.svg" alt="phone" width={20} height={20} />
               تماس با ما
@@ -232,20 +231,21 @@ export default function Header() {
           </div>
 
           <button
-            className="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-md border border-gray-300 hover:bg-gray-50"
+            className="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-md border border-skin-border hover:bg-skin-card/60 text-skin-base"
             onClick={() => setOpen(true)}
             aria-label="open menu"
             aria-expanded={open}
           >
             <svg
-              width="24"
-              height="24"
+              width="22"
+              height="22"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              className="text-skin-base"
             >
               <line x1="3" y1="6" x2="21" y2="6" />
               <line x1="3" y1="12" x2="21" y2="12" />
@@ -256,41 +256,39 @@ export default function Header() {
       </div>
 
       <div
-        className={`lg:hidden fixed inset-0 z-40 transition
-               ${
-                 open
-                   ? "bg-transparent  pointer-events-auto"
-                   : "pointer-events-none"
-               }`}
+        className={`lg:hidden fixed inset-0 z-40 transition ${
+          open ? "bg-black/10 pointer-events-auto" : "pointer-events-none"
+        }`}
         onClick={() => setOpen(false)}
       />
 
       <aside
         className={`lg:hidden fixed top-0 right-0 left-0 z-50
-              bg-white border-b border-gray-200 shadow-xl
+              bg-skin-bg border-b border-skin-border shadow-xl
               transition-transform duration-300 will-change-transform
               ${open ? "translate-y-0" : "-translate-y-full"}`}
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between h-[64px] border-b border-gray-200 px-4">
+        <div className="flex items-center justify-between h-[64px] border-b border-skin-border px-4">
           <div className="flex-1" />
           <Logo />
           <div className="flex-1 flex justify-end">
             <button
-              className="inline-flex items-center justify-center w-10 h-10 rounded-md hover:bg-gray-100"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-md hover:bg-skin-card/60 text-skin-base"
               onClick={() => setOpen(false)}
               aria-label="close menu"
             >
               <svg
-                width="24"
-                height="24"
+                width="22"
+                height="22"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                className="text-skin-base"
               >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -323,8 +321,7 @@ export default function Header() {
               <span
                 style={{ backgroundColor: "#19CCA7" }}
                 className="inline-flex w-full justify-center items-center gap-2 px-4 py-3 rounded-md text-sm font-medium
-                           border border-gray-300 text-black
-                           dark:border-neutral-700"
+                           border border-skin-border text-black"
               >
                 اپدیت شده
               </span>
@@ -352,8 +349,7 @@ export default function Header() {
               <Link
                 href="/careers"
                 className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-md font-medium
-                           border border-transparent text-black hover:bg-gray-50
-                           dark:text-gray-100 dark:hover:bg-neutral-800"
+                           border border-transparent text-skin-base hover:bg-skin-card/60"
                 onClick={() => setOpen(false)}
               >
                 <Image
@@ -397,8 +393,7 @@ export default function Header() {
             <Link
               href="/contact"
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md font-medium
-                         border text-black hover:bg-gray-50 border-gray-300
-                         dark:text-gray-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                         border text-skin-base hover:bg-skin-card/60 border-skin-border"
               onClick={() => setOpen(false)}
             >
               <Image src="/svg/phone2.svg" alt="phone" width={20} height={20} />

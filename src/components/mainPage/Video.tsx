@@ -1,4 +1,3 @@
-// components/home/Video.tsx
 import Image from "next/image";
 import VideoCart from "./VideoCart";
 
@@ -8,7 +7,9 @@ export default function Video() {
       <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
-          <h3 className="text-xl font-semibold text-[#1C2121]">آخرین ویدیوها</h3>
+          <h3 className="text-xl font-semibold text-[#1C2121] dark:text-white">
+            آخرین ویدیوها
+          </h3>
         </div>
 
         <button className="self-start sm:self-auto px-6 sm:px-8 w-[202px] h-[56px] whitespace-nowrap bg-[#19CCA7] rounded-md flex items-center justify-center gap-2 text-white">
@@ -30,9 +31,21 @@ export default function Video() {
         </div>
 
         <div className="relative rounded-md overflow-hidden aspect-[16/10] sm:aspect-[16/10] lg:aspect-auto lg:h-full">
-          <Image src="/image/mac.png" alt="thumb" fill className="object-cover" />
+          <Image
+            src="/image/mac.png"
+            alt="thumb"
+            fill
+            className="object-cover"
+          />
+
           <div className="pointer-events-none select-none absolute inset-0 flex items-center justify-center">
-            <Image src="/svg/play.svg" alt="play" width={160} height={160} />
+            <Image
+              src="/svg/play.svg"
+              alt="play"
+              width={160}
+              height={160}
+              className="dark:invert"
+            />
           </div>
         </div>
       </div>

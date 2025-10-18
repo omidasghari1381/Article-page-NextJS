@@ -29,16 +29,16 @@ export default function Chosen({
   const [selected, setSelected] = useState<articleCategoryEnum | null>(null);
 
   const baseBtn =
-    "text-sm font-semibold px-4 py-2 rounded-md border transition whitespace-nowrap";
+    "text-sm font-semibold px-4 py-2 rounded-md border border-skin-border bg-skin-bg text-skin-base hover:bg-skin-card/60 transition whitespace-nowrap";
   const active =
-    "text-white bg-gradient-to-r from-[#111414] to-[#272F2F] border-transparent";
-  const inactive = "text-black border-[#D7D7D7]";
+    "text-white bg-skin-accent hover:opacity-90 border-transparent";
+  const inactive = "";
 
   return (
-    <section>
+    <section className="text-skin-base">
       <div className="flex items-center gap-3">
         <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
-        <h3 className="text-xl font-semibold text-[#1C2121]">انتخاب سردبیر</h3>
+        <h3 className="text-xl font-semibold text-skin-heading">انتخاب سردبیر</h3>
       </div>
 
       <div className="my-5 flex gap-2 overflow-x-auto no-scrollbar sm:flex-wrap sm:overflow-visible">
@@ -83,10 +83,10 @@ function ArticleCard({ article }: { article: ArticleLite | null }) {
         />
       </div>
       <div className="flex-1">
-        <h4 className="text-base sm:text-lg font-semibold text-[#1C2121] line-clamp-2">
+        <h4 className="text-base sm:text-lg font-semibold text-skin-heading line-clamp-2">
           {article?.subject ?? article?.title ?? "—"}
         </h4>
-        <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-[#373A41]">
+        <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-skin-muted">
           <div className="flex items-center gap-2">
             <Image
               src={"/svg/calender.svg"}

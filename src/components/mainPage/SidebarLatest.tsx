@@ -31,12 +31,11 @@ function getCategoryName(categories: CategoryLike): string | null {
 }
 
 export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
-  console.log(posts)
   return (
     <aside>
       <div className="flex items-center gap-3 px-2 sm:px-4 py-6">
         <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
-        <h3 className="text-lg sm:text-xl font-semibold text-[#1C2121]">
+        <h3 className="text-lg sm:text-xl font-semibold text-[#1C2121] dark:text-white">
           محبوب‌ترین مقالات
         </h3>
       </div>
@@ -47,7 +46,9 @@ export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
             <SidebarCard key={p.id ?? `${p.title}-${Math.random()}`} post={p} />
           ))
         ) : (
-          <div className="text-sm text-gray-500">موردی برای نمایش نیست.</div>
+          <div className="text-sm text-gray-500 dark:text-skin-muted">
+            موردی برای نمایش نیست.
+          </div>
         )}
       </div>
     </aside>
@@ -56,7 +57,7 @@ export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
 
 function SidebarCard({ post }: { post: LatestItem }) {
   const categoryName = getCategoryName(post.categories);
-  const articleUrl = `/articles/${post.id}`; 
+  const articleUrl = post.id ? `/articles/${post.id}` : "#";
 
   return (
     <Link href={articleUrl} className="group block transition hover:opacity-95">
@@ -82,10 +83,10 @@ function SidebarCard({ post }: { post: LatestItem }) {
                 alt="badge"
                 width={108}
                 height={35}
-                className="block"
+                className="block dark:invert"
                 priority
               />
-              <span className="absolute inset-0 left-3 flex items-center justify-center text-white text-[10px] sm:text-xs font-semibold leading-none px-2">
+              <span className=" dark:text-black absolute inset-0 left-3 flex items-center justify-center text-white text-[10px] sm:text-xs font-semibold leading-none px-2">
                 {categoryName}
               </span>
             </div>

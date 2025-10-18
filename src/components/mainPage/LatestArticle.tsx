@@ -2,9 +2,7 @@ import Image from "next/image";
 import { timeAgoFa } from "@/app/utils/date";
 import Link from "next/link";
 
-type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
-type CategoryLite = { id: string; name: string; slug?: string };
-type ArticleLite = {
+export type ArticleLite = {
   id: string;
   title: string;
   subject: string | null;
@@ -12,21 +10,20 @@ type ArticleLite = {
   viewCount: number;
   thumbnail: string | null;
   readingPeriod: number;
-  author?: AuthorDTO;
+  author?: { id: string; firstName: string; lastName: string } | null;
   categories?: string | null;
 };
 
-export default async function LatestArticle({
-  items,
-}: {
-  items?: ArticleLite[];
-}) {
+const articleHref = (a?: Pick<ArticleLite, "id"> | null) =>
+  a?.id ? `/articles/${a.id}` : "#";
+
+export default async function LatestArticle({ items }: { items?: ArticleLite[] }) {
   const data = items ?? [];
   return (
     <section>
       <div className="flex items-center gap-3 py-6">
         <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
-        <h3 className="text-xl font-semibold text-[#1C2121]">آخرین مقالات</h3>
+        <h3 className="text-xl font-semibold text-[#1C2121] dark:text-white">آخرین مقالات</h3>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -56,6 +53,7 @@ export default async function LatestArticle({
 function LateArticle({ item }: { item: ArticleLite }) {
   const catName = item.categories ?? "—";
   const articleUrl = `/articles/${item.id}`;
+
   return (
     <Link href={articleUrl} className="block mb-2 hover:opacity-90 transition">
       <div className="relative w-full aspect-[16/9]">
@@ -77,29 +75,36 @@ function LateArticle({ item }: { item: ArticleLite }) {
               alt="badge"
               width={108}
               height={34}
-              className="block rounded-sm"
+              className="block rounded-sm dark:invert"
               priority
             />
-            <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold">
+            <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold dark:text-black">
               {catName}
             </span>
           </div>
-          <span className="text-[#373A41] text-sm sm:text-base font-medium">
+
+          <span className="text-[#373A41] dark:text-skin-muted text-sm sm:text-base font-medium">
             {item.createdAt ? timeAgoFa(item.createdAt) : "—"}
           </span>
         </div>
+
         <div className="flex items-center gap-2">
-          <Image src={"/svg/eye.svg"} alt="views" width={18} height={14} />
-          <span className="text-sm text-[#373A41]">
+          {/* eye.svg تک‌رنگ → mask + bg تا با تم هماهنگ شه */}
+          <span
+            className="inline-block w-[18px] h-[14px] bg-[#373A41] dark:bg-white
+                       [mask:url('/svg/eye.svg')] [mask-size:contain] [mask-repeat:no-repeat] [mask-position:center]"
+            aria-hidden
+          />
+          <span className="text-sm text-[#373A41] dark:text-skin-muted">
             بازدید {item.viewCount}
           </span>
         </div>
       </div>
 
-      <p className="mt-2 text-base sm:text-lg text-[#121212] font-bold line-clamp-2">
+      <p className="mt-2 text-base sm:text-lg text-[#121212] dark:text-white font-bold line-clamp-2">
         {item.title}
       </p>
-      <p className="text-sm sm:text-base font-normal text-[#121212] mt-3 line-clamp-3">
+      <p className="text-sm sm:text-base font-normal text-[#121212] dark:text-skin-base mt-3 line-clamp-3">
         {item.subject ?? ""}
       </p>
     </Link>
@@ -110,12 +115,7 @@ function LateArticlePlaceholder() {
   return (
     <article className="mb-2">
       <div className="relative w-full aspect-[16/9]">
-        <Image
-          src="/image/chart.png"
-          alt="thumb"
-          fill
-          className="rounded-md object-cover"
-        />
+        <Image src="/image/chart.png" alt="thumb" fill className="rounded-md object-cover" />
       </div>
 
       <div className="flex items-center justify-between mt-3">
@@ -126,29 +126,28 @@ function LateArticlePlaceholder() {
               alt="badge"
               width={108}
               height={34}
-              className="block rounded-sm"
+              className="block rounded-sm dark:invert"
               priority
             />
             <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-semibold">
               —
             </span>
           </div>
-          <span className="text-[#373A41] text-sm sm:text-base font-medium">
-            —
-          </span>
+          <span className="text-[#373A41] dark:text-skin-muted text-sm sm:text-base font-medium">—</span>
         </div>
+
         <div className="flex items-center gap-2">
-          <Image src={"/svg/eye.svg"} alt="views" width={18} height={14} />
-          <span className="text-sm text-[#373A41]">بازدید 0</span>
+          <span
+            className="inline-block w-[18px] h-[14px] bg-[#373A41] dark:bg-white
+                       [mask:url('/svg/eye.svg')] [mask-size:contain] [mask-repeat:no-repeat] [mask-position:center]"
+            aria-hidden
+          />
+          <span className="text-sm text-[#373A41] dark:text-skin-muted">بازدید 0</span>
         </div>
       </div>
 
-      <p className="mt-2 text-base sm:text-lg text-[#121212] font-bold line-clamp-2">
-        —
-      </p>
-      <p className="text-sm sm:text-base font-normal text-[#121212] mt-3 line-clamp-3">
-        —
-      </p>
+      <p className="mt-2 text-base sm:text-lg text-[#121212] dark:text-white font-bold line-clamp-2">—</p>
+      <p className="text-sm sm:text-base font-normal text-[#121212] dark:text-skin-base mt-3 line-clamp-3">—</p>
     </article>
   );
 }

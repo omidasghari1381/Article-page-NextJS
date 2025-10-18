@@ -5,13 +5,11 @@ export type Crumb = { label: string; href?: string };
 type EllipsisItem = { ellipsis: true };
 type DisplayItem = Crumb | EllipsisItem;
 
-/** Type Guards */
 const isEllipsisItem = (x: DisplayItem): x is EllipsisItem =>
   (x as any).ellipsis === true;
 const isCrumb = (x: DisplayItem): x is Crumb => !isEllipsisItem(x);
 
-/** Compute helpers */
-// دسکتاپ: فقط اول + دوم + ... + آخر
+
 function computeDesktopItems(items: Crumb[]): DisplayItem[] {
   const total = items.length;
   if (total <= 4) return items;
