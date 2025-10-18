@@ -51,8 +51,8 @@ async function getTagsViaService(search: {
     name: t.name,
     slug: t.slug,
     description: t.description ?? null,
-    createdAt: t.createdAt?.toISOString(),
-    updatedAt: t.updatedAt?.toISOString(),
+    createdAt: t.createdAt?.toString(),
+    updatedAt: t.updatedAt?.toString(),
   }));
 
   return { items: normalizedItems, total, page: pageNum, perPage: per, pages };

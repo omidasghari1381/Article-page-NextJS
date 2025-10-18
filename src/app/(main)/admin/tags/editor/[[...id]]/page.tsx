@@ -14,21 +14,29 @@ type TagDTO = {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export default async function Page({ params }: { params: { id?: string[] } }) {
-  const id =
-    Array.isArray(params?.id) && params.id.length ? params.id[0] : null;
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id?: string[] }>;
+}) {
+  const p = await params;
+  const id = Array.isArray(p?.id) && p.id.length ? p.id[0] : null;
 
   let initialRecord: TagDTO | null = null;
   if (id) {
     try {
       const svc = new TagsService();
       const row = await svc.getById(id);
-      initialRecord = {
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        description: row.description ?? null,
-      };
+      if (row) {
+        initialRecord = {
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+          description: row.description ?? null,
+        };
+      } else {
+        initialRecord = null;
+      }
     } catch {
       initialRecord = null;
     }

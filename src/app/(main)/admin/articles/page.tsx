@@ -1,4 +1,3 @@
-// src/app/articles/article-list/page.tsx
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -58,11 +57,9 @@ export default async function Page({
   const page = toInt(sp.page as string, 1);
   const pageSize = Math.min(toInt(sp.pageSize as string, 20), 100);
 
-  // خدمات
   const articleSvc = new ArticleService();
   const categorySvc = new CategoryService();
 
-  // مقالات + کتگوری‌ها از سرویس
   const [{ items, total }, catEntities] = await Promise.all([
     articleSvc.listArticles({
       page,
@@ -89,7 +86,7 @@ export default async function Page({
     title: a.title,
     subject: a.subject ?? null,
     createdAt: a.createdAt,
-    category: a.categories ? { id: "", name: a.categories } : null, // خروجی لایت: name رشته‌ای
+    category: a.categories ? { id: "", name: a.categories } : null,
     author: a.author
       ? {
           id: a.author.id,

@@ -1,9 +1,9 @@
 "use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import Logo from "./Logo";
+import { useTheme } from "next-themes";
 
 const navLink =
   "flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 transition text-black";
@@ -11,7 +11,7 @@ const navLink =
 function DD({
   title,
   children,
- summeryClassName = "",
+  summeryClassName = "",
   menuClassName = "",
 }: {
   title: React.ReactNode;
@@ -24,26 +24,38 @@ function DD({
       <summary
         className={`${navLink} cursor-pointer list-none flex items-center ${summeryClassName}`}
       >
-        <span>{title}</span>
-        <span className="text-xs opacity-60 pr-1">▾</span>
+        <span className="dark:text-white">{title}</span>
+        <span className="text-xs opacity-60 pr-1 dark:text-white">▾</span>
       </summary>
       <div
         className={`absolute top-[110%] right-0 w-56 rounded-sm border border-gray-200 bg-white shadow-xl p-2 z-30
-                    invisible opacity-0 group-open:visible group-open:opacity-100 transition ${menuClassName}`}
+                    invisible opacity-0 group-open:visible group-open:opacity-100 transition ${menuClassName} `}
       >
-        <div className="flex flex-col">{children}</div>
+        <div className="flex flex-col ">{children}</div>
       </div>
     </details>
   );
 }
 
 export default function Header() {
-  const [dark, setDark] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const current = mounted ? resolvedTheme : undefined;
+
+  const toggleTheme = () => {
+    const root = document.documentElement;
+    root.classList.add("theme-anim");
+    requestAnimationFrame(() => {
+      setTheme(current === "dark" ? "light" : "dark");
+      window.setTimeout(() => {
+        root.classList.remove("theme-anim");
+      }, 300);
+    });
+  };
+
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
   useEffect(() => {
     if (!open) {
       const top = document.body.style.top;
@@ -88,17 +100,16 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 bg-white border-b border-gray-200 backdrop-blur-none lg:backdrop-blur"
-      dir="rtl"
+      className="sticky top-0 z-40  border-b border-gray-200 backdrop-blur-none lg:backdrop-blur dark:border-blue-900 bg-white dark:bg-[rgb15 23 42]"
     >
       <div className="h-[72px] lg:h-[122px] flex items-center justify-between px-4 sm:px-6 lg:px-20 mx-auto">
         <div className="flex items-center gap-2 lg:gap-3">
           <Logo />
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1 ">
             <DD
               title={
-                <span className="flex gap-2 items-center justify-center whitespace-nowrap text-sm leading-6">
+                <span className="flex gap-2 items-center justify-center whitespace-nowrap text-sm leading-6 dark:text-white">
                   <Image
                     src="/svg/money.svg"
                     alt="money"
@@ -109,15 +120,12 @@ export default function Header() {
                 </span>
               }
             />
-            <span
-              // style={{ backgroundColor: "#19CCA7" }}
-              className="inline-flex justify-center items-center whitespace-nowrap bg-[#19CCA7] border border-gray-300 px-4 py-2 rounded-sm text-xs font-medium hover:bg-gray-50 transition w-[64px] h-[28px]"
-            >
+            <span className="inline-flex justify-center items-center whitespace-nowrap bg-[#19CCA7] border border-gray-300 px-4 py-2 rounded-sm text-xs font-medium hover:bg-gray-50 transition w-[64px] h-[28px]">
               اپدیت شده
             </span>
             <DD
               title={
-                <span className="flex items-center text-sm whitespace-nowrap">
+                <span className="flex items-center text-sm whitespace-nowrap dark:text-white">
                   <Image
                     src="/svg/plan.svg"
                     alt="plan"
@@ -164,17 +172,13 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          {/* Theme toggle */}
           <button
-            onClick={() => setDark((v) => !v)}
-            className="flex items-center justify-center w-11 h-11 lg:w-[51px] lg:h-[51px] bg-gray-100 rounded-full hover:bg-gray-200 transition"
+            onClick={toggleTheme}
+            className="flex items-center justify-center w-11 h-11 lg:w-[51px] lg:h-[51px] !bg-gray-100 rounded-full hover:bg-gray-200 transition dark:!bg-gray-700 dark:hover:!bg-gray-600"
             aria-label="theme"
           >
-            {!dark ? (
-              <Image src="/svg/sun.svg" alt="sun" width={20} height={20} />
-            ) : (
+            {mounted && current === "dark" ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -188,14 +192,15 @@ export default function Header() {
               >
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
+            ) : (
+              <Image src="/svg/sun.svg" alt="sun" width={20} height={20} />
             )}
           </button>
 
-          {/* Desktop CTAs */}
           <div className="hidden lg:flex items-center gap-2">
             <Link
               href="/contact"
-              className="flex items-center justify-center leading-6 text-base gap-2 border border-gray-300 px-4 py-2 rounded-sm font-medium hover:bg-gray-50 transition text-black w-[150px] h-[51px]"
+              className="flex items-center justify-center leading-6 text-base gap-2 border border-gray-300 px-4 py-2 rounded-sm font-medium hover:bg-gray-50 transition text-black w-[150px] h-[51px] dark:bg-gray-400"
             >
               <Image src="/svg/phone2.svg" alt="phone" width={20} height={20} />
               تماس با ما
@@ -226,7 +231,6 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Hamburger (Mobile/Tablet) */}
           <button
             className="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-md border border-gray-300 hover:bg-gray-50"
             onClick={() => setOpen(true)}
@@ -261,7 +265,6 @@ export default function Header() {
         onClick={() => setOpen(false)}
       />
 
-      {/* Drawer: تمام‌صفحه، سفید، متن‌ها وسط */}
       <aside
         className={`lg:hidden fixed top-0 right-0 left-0 z-50
               bg-white border-b border-gray-200 shadow-xl
@@ -270,7 +273,6 @@ export default function Header() {
         role="dialog"
         aria-modal="true"
       >
-        {/* Header داخل Drawer */}
         <div className="flex items-center justify-between h-[64px] border-b border-gray-200 px-4">
           <div className="flex-1" />
           <Logo />
@@ -297,7 +299,6 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Nav Content — تمام‌عرض و وسط‌چین */}
         <nav className="p-6">
           <ul className="flex flex-col items-center text-center gap-2 text-base">
             <li className="w-full">
@@ -321,7 +322,9 @@ export default function Header() {
             <li className="w-full">
               <span
                 style={{ backgroundColor: "#19CCA7" }}
-                className="inline-flex w-full justify-center items-center gap-2 border border-gray-300 px-4 py-3 rounded-md text-sm font-medium"
+                className="inline-flex w-full justify-center items-center gap-2 px-4 py-3 rounded-md text-sm font-medium
+                           border border-gray-300 text-black
+                           dark:border-neutral-700"
               >
                 اپدیت شده
               </span>
@@ -348,7 +351,9 @@ export default function Header() {
             <li className="w-full">
               <Link
                 href="/careers"
-                className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-md font-medium hover:bg-gray-50 transition text-black border border-transparent"
+                className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-md font-medium
+                           border border-transparent text-black hover:bg-gray-50
+                           dark:text-gray-100 dark:hover:bg-neutral-800"
                 onClick={() => setOpen(false)}
               >
                 <Image
@@ -388,11 +393,12 @@ export default function Header() {
             </li>
           </ul>
 
-          {/* Mobile CTAs — تمام‌عرض و وسط‌چین */}
           <div className="mt-6 grid gap-3">
             <Link
               href="/contact"
-              className="w-full flex items-center justify-center gap-2 border border-gray-300 px-4 py-3 rounded-md font-medium text-black"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md font-medium
+                         border text-black hover:bg-gray-50 border-gray-300
+                         dark:text-gray-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
               onClick={() => setOpen(false)}
             >
               <Image src="/svg/phone2.svg" alt="phone" width={20} height={20} />
@@ -401,7 +407,8 @@ export default function Header() {
 
             <Link
               href="/login"
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md text-white [background:linear-gradient(180deg,#111414_0%,#272F2F_100%)]"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md text-white
+                         [background:linear-gradient(180deg,#111414_0%,#272F2F_100%)]"
               onClick={() => setOpen(false)}
             >
               <svg

@@ -17,7 +17,7 @@ export default function Markets() {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
       <Market title="بازار فارکس" pair={defaultPairs} />
       <Market title="ارز دیجیتال" pair={defaultPairs} />
     </div>
