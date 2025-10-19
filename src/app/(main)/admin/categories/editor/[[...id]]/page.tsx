@@ -4,6 +4,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import CategoryEditWithTabs from "@/components/categories/CategoryEditWithTabs";
 import { CategoryService } from "@/server/modules/categories/services/category.service";
 import { SeoMetaService } from "@/server/modules/metaData/services/seoMeta.service";
+import { SeoEntityType } from "@/server/modules/metaData/enums/entity.enum";
 
 type CategoryDTO = {
   id: string;
@@ -71,7 +72,7 @@ const getSeoForCategory = cache(async (id: string, locale = "") => {
   noStore();
   if (!id) return { exists: false, data: null as SeoMetaPayload | null };
   const seoSvc = new SeoMetaService();
-  const rec = await seoSvc.getForCategory(id, locale);
+  const rec = await seoSvc.getBy(SeoEntityType.CATEGORY, id, locale);
   if (!rec) return { exists: false, data: null as SeoMetaPayload | null };
   const data: SeoMetaPayload = {
     useAuto: !!rec.useAuto,
@@ -83,12 +84,8 @@ const getSeoForCategory = cache(async (id: string, locale = "") => {
     ogDescription: rec.ogDescription ?? null,
     ogImageUrl: rec.ogImageUrl ?? null,
     twitterCard: rec.twitterCard ?? null,
-    publishedTime: rec.publishedTime
-      ? new Date(rec.publishedTime).toISOString()
-      : null,
-    modifiedTime: rec.modifiedTime
-      ? new Date(rec.modifiedTime).toISOString()
-      : null,
+    publishedTime: rec.publishedTime ? new Date(rec.publishedTime).toISOString() : null,
+    modifiedTime: rec.modifiedTime ? new Date(rec.modifiedTime).toISOString() : null,
     authorName: rec.authorName ?? null,
     tags: Array.isArray(rec.tags) ? rec.tags : null,
   };

@@ -1,7 +1,5 @@
-import UsersAreaCard from "@/components/admin/UsersChart";
 import { ArticleService } from "@/server/modules/articles/services/article.service";
 import { UserService } from "@/server/modules/users/services/users.service";
-import { da } from "zod/v4/locales";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,11 +10,6 @@ export default async function AdminLayout() {
 
   const userCount = await userService.getUserCount({ isDeleted: "0" });
   const articleViewCount = await articleService.getViewCount();
-
-  const daily = await userService.getDailyNewUsers("last_7", {
-    locale: "fa-IR",
-  });
-  console.log(daily);
 
   return (
     <main className="px-4 py-6">
@@ -39,15 +32,6 @@ export default async function AdminLayout() {
           </div>
         </div>
       </div>
-
-      <UsersAreaCard
-        total={daily.total}
-        deltaPercent={Math.round(daily.deltaPercent)}
-        series={daily.series}
-        categories={daily.labels}
-        defaultPeriod="۷ روز گذشته"
-        subtitle="Users this week"
-      />
     </main>
   );
 }

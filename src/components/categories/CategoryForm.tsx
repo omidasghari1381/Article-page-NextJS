@@ -28,7 +28,9 @@ export default function CategoryForm({
 }) {
   const router = useRouter();
   const isEdit = !!initialCategory?.id;
-  const [allCategories, setAllCategories] = useState<CategoryDTO[]>(initialAllCategories || []);
+  const [allCategories, setAllCategories] = useState<CategoryDTO[]>(
+    initialAllCategories || []
+  );
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
@@ -53,11 +55,16 @@ export default function CategoryForm({
         }
       } catch {}
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [initialAllCategories]);
 
   const slugify = (s: string) =>
-    s.toString().trim().toLowerCase()
+    s
+      .toString()
+      .trim()
+      .toLowerCase()
       .replace(/[\u0600-\u06FF]/g, "")
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-]/g, "")
@@ -68,26 +75,35 @@ export default function CategoryForm({
     return (allCategories || [])
       .slice()
       .sort((a, b) => a.depth - b.depth || a.name.localeCompare(b.name))
-      .map((c) => ({ id: c.id, label: `${"— ".repeat(Math.min(c.depth, 6))}${c.name}` }));
+      .map((c) => ({
+        id: c.id,
+        label: `${"— ".repeat(Math.min(c.depth, 6))}${c.name}`,
+      }));
   }, [allCategories]);
 
-  const handleChange = (field: keyof typeof form) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | string
-  ) => {
-    const val = typeof e === "string" ? e : e.target.value;
-    if (field === "name") {
-      setForm((f) => {
-        const next: any = { ...f, name: val };
-        if (!slugTouched) next.slug = slugify(val);
-        return next;
-      });
-    } else if (field === "slug") {
-      setSlugTouched(true);
-      setForm((f) => ({ ...f, slug: slugify(val) }));
-    } else {
-      setForm((f) => ({ ...f, [field]: val }));
-    }
-  };
+  const handleChange =
+    (field: keyof typeof form) =>
+    (
+      e:
+        | React.ChangeEvent<
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+          >
+        | string
+    ) => {
+      const val = typeof e === "string" ? e : e.target.value;
+      if (field === "name") {
+        setForm((f) => {
+          const next: any = { ...f, name: val };
+          if (!slugTouched) next.slug = slugify(val);
+          return next;
+        });
+      } else if (field === "slug") {
+        setSlugTouched(true);
+        setForm((f) => ({ ...f, slug: slugify(val) }));
+      } else {
+        setForm((f) => ({ ...f, [field]: val }));
+      }
+    };
 
   const handleDelete = async () => {
     if (!isEdit || !initialCategory?.id) return;
@@ -134,9 +150,15 @@ export default function CategoryForm({
     try {
       setSaving(true);
       setError(null);
-      const url = isEdit ? `/api/categories/${initialCategory!.id}` : `/api/categories`;
+      const url = isEdit
+        ? `/api/categories/${initialCategory!.id}`
+        : `/api/categories`;
       const method = isEdit ? "PATCH" : "POST";
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
         throw new Error(t || "خطا در ذخیره دسته");
@@ -160,75 +182,118 @@ export default function CategoryForm({
 
   return (
     <section className="w-full">
-      <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-sm border p-6 md:p-8 w-full mx-auto" dir="rtl">
-        {error && <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">{error}</div>}
+      <form
+        onSubmit={onSubmit}
+        className="bg-white dark:bg-skin-card rounded-2xl shadow-sm border border-gray-200 dark:border-skin-border p-6 md:p-8 w-full mx-auto transition-colors"
+        dir="rtl"
+      >
+        {error && (
+          <div className="mb-4 rounded border border-red-300 dark:border-red-400/40 bg-red-50 dark:bg-red-400/10 p-3 text-red-700 dark:text-red-200">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-5 space-y-6">
             <div>
-              <label className="block text-sm text-black mb-2">نام دسته</label>
+              <label className="block text-sm text-black dark:text-white mb-2">
+                نام دسته
+              </label>
               <input
                 type="text"
-                className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-gray-200 dark:border-skin-border text-black dark:text-white bg-white dark:bg-skin-bg/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-skin-border/50 transition-colors"
                 placeholder="مثلاً: تحلیل بازار"
                 value={form.name}
                 onChange={handleChange("name")}
               />
             </div>
+
             <div>
-              <label className="block text-sm text-black mb-2">اسلاگ</label>
+              <label className="block text-sm text-black dark:text-white mb-2">
+                اسلاگ
+              </label>
               <input
                 type="text"
-                className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 ltr"
+                className="w-full rounded-lg border border-gray-200 dark:border-skin-border text-black dark:text-white bg-white dark:bg-skin-bg/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-skin-border/50 ltr transition-colors"
                 placeholder="masalan: market-analysis"
                 value={form.slug}
                 onChange={handleChange("slug")}
               />
-              <p className="text-xs text-gray-400 mt-1">اگر خالی بماند، از روی نام ساخته می‌شود.</p>
+              <p className="text-xs text-gray-400 dark:text-skin-muted mt-1">
+                اگر خالی بماند، از روی نام ساخته می‌شود.
+              </p>
             </div>
+
             <div>
-              <label className="block text-sm text-black mb-2">دسته والد (اختیاری)</label>
+              <label className="block text-sm text-black dark:text-white mb-2">
+                دسته والد (اختیاری)
+              </label>
               <select
-                className="w-full rounded-lg border text-black border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border text-black dark:text-white border-gray-200 dark:border-skin-border bg-white dark:bg-skin-bg/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-skin-border/50 transition-colors"
                 value={form.parentId}
                 onChange={(e) => handleChange("parentId")(e)}
               >
                 <option value="">— بدون والد —</option>
                 {parentOptions.map((opt) => (
-                  <option value={opt.id} key={opt.id}>{opt.label}</option>
+                  <option value={opt.id} key={opt.id}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
-              <p className="text-xs text-gray-400 mt-1">والد باعث ساختار درختی می‌شود.</p>
+              <p className="text-xs text-gray-400 dark:text-skin-muted mt-1">
+                والد باعث ساختار درختی می‌شود.
+              </p>
             </div>
           </div>
+
           <div className="md:col-span-7 space-y-6">
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-sm text-black mb-2">توضیح</label>
+                <label className="block text-sm text-black dark:text-white mb-2">
+                  توضیح
+                </label>
                 <CharCounter value={form.description} max={1000} />
               </div>
               <textarea
-                className="w-full min-h-[160px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full min-h-[160px] text-black dark:text-white rounded-lg border border-gray-200 dark:border-skin-border bg-white dark:bg-skin-bg/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-skin-border/50 transition-colors"
                 placeholder="توضیح کوتاه..."
                 value={form.description}
                 onChange={handleChange("description")}
                 maxLength={1000}
               />
             </div>
+
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 rounded-lg border border-gray-200 dark:border-skin-border text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-skin-bg/10 transition-colors"
                 onClick={() => {
-                  setForm({ name: "", slug: "", description: "", parentId: "" });
+                  setForm({
+                    name: "",
+                    slug: "",
+                    description: "",
+                    parentId: "",
+                  });
                   setSlugTouched(false);
                 }}
               >
                 پاک‌سازی
               </button>
-              <button type="submit" className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50" disabled={saving}>
+
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                disabled={saving}
+              >
                 {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت دسته"}
               </button>
-              <button type="button" onClick={handleDelete} className="px-5 py-2 rounded-lg bg-red-700 text-white hover:bg-red-800 disabled:opacity-50" disabled={deleting || !isEdit}>
+
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-5 py-2 rounded-lg bg-red-700 text-white hover:bg-red-800 disabled:opacity-50"
+                disabled={deleting || !isEdit}
+              >
                 {deleting ? "در حال حذف..." : "حذف دسته"}
               </button>
             </div>
@@ -242,5 +307,13 @@ export default function CategoryForm({
 function CharCounter({ value, max }: { value: string; max: number }) {
   const len = value?.length || 0;
   const danger = len > max * 0.9;
-  return <span className={`text-xs ${danger ? "text-red-500" : "text-gray-400"}`}>{len}/{max}</span>;
+  return (
+    <span
+      className={`text-xs ${
+        danger ? "text-red-500" : "text-gray-400 dark:text-skin-muted"
+      }`}
+    >
+      {len}/{max}
+    </span>
+  );
 }

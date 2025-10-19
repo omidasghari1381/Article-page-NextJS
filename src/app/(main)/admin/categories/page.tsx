@@ -113,7 +113,7 @@ export default async function Page({
           <span>تعداد دسته‌ها </span>
           <span>({total})</span>
         </div>
-        <div className="mt-6 bg-skin-bg rounded-2xl border border-skin-border">
+        <div className="mt-6 bg-skin-bg border-skin-border">
           <div className="divide-y divide-skin-border">
             {categories.map((c: CategoryNode) => (
               <CategoryRow key={c.id} item={c} />

@@ -48,7 +48,7 @@ export default function CategoryEditWithTabs({
   const [tab, setTab] = useState<"category" | "seo">(initialTab);
 
   return (
-    <section className="w-full" dir="rtl">
+    <section className="w-full text-skin-base dark:text-skin-base" dir="rtl">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
@@ -62,9 +62,12 @@ export default function CategoryEditWithTabs({
             <button
               role="tab"
               aria-selected={tab === "category"}
-              className={`px-4 py-2 rounded-full border transition whitespace-nowrap ${
-                tab === "category" ? "bg-black text-white border-black" : "bg-white text-gray-800 hover:bg-gray-50 border-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-full border transition-colors whitespace-nowrap
+                ${
+                  tab === "category"
+                    ? "bg-black text-white border-black"
+                    : "bg-white dark:bg-skin-card text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-skin-bg/10 border-gray-200 dark:border-skin-border"
+                }`}
               onClick={() => setTab("category")}
             >
               اطلاعات دسته
@@ -72,9 +75,12 @@ export default function CategoryEditWithTabs({
             <button
               role="tab"
               aria-selected={tab === "seo"}
-              className={`px-4 py-2 rounded-full border transition whitespace-nowrap ${
-                tab === "seo" ? "bg-black text-white border-black" : "bg-white text-gray-800 hover:bg-gray-50 border-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-full border transition-colors whitespace-nowrap
+                ${
+                  tab === "seo"
+                    ? "bg-black text-white border-black"
+                    : "bg-white dark:bg-skin-card text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-skin-bg/10 border-gray-200 dark:border-skin-border"
+                }`}
               onClick={() => setTab("seo")}
             >
               SEO
