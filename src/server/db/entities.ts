@@ -10,19 +10,25 @@ import { Redirect } from "@/server/modules/redirects/entities/redirect.entity";
 import { SeoMeta } from "@/server/modules/metaData/entities/seoMeta.entity";
 import { MediaItem } from "@/server/modules/media/entities/mediaItem.entity";
 import type { EntitySchema } from "typeorm";
+import { TranslationValue } from "../modules/i18n/entities/translation-value.entity";
+import { TranslationKey } from "../modules/i18n/entities/translation-key.entity";
+import { Locale } from "../modules/i18n/entities/locale.entity";
 
 export const ENTITIES: (Function | EntitySchema<any> | string)[] = [
   Redirect,
   ArticleTag,
   User,
   Article,
-  NewArticle,
+  NewArticle, 
   FAQ,
   CommentArticle,
   ReplyComment,
   ArticleCategory,
   SeoMeta,
   MediaItem,
+  TranslationValue,
+  TranslationKey,
+  Locale,
 ];
 
 export {
@@ -37,4 +43,7 @@ export {
   Redirect,
   SeoMeta,
   MediaItem,
+  TranslationValue,
+  TranslationKey,
+  Locale,
 };
