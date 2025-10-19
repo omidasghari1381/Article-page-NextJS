@@ -113,6 +113,7 @@ export default function Header() {
                     alt="money"
                     width={20}
                     height={20}
+                    className="dark:invert"
                   />
                   پراپ تریدینگ
                 </span>
@@ -128,7 +129,8 @@ export default function Header() {
                     src="/svg/plan.svg"
                     alt="plan"
                     width={40}
-                    height={40}
+                    height={40}                    className="dark:invert"
+
                   />
                   پلن‌های ما
                 </span>
@@ -142,7 +144,8 @@ export default function Header() {
                 src="/svg/groupmen.svg"
                 alt="team"
                 width={40}
-                height={40}
+                height={40}                    className="dark:invert"
+
               />
               همکاری با ما
             </Link>
@@ -201,14 +204,15 @@ export default function Header() {
               href="/contact"
               className="flex items-center justify-center leading-6 text-base gap-2 border border-skin-border px-4 py-2 rounded-sm font-medium hover:bg-skin-card/60 transition text-skin-base w-[150px] h-[51px]"
             >
-              <Image src="/svg/phone2.svg" alt="phone" width={20} height={20} />
+              <Image src="/svg/phone2.svg" alt="phone" width={20} height={20}                     className="dark:invert"
+/>
               تماس با ما
             </Link>
 
             <Link
               href="/login"
               className="flex justify-center items-center leading-6 [background:linear-gradient(180deg,#111414_0%,#272F2F_100%)]
-                         text-white rounded-sm text-sm font-medium hover:opacity-90 transition w-[150px] h-[51px]"
+                         text-white rounded-sm text-sm font-medium hover:opacity-90 transition w-[150px] h-[51px] dark:invert"
             >
               <span className="flex items-center gap-2">
                 <svg
@@ -309,7 +313,8 @@ export default function Header() {
                       src="/svg/money.svg"
                       alt="money"
                       width={20}
-                      height={20}
+                      height={20}                    className="dark:invert"
+
                     />
                     پراپ تریدینگ
                   </span>
@@ -337,7 +342,8 @@ export default function Header() {
                       src="/svg/plan.svg"
                       alt="plan"
                       width={20}
-                      height={20}
+                      height={20}                    className="dark:invert"
+
                     />
                     پلن‌های ما
                   </span>
@@ -356,7 +362,8 @@ export default function Header() {
                   src="/svg/groupmen.svg"
                   alt="team"
                   width={24}
-                  height={24}
+                  height={24}                    className="dark:invert"
+
                 />
                 همکاری با ما
               </Link>
@@ -396,14 +403,15 @@ export default function Header() {
                          border text-skin-base hover:bg-skin-card/60 border-skin-border"
               onClick={() => setOpen(false)}
             >
-              <Image src="/svg/phone2.svg" alt="phone" width={20} height={20} />
+              <Image src="/svg/phone2.svg" alt="phone" width={20} height={20}                     className="dark:invert"
+/>
               تماس با ما
             </Link>
 
             <Link
               href="/login"
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md text-white
-                         [background:linear-gradient(180deg,#111414_0%,#272F2F_100%)]"
+                         [background:linear-gradient(180deg,#111414_0%,#272F2F_100%)] dark:invert"
               onClick={() => setOpen(false)}
             >
               <svg

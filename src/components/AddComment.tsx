@@ -17,7 +17,6 @@ export default function AddComment({
   const { data: session, status } = useSession();
   const isAuth = status === "authenticated";
   const userId = (session?.user as any)?.id as string | undefined;
-  const accessToken = (session as any)?.accessToken as string | undefined;
 
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,7 +33,6 @@ export default function AddComment({
         { text, userId },
         {}
       );
-
       setText("");
       onSubmitted?.();
     } catch (err) {
@@ -46,10 +44,8 @@ export default function AddComment({
 
   if (!isAuth) {
     return (
-      <div className="border bg-[#F5F5F5] h-[69.8px] w-full border-[#DADADA] my-9 px-4 flex justify-between items-center rounded-lg">
-        <span className="text-sm font-medium text-[#171717]">
-          برای ثبت نظر خود وارد شوید.
-        </span>
+      <div className="border bg-[#F5F5F5] dark:bg-skin-card w-full border-[#DADADA] dark:border-skin-border my-9 px-4 flex justify-between items-center rounded-lg text-black dark:text-white transition-colors">
+        <span className="text-sm font-medium">برای ثبت نظر خود وارد شوید.</span>
         <button
           onClick={() => signIn()}
           className="bg-[#19CCA7] text-white flex items-center justify-center w-[137px] h-[51px] rounded-md gap-1 text-sm"
@@ -62,18 +58,18 @@ export default function AddComment({
   }
 
   return (
-    <div className="border bg-[#F5F5F5] w-full border-[#DADADA] my-9 p-4 flex flex-col gap-3 rounded-lg text-black">
+    <div className="border bg-[#F5F5F5] dark:bg-skin-card w-full border-[#DADADA] dark:border-skin-border my-9 p-4 flex flex-col gap-3 rounded-lg text-black dark:text-white transition-colors">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="نظر خود را بنویسید..."
-        className="w-full h-18 sm:h-28 p-2 rounded-md border border-gray-300 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#19CCA7]"
+        className="w-full h-18 sm:h-28 p-2 rounded-md border border-gray-300 dark:border-skin-border bg-white dark:bg-skin-bg/5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#19CCA7] transition-colors"
       />
       <div className="flex justify-end">
         <button
           onClick={handleSubmit}
           disabled={loading || !text.trim() || !articleId}
-          className="bg-[#19CCA7] text-white px-6 py-2 rounded-md text-sm disabled:opacity-50  hover:cursor-pointer"
+          className="bg-[#19CCA7] text-white px-6 py-2 rounded-md text-sm disabled:opacity-50 hover:cursor-pointer"
         >
           {loading ? "در حال ارسال..." : "ارسال نظر"}
         </button>

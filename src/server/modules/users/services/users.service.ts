@@ -14,6 +14,23 @@ export type UserDTO = {
   isDeleted?: number;
 };
 
+export type AnalyticsPeriod =
+  | "today"
+  | "yesterday"
+  | "last_7"
+  | "last_30"
+  | "last_90";
+
+export type DailyUsersResult = {
+  labels: string[];
+  series: number[];
+  from: string;
+  to: string;
+  total: number;
+  prevTotal: number;
+  deltaPercent: number;
+};
+
 export class UserService {
   private repoP: Promise<Repository<User>>;
 
@@ -186,5 +203,66 @@ export class UserService {
     } catch (err) {
       throw { status: 500, message: "Failed to get user count", err };
     }
+  }
+
+async getDailyNewUsersMap(
+  period: AnalyticsPeriod
+): Promise<{ from: string; to: string; counts: Record<string, number> }> {
+  const repo = await this.repo();
+
+  const now = new Date();
+  const { start, end } = this.getRange(period, now, "UTC");
+
+  const baseWhere =
+    "(u.deletedAt IS NULL AND (u.isDeleted = 0 OR u.isDeleted IS NULL))";
+
+  const rows = await repo
+    .createQueryBuilder("u")
+    .select("DATE(u.createdAt)", "d")
+    .addSelect("COUNT(*)", "c")
+    .where(baseWhere)
+    .andWhere("u.createdAt >= :from AND u.createdAt < :to", {
+      from: start.toISOString(),
+      to: end.toISOString(),
+    })
+    .groupBy("d")
+    .orderBy("d", "ASC")
+    .getRawMany<{ d: string; c: string }>();
+
+  const counts: Record<string, number> = {};
+  for (const r of rows) counts[this.normalizeDateKey(r.d)] = Number(r.c);
+
+  return { from: start.toISOString(), to: end.toISOString(), counts };
+}
+
+  private getRange(period: AnalyticsPeriod, now: Date, tz: string) {
+    const end = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)
+    );
+    let start = new Date(end);
+    if (period === "today") {
+      start = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+      );
+    } else if (period === "yesterday") {
+      start = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1)
+      );
+      end.setUTCDate(end.getUTCDate() - 1);
+    } else if (period === "last_7") {
+      start.setUTCDate(end.getUTCDate() - 7);
+    } else if (period === "last_30") {
+      start.setUTCDate(end.getUTCDate() - 30);
+    } else if (period === "last_90") {
+      start.setUTCDate(end.getUTCDate() - 90);
+    }
+    return { start, end };
+  }
+
+  private normalizeDateKey(raw: string) {
+    if (!raw) return "";
+    const s = String(raw);
+    if (s.length >= 10) return s.slice(0, 10);
+    return s;
   }
 }

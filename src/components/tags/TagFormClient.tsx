@@ -15,11 +15,7 @@ type Props = {
   onDelete: (formData: FormData) => Promise<void>;
 };
 
-export default function TagFormClient({
-  initialRecord,
-  onSave,
-  onDelete,
-}: Props) {
+export default function TagFormClient({ initialRecord, onSave, onDelete }: Props) {
   const isEdit = !!initialRecord?.id;
 
   const [form, setForm] = useState({ name: "", slug: "", description: "" });
@@ -92,27 +88,25 @@ export default function TagFormClient({
     <section className="w-full">
       <form
         action={onSaveFormAction}
-        className="bg-white rounded-2xl shadow-sm border p-6 md:p-8 w-full mx-auto"
+        className="bg-skin-bg rounded-2xl shadow-sm border border-skin-border p-6 md:p-8 w-full mx-auto"
         dir="rtl"
       >
         {error && (
-          <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
+          <div className="mb-4 rounded border border-red-500 bg-red-900/20 p-3 text-red-300">
             {error}
           </div>
         )}
 
-        {isEdit ? (
-          <input type="hidden" name="id" value={initialRecord!.id} />
-        ) : null}
+        {isEdit ? <input type="hidden" name="id" value={initialRecord!.id} /> : null}
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-6 space-y-6">
             <div>
-              <label className="block text-sm text-black mb-2">نام تگ</label>
+              <label className="block text-sm text-skin-muted mb-2">نام تگ</label>
               <input
                 name="name"
                 type="text"
-                className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-skin-border text-skin-base bg-skin-bg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
                 placeholder="مثلاً: پرایس‌اکشن"
                 value={form.name}
                 onChange={handleChange("name")}
@@ -120,30 +114,28 @@ export default function TagFormClient({
             </div>
 
             <div>
-              <label className="block text-sm text-black mb-2">اسلاگ</label>
+              <label className="block text-sm text-skin-muted mb-2">اسلاگ</label>
               <input
                 name="slug"
                 type="text"
-                className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300 ltr"
+                className="w-full rounded-lg border border-skin-border text-skin-base bg-skin-bg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70 ltr"
                 placeholder="masalan: price-action"
                 value={form.slug}
                 onChange={handleChange("slug")}
               />
-              <p className="text-xs text-gray-400 mt-1">
-                اگر خالی بماند، از روی نام ساخته می‌شود (حروف کوچک و خط تیره).
-              </p>
+              <p className="text-xs text-skin-muted mt-1">اگر خالی بماند، از روی نام ساخته می‌شود (حروف کوچک و خط تیره).</p>
             </div>
           </div>
 
           <div className="md:col-span-6 space-y-6">
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-sm text-black mb-2">توضیح</label>
+                <label className="block text-sm text-skin-muted mb-2">توضیح</label>
                 <CharCounter value={form.description} max={600} />
               </div>
               <textarea
                 name="description"
-                className="w-full min-h-[140px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full min-h-[140px] text-skin-base rounded-lg border border-skin-border bg-skin-bg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
                 placeholder="توضیح کوتاه برای این تگ (اختیاری)…"
                 value={form.description}
                 onChange={handleChange("description")}
@@ -154,7 +146,7 @@ export default function TagFormClient({
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card"
                 onClick={() => {
                   setForm({ name: "", slug: "", description: "" });
                   setSlugTouched(false);
@@ -165,18 +157,14 @@ export default function TagFormClient({
 
               <button
                 type="submit"
-                className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                className="px-5 py-2 rounded-lg bg-skin-accent text-white hover:bg-skin-accent/90 disabled:opacity-50"
                 disabled={saving}
               >
                 {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت تگ"}
               </button>
 
               <form action={onDeleteFormAction} className="contents">
-                <input
-                  type="hidden"
-                  name="id"
-                  value={initialRecord?.id || ""}
-                />
+                <input type="hidden" name="id" value={initialRecord?.id || ""} />
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-lg bg-red-700 text-white hover:bg-red-800 disabled:opacity-50"
@@ -201,9 +189,5 @@ export default function TagFormClient({
 function CharCounter({ value, max }: { value: string; max: number }) {
   const len = value?.length || 0;
   const danger = len > max * 0.9;
-  return (
-    <span className={`text-xs ${danger ? "text-red-500" : "text-gray-400"}`}>
-      {len}/{max}
-    </span>
-  );
+  return <span className={`text-xs ${danger ? "text-red-400" : "text-skin-muted"}`}>{len}/{max}</span>;
 }

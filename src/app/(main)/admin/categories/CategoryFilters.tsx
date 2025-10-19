@@ -45,7 +45,7 @@ export function CategoryFilters() {
         usp.set(k, v);
       }
     });
-    usp.set("page", "1"); 
+    usp.set("page", "1");
     router.push(`?${usp.toString()}`);
   };
 
@@ -79,53 +79,49 @@ export function CategoryFilters() {
   };
 
   return (
-    <form onSubmit={onSubmit} className=" p-4 grid gap-4 md:grid-cols-12">
-      {/* q */}
+    <form onSubmit={onSubmit} className="p-4 grid gap-4 md:grid-cols-12">
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">جستجو</label>
+        <label className="block text-sm text-skin-muted mb-1">جستجو</label>
         <input
           name="q"
           defaultValue={initial.q}
           placeholder="نام / اسلاگ / توضیحات"
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
         />
       </div>
 
-      {/* parentId */}
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">شناسه والد</label>
+        <label className="block text-sm text-skin-muted mb-1">شناسه والد</label>
         <input
           name="parentId"
           defaultValue={initial.parentId}
           placeholder="UUID والد (اختیاری)"
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70 ltr"
         />
       </div>
 
-      {/* createdFrom */}
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">از تاریخ</label>
+        <label className="block text-sm text-skin-muted mb-1">از تاریخ</label>
         <input
           type="date"
           name="createdFrom"
           defaultValue={initial.createdFrom}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
         />
       </div>
 
-      {/* createdTo */}
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">تا تاریخ</label>
+        <label className="block text-sm text-skin-muted mb-1">تا تاریخ</label>
         <input
           type="date"
           name="createdTo"
           defaultValue={initial.createdTo}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
         />
       </div>
-      {/* hasParent */}
+
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">نوع گره</label>
+        <label className="block text-sm text-skin-muted mb-1">نوع گره</label>
         <div className="flex gap-2">
           {[
             { label: "همه", value: "" },
@@ -140,8 +136,8 @@ export function CategoryFilters() {
                 onClick={() => setHasParent(opt.value as "" | "yes" | "no")}
                 className={`px-3 py-1.5 rounded-lg border ${
                   active
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-gray-800 border-gray-200"
+                    ? "bg-skin-accent text-white border-skin-accent"
+                    : "bg-skin-bg text-skin-base border-skin-border hover:bg-skin-card"
                 }`}
                 aria-pressed={active}
               >
@@ -151,13 +147,13 @@ export function CategoryFilters() {
           })}
         </div>
       </div>
-      {/* sortBy */}
+
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">مرتب‌سازی</label>
+        <label className="block text-sm text-skin-muted mb-1">مرتب‌سازی</label>
         <select
           name="sortBy"
           defaultValue={initial.sortBy}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
         >
           {SORT_BY.map((o) => (
             <option key={o.value} value={o.value}>
@@ -167,26 +163,24 @@ export function CategoryFilters() {
         </select>
       </div>
 
-      {/* sortDir */}
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">جهت</label>
+        <label className="block text-sm text-skin-muted mb-1">جهت</label>
         <select
           name="sortDir"
           defaultValue={initial.sortDir}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
         >
           <option value="DESC">نزولی</option>
           <option value="ASC">صعودی</option>
         </select>
       </div>
 
-      {/* pageSize */}
       <div className="md:col-span-3">
-        <label className="block text-sm text-gray-600 mb-1">در صفحه</label>
+        <label className="block text-sm text-skin-muted mb-1">در صفحه</label>
         <select
           name="pageSize"
           defaultValue={initial.pageSize}
-          className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
         >
           <option value="10">10</option>
           <option value="20">20</option>
@@ -196,21 +190,19 @@ export function CategoryFilters() {
         </select>
       </div>
 
-      {/* Actions */}
       <div className="md:col-span-12 flex items-center gap-2 justify-end">
-        {" "}
         <button
           type="button"
           onClick={onReset}
-          className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+          className="px-4 py-2 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card"
         >
           پاکسازی
         </button>
         <button
           type="submit"
-          className="px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-black transition"
+          className="px-4 py-2 rounded-xl bg-skin-accent text-white hover:bg-skin-accent/90 transition"
         >
-          اعمال فیلتر ها{" "}
+          اعمال فیلتر ها
         </button>
       </div>
     </form>

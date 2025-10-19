@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Types
 type CategoryDTO = {
   id: string;
   name: string;
@@ -29,14 +28,12 @@ export default function CategoryForm({
 }) {
   const router = useRouter();
   const isEdit = !!initialCategory?.id;
-
   const [allCategories, setAllCategories] = useState<CategoryDTO[]>(initialAllCategories || []);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState<boolean>(false);
-
   const [form, setForm] = useState({
     name: initialCategory?.name ?? "",
     slug: initialCategory?.slug ?? "",
@@ -44,7 +41,6 @@ export default function CategoryForm({
     parentId: (initialCategory?.parent as any)?.id ?? "",
   });
 
-  // اگر به هر دلیل لیست دسته‌ها خالی بود، fallback به fetch کلاینتی
   useEffect(() => {
     if (initialAllCategories?.length) return;
     let active = true;
@@ -119,44 +115,32 @@ export default function CategoryForm({
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = "نام الزامی است.";
     if (!form.slug.trim()) errs.slug = "اسلاگ الزامی است.";
-
     if (isEdit && form.parentId && form.parentId === initialCategory?.id) {
       errs.parentId = "نمی‌توانید والد را خود دسته قرار دهید.";
     }
-
     if (Object.keys(errs).length) {
       alert(Object.values(errs).join("\n"));
       return;
     }
-
     const payload: CategoryCreatePayload = {
       name: form.name.trim(),
       slug: form.slug.trim(),
       description: form.description?.trim() ? form.description.trim() : null,
       parentId: form.parentId || undefined,
     };
-
     try {
       setSaving(true);
       setError(null);
-
       const url = isEdit ? `/api/categories/${initialCategory!.id}` : `/api/categories`;
       const method = isEdit ? "PATCH" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
         throw new Error(t || "خطا در ذخیره دسته");
       }
-
       if (!isEdit) {
         const json = await res.json().catch(() => null);
         const newId = json?.created?.id;
@@ -165,7 +149,6 @@ export default function CategoryForm({
           return;
         }
       }
-
       alert(isEdit ? "تغییرات ثبت شد ✅" : "دسته با موفقیت ایجاد شد ✅");
       router.refresh();
     } catch (err: any) {
@@ -175,14 +158,10 @@ export default function CategoryForm({
     }
   };
 
-  // UI همانی که داشتید (بدون تغییر استایل)
   return (
     <section className="w-full">
       <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-sm border p-6 md:p-8 w-full mx-auto" dir="rtl">
-        {error && (
-          <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">{error}</div>
-        )}
-
+        {error && <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">{error}</div>}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-5 space-y-6">
             <div>
@@ -195,7 +174,6 @@ export default function CategoryForm({
                 onChange={handleChange("name")}
               />
             </div>
-
             <div>
               <label className="block text-sm text-black mb-2">اسلاگ</label>
               <input
@@ -205,9 +183,8 @@ export default function CategoryForm({
                 value={form.slug}
                 onChange={handleChange("slug")}
               />
-              <p className="text-xs text-gray-400 mt-1">اگر خالی بماند، از روی نام ساخته می‌شود (حروف کوچک و خط تیره).</p>
+              <p className="text-xs text-gray-400 mt-1">اگر خالی بماند، از روی نام ساخته می‌شود.</p>
             </div>
-
             <div>
               <label className="block text-sm text-black mb-2">دسته والد (اختیاری)</label>
               <select
@@ -220,10 +197,9 @@ export default function CategoryForm({
                   <option value={opt.id} key={opt.id}>{opt.label}</option>
                 ))}
               </select>
-              <p className="text-xs text-gray-400 mt-1">والد باعث ساختار درختی می‌شود. حذف والد، این دسته را ریشه‌ای می‌کند.</p>
+              <p className="text-xs text-gray-400 mt-1">والد باعث ساختار درختی می‌شود.</p>
             </div>
           </div>
-
           <div className="md:col-span-7 space-y-6">
             <div>
               <div className="flex items-center justify-between">
@@ -232,13 +208,12 @@ export default function CategoryForm({
               </div>
               <textarea
                 className="w-full min-h-[160px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                placeholder="توضیح کوتاهی درباره این دسته بنویسید (اختیاری)..."
+                placeholder="توضیح کوتاه..."
                 value={form.description}
                 onChange={handleChange("description")}
                 maxLength={1000}
               />
             </div>
-
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
@@ -250,11 +225,9 @@ export default function CategoryForm({
               >
                 پاک‌سازی
               </button>
-
               <button type="submit" className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50" disabled={saving}>
                 {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت دسته"}
               </button>
-
               <button type="button" onClick={handleDelete} className="px-5 py-2 rounded-lg bg-red-700 text-white hover:bg-red-800 disabled:opacity-50" disabled={deleting || !isEdit}>
                 {deleting ? "در حال حذف..." : "حذف دسته"}
               </button>

@@ -2,6 +2,9 @@ import { Suspense } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
 import ArticleForm from "@/components/article/ArticleForm";
 import SeoSettingsForm from "@/components/seo/ArticleSeoSettingsForm";
+import { ArticleService } from "@/server/modules/articles/services/article.service";
+import { CategoryService } from "@/server/modules/categories/services/category.service";
+import { TagsService } from "@/server/modules/tags/services/tag.service";
 
 export const dynamic = "force-dynamic";
 
@@ -32,17 +35,10 @@ export function mediaAbsolute(pathOrUrl?: string | null) {
   if (!pathOrUrl) return "";
   const v = String(pathOrUrl);
   if (/^https?:\/\//i.test(v)) return v;
-  const mediaBase = (process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "").replace(
-    /\/$/,
-    ""
-  );
+  const mediaBase = (process.env.NEXT_PUBLIC_MEDIA_BASE_URL || "").replace(/\/$/, "");
   const path = v.replace(/^\//, "");
   return mediaBase ? `${mediaBase}/${path}` : `/${path}`;
 }
-
-import { ArticleService } from "@/server/modules/articles/services/article.service";
-import { CategoryService } from "@/server/modules/categories/services/category.service";
-import { TagsService } from "@/server/modules/tags/services/tag.service";
 
 async function getInitialData(articleId?: string) {
   const categorySvc = new CategoryService();
@@ -84,28 +80,22 @@ export default async function Page(props: {
 
   const articleId = id?.[0];
   const tabParam = sp?.tab;
-  const tab =
-    (Array.isArray(tabParam) ? tabParam[0] : tabParam) === "seo"
-      ? "seo"
-      : "article";
+  const tab = (Array.isArray(tabParam) ? tabParam[0] : tabParam) === "seo" ? "seo" : "article";
 
   const { cats, tags, article } = await getInitialData(articleId);
   const canSeo = !!article?.id;
 
-  const basePath = `/articles/editor${articleId ? `/${articleId}` : ""}`;
+  const basePath = `/admin/articles/editor${articleId ? `/${articleId}` : ""}`;
   const articleHref = `${basePath}?tab=article`;
   const seoHref = `${basePath}?tab=seo`;
 
   return (
-    <main className="pb-24 pt-6">
+    <main className="pb-24 pt-6 text-skin-base">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
           { label: "مقالات", href: "/articles" },
-          {
-            label: articleId ? "ویرایش مقاله" : "افزودن مقاله",
-            href: basePath,
-          },
+          { label: articleId ? "ویرایش مقاله" : "افزودن مقاله", href: basePath },
         ]}
       />
 
@@ -114,10 +104,10 @@ export default async function Page(props: {
           <div className="inline-flex items-center gap-2 whitespace-nowrap">
             <a
               href={articleHref}
-              className={`px-4 py-2 rounded-lg border text-sm sm:text-base ${
+              className={`px-4 py-2 rounded-lg border text-sm sm:text-base transition-colors ${
                 tab === "article"
-                  ? "bg-black text-white"
-                  : "bg-white text-gray-800 hover:bg-gray-50"
+                  ? "bg-skin-accent text-white border-transparent"
+                  : "bg-skin-card text-skin-base border-skin-border hover:bg-skin-card/60"
               }`}
             >
               اطلاعات مقاله
@@ -125,17 +115,17 @@ export default async function Page(props: {
             {canSeo ? (
               <a
                 href={seoHref}
-                className={`px-4 py-2 rounded-lg border text-sm sm:text-base ${
+                className={`px-4 py-2 rounded-lg border text-sm sm:text-base transition-colors ${
                   tab === "seo"
-                    ? "bg-black text-white"
-                    : "bg-white text-gray-800 hover:bg-gray-50"
+                    ? "bg-skin-accent text-white border-transparent"
+                    : "bg-skin-card text-skin-base border-skin-border hover:bg-skin-card/60"
                 }`}
               >
                 SEO
               </a>
             ) : (
               <span
-                className="px-4 py-2 rounded-lg border bg-gray-100 text-gray-400 cursor-not-allowed text-sm sm:text-base"
+                className="px-4 py-2 rounded-lg border bg-skin-border/30 text-skin-muted cursor-not-allowed text-sm sm:text-base"
                 title="برای سئو، ابتدا مقاله را ذخیره کنید"
               >
                 SEO
@@ -145,24 +135,19 @@ export default async function Page(props: {
         </div>
 
         {tab === "article" ? (
-          <Suspense fallback={<div>در حال بارگذاری فرم…</div>}>
+          <Suspense fallback={<div className="text-skin-muted">در حال بارگذاری فرم…</div>}>
             <ArticleForm
               initialArticle={article}
               categories={cats}
               tags={tags}
               initialThumbUrl={mediaAbsolute(
-                typeof article?.thumbnail === "string"
-                  ? article?.thumbnail
-                  : article?.thumbnail?.url
+                typeof article?.thumbnail === "string" ? article?.thumbnail : article?.thumbnail?.url
               )}
             />
           </Suspense>
         ) : (
-          <Suspense fallback={<div>در حال بارگذاری تب سئو…</div>}>
-            <SeoSettingsForm
-              entityType="article"
-              entityId={article?.id ?? null}
-            />
+          <Suspense fallback={<div className="text-skin-muted">در حال بارگذاری تب سئو…</div>}>
+            <SeoSettingsForm entityType="article" entityId={article?.id ?? null} />
           </Suspense>
         )}
       </div>

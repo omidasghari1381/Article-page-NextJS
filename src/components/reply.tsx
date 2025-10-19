@@ -76,7 +76,7 @@ export default function RepliesAccordion({
   const list = useMemo(() => replies.slice(0, visible), [replies, visible]);
 
   return (
-    <div className={`text-[#2E3232] ${className}`} dir="rtl">
+    <div className={`text-[#2E3232] dark:text-skin-base ${className}`} dir="rtl">
       {showToggle && (
         <button
           onClick={() => setOpen((v) => !v)}
@@ -92,7 +92,7 @@ export default function RepliesAccordion({
             alt="arrow"
             width={11}
             height={5}
-            className={`mr-3 transition-transform duration-200 ${
+            className={`mr-3 transition-transform duration-200 dark:invert ${
               open ? "rotate-90" : "-rotate-90"
             }`}
           />
@@ -102,13 +102,15 @@ export default function RepliesAccordion({
       <div
         id={`replies-panel-${commentId}`}
         className={`transition-all duration-300 overflow-hidden ${
-          open ? "max-h-[9999px] border-t border-slate-100" : "max-h-0"
+          open
+            ? "max-h-[9999px] border-t border-slate-100 dark:border-skin-border"
+            : "max-h-0"
         }`}
       >
         {open && (
           <div className="p-3 md:p-4">
             {loading && (
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-slate-500 dark:text-skin-muted">
                 در حال دریافت پاسخ‌ها…
               </div>
             )}
@@ -125,10 +127,10 @@ export default function RepliesAccordion({
                   return (
                     <li
                       key={r.id}
-                      className="rounded-xl border border-slate-200 p-2.5 md:p-3.5"
+                      className="rounded-xl border border-slate-200 dark:border-skin-border p-2.5 md:p-3.5 transition-colors"
                     >
                       <div className="flex items-start gap-2.5 md:gap-3.5">
-                        <div className="relative w-8 h-8 md:w-9 md:h-9 overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100 shrink-0">
+                        <div className="relative w-8 h-8 md:w-9 md:h-9 overflow-hidden rounded-full ring-1 ring-slate-200 dark:ring-skin-border bg-slate-100 dark:bg-skin-card shrink-0">
                           <Image
                             src={"/image/author.png"}
                             alt={"author"}
@@ -140,15 +142,15 @@ export default function RepliesAccordion({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2 w-full">
                             <div className="truncate text-[11px] md:text-xs">
-                              <span className="font-bold text-slate-900">
+                              <span className="font-bold text-slate-900 dark:text-white">
                                 {author}
                               </span>
                             </div>
-                            <div className="shrink-0 text-[10px] md:text-xs text-slate-500 flex items-center gap-1">
+                            <div className="shrink-0 text-[10px] md:text-xs text-slate-500 dark:text-skin-muted flex items-center gap-1">
                               <span>{when}</span>
                             </div>
                           </div>
-                          <p className="my-2.5 md:my-4 text-[14px] md:text-[15px] leading-7 text-slate-700 break-words">
+                          <p className="my-2.5 md:my-4 text-[14px] md:text-[15px] leading-7 text-slate-700 dark:text-skin-base break-words">
                             {r.text}
                           </p>
                         </div>
@@ -163,7 +165,7 @@ export default function RepliesAccordion({
               <div className="mt-3">
                 <button
                   onClick={() => setVisible((v) => v + pageSize)}
-                  className="w-full md:w-auto px-3 py-2 md:px-0 md:py-0 text-xs text-emerald-700 hover:underline rounded-lg md:rounded-none border border-slate-200 md:border-0"
+                  className="w-full md:w-auto px-3 py-2 md:px-0 md:py-0 text-xs text-emerald-700 hover:underline rounded-lg md:rounded-none border border-slate-200 dark:border-skin-border md:border-0 transition-colors"
                 >
                   نمایش بیشتر
                 </button>

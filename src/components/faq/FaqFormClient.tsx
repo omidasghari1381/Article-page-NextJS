@@ -77,38 +77,39 @@ export default function FaqFormClient() {
   };
 
   return (
-    <section className="w-full">
+    <section className="w-full" dir="rtl">
       <form
         onSubmit={onSubmit}
-        className="bg-white rounded-2xl shadow-sm border p-6 md:p-8 w-full mx-auto"
-        dir="rtl"
+        className="bg-skin-bg rounded-2xl shadow-sm border border-skin-border p-6 md:p-8 w-full mx-auto"
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-4 space-y-6">
             <div>
-              <label className="block text-sm text-gray-600 mb-2">سوال</label>
+              <label className="block text-sm text-skin-muted mb-2">سوال</label>
               <input
                 type="text"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
                 placeholder="مثلاً: چگونه در فارکس ضرر نکنیم"
                 value={form.question}
                 onChange={handleChange("question")}
               />
             </div>
+
             <div>
-              <label className="block text-sm text-gray-600 mb-2">پاسخ</label>
+              <label className="block text-sm text-skin-muted mb-2">پاسخ</label>
               <input
                 type="text"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                placeholder="مثلاً: چگونه در فارکس ضرر نکنیم"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
+                placeholder="پاسخ مربوط به سوال"
                 value={form.answer}
                 onChange={handleChange("answer")}
               />
             </div>
+
             <div>
-              <label className="block text-sm text-black mb-2">دسته‌بندی</label>
+              <label className="block text-sm text-skin-muted mb-2">دسته‌بندی</label>
               <select
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
                 value={form.category}
                 onChange={handleChange("category")}
               >
@@ -121,13 +122,12 @@ export default function FaqFormClient() {
               </select>
             </div>
           </div>
+
           <div className="md:col-span-8 space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6"></div>
-            <div></div>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card"
                 onClick={() =>
                   setForm({
                     question: "",
@@ -138,9 +138,10 @@ export default function FaqFormClient() {
               >
                 پاک‌سازی
               </button>
+
               <button
                 type="submit"
-                className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
+                className="px-5 py-2 rounded-lg bg-skin-accent text-white hover:bg-skin-accent/90"
               >
                 ثبت سوال
               </button>

@@ -24,14 +24,11 @@ async function fetchMedia(searchParams: {
   offset?: string;
 }): Promise<ListRes> {
   const qs = new URLSearchParams();
-
   if (searchParams.q) qs.set("q", searchParams.q);
-  if (searchParams.type && searchParams.type !== "all")
-    qs.set("type", searchParams.type);
+  if (searchParams.type && searchParams.type !== "all") qs.set("type", searchParams.type);
   if (searchParams.sort) qs.set("sort", searchParams.sort);
   qs.set("limit", searchParams.limit ?? "100");
   if (searchParams.offset) qs.set("offset", searchParams.offset);
-
   const url = absolute(`/api/media?${qs.toString()}`);
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to load media");
@@ -55,8 +52,8 @@ export default async function MediaListPage({
   const { items, total } = await fetchMedia(sp);
 
   return (
-    <main className="pb-28 pt-4 sm:pt-6">
-      <div className="mx-auto w-full max-w-8xl sm:px-6 ">
+    <main className="pb-28 pt-4 sm:pt-6 text-skin-base">
+      <div className="mx-auto w-full max-w-8xl sm:px-6">
         <Breadcrumb
           items={[
             { label: "مای پراپ", href: "/" },
@@ -64,21 +61,16 @@ export default async function MediaListPage({
           ]}
         />
 
-        <div className="mt-4 sm:mt-6 flex items-center justify-between text-gray-800">
-          <h1 className="text-xl sm:text-2xl font-semibold">لیست مدیا</h1>
+        <div className="mt-4 sm:mt-6 flex items-center justify-between">
+          <h1 className="text-xl sm:text-2xl font-semibold text-skin-heading">لیست مدیا</h1>
         </div>
 
-        <section
-          className="mt-4 sm:mt-6 bg-white rounded-2xl shadow-sm border p-4 sm:p-6 lg:p-8"
-          dir="rtl"
-        >
-          <MediaFilters
-            initial={{ q: sp.q ?? "", type: sp.type!, sort: sp.sort! }}
-          />
+        <section className="mt-4 sm:mt-6 bg-skin-card border border-skin-border rounded-2xl shadow-sm p-4 sm:p-6 lg:p-8" dir="rtl">
+          <MediaFilters initial={{ q: sp.q ?? "", type: sp.type!, sort: sp.sort! }} />
         </section>
 
-        <div className="text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4 mb-2">
-          مجموع نتایج: <b>{total}</b>
+        <div className="text-xs sm:text-sm text-skin-muted mt-3 sm:mt-4 mb-2">
+          مجموع نتایج: <b className="text-skin-heading">{total}</b>
         </div>
 
         <MediaGrid items={items} />

@@ -1,3 +1,4 @@
+// app/admin/tags/page.tsx
 import Breadcrumb from "@/components/Breadcrumb";
 import TagFilters, { type TagFilterState } from "@/components/tags/TagFilters";
 import TagCard, { type TagDTO } from "@/components/tags/TagCard";
@@ -24,28 +25,19 @@ async function getTagsViaService(search: {
   perPage?: string;
 }): Promise<ListResponse> {
   const svc = new TagsService();
-
   const page = Math.max(1, Number(search.page ?? "1"));
   const perPage = Math.max(1, Math.min(100, Number(search.perPage ?? "20")));
   const q = typeof search.q === "string" ? search.q : "";
   const sortBy = (search.sortBy ?? "createdAt") as TagFilterState["sortBy"];
   const sortDir = (search.sortDir ?? "DESC") as TagFilterState["sortDir"];
-
-  const {
-    items,
-    total,
-    page: pageNum,
-    perPage: per,
-  } = await svc.listTags({
+  const { items, total, page: pageNum, perPage: per } = await svc.listTags({
     q,
     page,
     perPage,
     sortBy,
     sortDir,
   });
-
   const pages = per > 0 ? Math.max(1, Math.ceil(total / per)) : 1;
-
   const normalizedItems: TagDTO[] = items.map((t) => ({
     id: t.id,
     name: t.name,
@@ -54,7 +46,6 @@ async function getTagsViaService(search: {
     createdAt: t.createdAt?.toString(),
     updatedAt: t.updatedAt?.toString(),
   }));
-
   return { items: normalizedItems, total, page: pageNum, perPage: per, pages };
 }
 
@@ -65,23 +56,13 @@ export default async function Page({
 }) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
-  const sortBy = (
-    typeof sp.sortBy === "string" ? sp.sortBy : "createdAt"
-  ) as TagFilterState["sortBy"];
-  const sortDir = (
-    typeof sp.sortDir === "string" ? sp.sortDir : "DESC"
-  ) as TagFilterState["sortDir"];
+  const sortBy = (typeof sp.sortBy === "string" ? sp.sortBy : "createdAt") as TagFilterState["sortBy"];
+  const sortDir = (typeof sp.sortDir === "string" ? sp.sortDir : "DESC") as TagFilterState["sortDir"];
   const page = typeof sp.page === "string" ? sp.page : "1";
   const perPageParam = typeof sp.perPage === "string" ? sp.perPage : "20";
   const debug = sp.__debug === "1";
 
-  const {
-    items,
-    total,
-    pages,
-    perPage,
-    page: pageNum,
-  } = await getTagsViaService({
+  const { items, total, pages, perPage, page: pageNum } = await getTagsViaService({
     q,
     sortBy,
     sortDir,
@@ -106,7 +87,7 @@ export default async function Page({
   };
 
   return (
-    <main className="pb-24 pt-6" dir="rtl">
+    <main className="pb-24 pt-6 text-skin-base" dir="rtl">
       <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
         <Breadcrumb
           items={[
@@ -114,11 +95,9 @@ export default async function Page({
             { label: "تگ‌ها", href: "/admin/tags" },
           ]}
         />
-
-        <div className="mt-4 sm:mt-6 flex items-center justify-between text-gray-800">
-          <h1 className="text-xl sm:text-2xl font-semibold">لیست تگ‌ها</h1>
+        <div className="mt-4 sm:mt-6 flex items-center justify-between">
+          <h1 className="text-xl sm:text-2xl font-semibold text-skin-heading">لیست تگ‌ها</h1>
         </div>
-
         <TagFilters
           value={{
             q,
@@ -128,10 +107,9 @@ export default async function Page({
             pageSize: Number(perPageParam),
           }}
         />
-
-        <section className="mt-6" dir="rtl">
+        <section className="mt-6">
           {debug ? (
-            <pre className="mb-4 rounded bg-gray-50 p-3 text-xs text-gray-700 overflow-auto">
+            <pre className="mb-4 rounded bg-skin-card text-skin-base border border-skin-border p-3 text-xs overflow-auto">
               {JSON.stringify(
                 {
                   in: { q, sortBy, sortDir, page, perPageParam },
@@ -142,66 +120,54 @@ export default async function Page({
               )}
             </pre>
           ) : null}
-
           <div className="grid grid-cols-1 gap-3 sm:gap-4">
             {items.length === 0 ? (
-              <div className="px-4 py-10 text-center text-gray-500">
-                آیتمی یافت نشد.
-              </div>
+              <div className="px-4 py-10 text-center text-skin-muted">آیتمی یافت نشد.</div>
             ) : (
               items.map((t) => (
-                <TagCard
-                  key={t.id}
-                  item={t}
-                  editHref={(id) => `/admin/tags/editor/${id}`}
-                />
+                <TagCard key={t.id} item={t} editHref={(id) => `/admin/tags/editor/${id}`} />
               ))
             )}
           </div>
-
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 justify-between px-0 py-6">
-            <div className="text-sm text-gray-500 order-2 sm:order-1 text-center sm:text-right">
+            <div className="text-sm text-skin-muted order-2 sm:order-1 text-center sm:text-right">
               {total > 0 ? (
                 <>
                   نمایش{" "}
-                  <strong>
-                    {(pageNum - 1) * perPage + 1}–
-                    {Math.min(pageNum * perPage, total)}
+                  <strong className="text-skin-base">
+                    {(pageNum - 1) * perPage + 1}–{Math.min(pageNum * perPage, total)}
                   </strong>{" "}
-                  از <strong>{total}</strong>
+                  از <strong className="text-skin-base">{total}</strong>
                 </>
               ) : (
                 "—"
               )}
             </div>
-
             <div className="order-1 sm:order-2 flex items-center gap-2">
               {canPrev ? (
                 <Link
-                  className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card whitespace-nowrap"
                   href={buildUrl(pageNum - 1)}
                 >
                   قبلی
                 </Link>
               ) : (
-                <span className="px-3 py-1.5 rounded-lg border text-gray-400 bg-gray-50 cursor-not-allowed whitespace-nowrap">
+                <span className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-muted bg-skin-card cursor-not-allowed whitespace-nowrap">
                   قبلی
                 </span>
               )}
-
-              <span className="text-sm text-gray-800">
+              <span className="text-sm text-skin-base">
                 صفحه {pageNum} از {safePages}
               </span>
-
               {canNext ? (
                 <Link
-                  className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card whitespace-nowrap"
                   href={buildUrl(pageNum + 1)}
                 >
                   بعدی
                 </Link>
               ) : (
-                <span className="px-3 py-1.5 rounded-lg border text-gray-400 bg-gray-50 cursor-not-allowed whitespace-nowrap">
+                <span className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-muted bg-skin-card cursor-not-allowed whitespace-nowrap">
                   بعدی
                 </span>
               )}

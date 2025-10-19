@@ -23,7 +23,7 @@ function normalizeCategory(raw: any): CategoryNode {
     createdAt:
       typeof raw.createdAt === "string"
         ? raw.createdAt
-        : new Date(raw.createdAt).toISOString(),
+        : new Date(raw.createdAt).toString?.() || String(raw.createdAt),
     depth: typeof raw.depth === "number" ? raw.depth : 0,
     parent: raw.parent
       ? {
@@ -95,26 +95,26 @@ export default async function Page({
   const { items: categories, total } = await fetchCategoriesFromService(sp);
 
   return (
-    <main className="pb-24 pt-6 px-20">
+    <main className="pb-24 pt-6 px-4 md:px-10 2xl:px-20">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
           { label: "دسته ها", href: "/categories" },
         ]}
       />
-      <div className="mt-6 flex items-center justify-between text-gray-800">
+      <div className="mt-6 flex items-center justify-between text-skin-base">
         <h1 className="text-2xl font-semibold">لیست دسته ها</h1>
       </div>
-      <section className="mt-6 bg-white rounded-2xl shadow-sm border p-6 md:p-8">
+      <section className="mt-6 bg-skin-bg rounded-2xl shadow-sm border border-skin-border p-6 md:p-8">
         <CategoryFilters />
       </section>
-      <div className=" py-4 my-10">
-        <div className="text-black text-2xl">
+      <div className="py-4 my-10">
+        <div className="text-skin-base text-2xl">
           <span>تعداد دسته‌ها </span>
           <span>({total})</span>
         </div>
-        <div className="mt-6 bg-white rounded-2xl ">
-          <div className="divide-y">
+        <div className="mt-6 bg-skin-bg rounded-2xl border border-skin-border">
+          <div className="divide-y divide-skin-border">
             {categories.map((c: CategoryNode) => (
               <CategoryRow key={c.id} item={c} />
             ))}

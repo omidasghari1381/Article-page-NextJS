@@ -18,9 +18,7 @@ function getBaseOrigin() {
   if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_BASE_URL) {
     return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/+$/, "");
   }
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
+  if (typeof window !== "undefined") return window.location.origin;
   return "";
 }
 
@@ -30,8 +28,7 @@ function toAbsoluteUrl(url: string): string {
     return u.href;
   } catch {
     const base = getBaseOrigin();
-    return new URL(url.replace(/^\/+/, "/"), base || "http://localhost:3000")
-      .href;
+    return new URL(url.replace(/^\/+/, "/"), base || "http://localhost:3000").href;
   }
 }
 
@@ -80,47 +77,32 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
         {gridItems.map((m) => (
           <button
             key={m.id}
-            className="border rounded-xl p-2 text-right hover:shadow transition bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="border border-skin-border rounded-xl p-2 text-right hover:shadow transition bg-skin-card focus:outline-none focus:ring-2 focus:ring-skin-border/70"
             onClick={() => setSelected(m)}
             title={m.name}
           >
-            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
+            <div className="aspect-square rounded-lg overflow-hidden bg-skin-border/40 mb-2">
               {m.type === "image" ? (
-                <img
-                  src={toAbsoluteUrl(m.url)}
-                  alt={m.name}
-                  className="w-full h-full object-cover"
-                />
+                <img src={toAbsoluteUrl(m.url)} alt={m.name} className="w-full h-full object-cover" />
               ) : (
-                <video
-                  src={toAbsoluteUrl(m.url)}
-                  className="w-full h-full object-cover"
-                />
+                <video src={toAbsoluteUrl(m.url)} className="w-full h-full object-cover" />
               )}
             </div>
-            <div className="line-clamp-1 text-sm font-medium text-black">
-              {m.name}
-            </div>
+            <div className="line-clamp-1 text-sm font-medium text-skin-heading">{m.name}</div>
           </button>
         ))}
       </div>
 
       {selected ? (
-        <div
-          className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50"
-          onClick={() => setSelected(null)}
-        >
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px] flex items-end sm:items-center justify-center z-50" onClick={() => setSelected(null)}>
           <div
-            className="bg-white w-full sm:w-[92vw] sm:max-w-2xl rounded-t-2xl sm:rounded-2xl p-4 sm:p-5 shadow-lg max-h-[92vh] overflow-auto"
+            className="bg-skin-card text-skin-base w-full sm:w-[92vw] sm:max-w-2xl rounded-t-2xl sm:rounded-2xl p-4 sm:p-5 shadow-lg border border-skin-border max-h-[92vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 justify-between mb-4">
-              <h2 className="text-lg font-semibold">جزئیات مدیا</h2>
+              <h2 className="text-lg font-semibold text-skin-heading">جزئیات مدیا</h2>
               <div className="flex items-center gap-2 sm:gap-3">
-                <button
-                  className="text-black px-4 py-2 rounded-lg border hover:bg-gray-50"
-                  onClick={() => setSelected(null)}
-                >
+                <button className="text-skin-base px-4 py-2 rounded-lg border border-skin-border hover:bg-skin-card/60" onClick={() => setSelected(null)}>
                   بستن
                 </button>
               </div>
@@ -128,75 +110,54 @@ export function MediaGrid({ items }: { items: MediaDTO[] }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
               <div>
-                <div className="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                <div className="aspect-square rounded-xl overflow-hidden bg-skin-border/40">
                   {selected.type === "image" ? (
-                    <img
-                      src={toAbsoluteUrl(selected.url)}
-                      alt={selected.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={toAbsoluteUrl(selected.url)} alt={selected.name} className="w-full h-full object-cover" />
                   ) : (
-                    <video
-                      src={toAbsoluteUrl(selected.url)}
-                      className="w-full h-full object-cover"
-                      controls
-                    />
+                    <video src={toAbsoluteUrl(selected.url)} className="w-full h-full object-cover" controls />
                   )}
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <div className="text-sm text-gray-600 mb-1">نام</div>
-                  <div className="font-medium text-black break-words">
-                    {selected.name}
-                  </div>
+                  <div className="text-sm text-skin-muted mb-1">نام</div>
+                  <div className="font-medium text-skin-heading break-words">{selected.name}</div>
                 </div>
 
                 <div>
-                  <div className="text-sm text-gray-600 mb-1">توضیحات</div>
-                  <div className="text-gray-800 whitespace-pre-wrap break-words">
-                    {selected.description || "—"}
-                  </div>
+                  <div className="text-sm text-skin-muted mb-1">توضیحات</div>
+                  <div className="text-skin-base whitespace-pre-wrap break-words">{selected.description || "—"}</div>
                 </div>
 
                 <div>
-                  <div className="text-sm text-gray-600 mb-1">آدرس (URL)</div>
+                  <div className="text-sm text-skin-muted mb-1">آدرس (URL)</div>
                   <button
-                    className="w-full text-right text-blue-700 underline break-all hover:opacity-80"
+                    className="w-full text-right underline break-all hover:opacity-90 text-skin-accent"
                     onClick={() => handleCopyUrl(selected)}
                     title="برای کپی کلیک کنید"
                   >
                     {toAbsoluteUrl(selected.url)}
                   </button>
-                  {copied === selected.id && (
-                    <div className="text-xs text-green-600 mt-1">
-                      آدرس کامل کپی شد ✓
-                    </div>
-                  )}
+                  {copied === selected.id && <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">آدرس کامل کپی شد ✓</div>}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-2">
-                  <Link
-                    href={`/admin/media/editor/${selected.id}`}
-                    className="px-4 py-2 rounded-xl bg-black text-white hover:bg-gray-800"
-                  >
+                  <Link href={`/admin/media/editor/${selected.id}`} className="px-4 py-2 rounded-xl bg-skin-accent hover:bg-skin-accent-hover text-white">
                     ویرایش
                   </Link>
-
                   <a
                     href={toAbsoluteUrl(selected.url)}
                     target="_blank"
-                    className="text-black px-4 py-2 rounded-xl border hover:bg-gray-50"
                     rel="noreferrer"
+                    className="text-skin-base px-4 py-2 rounded-xl border border-skin-border hover:bg-skin-card/60"
                   >
                     باز کردن فایل
                   </a>
-
                   <button
                     onClick={() => handleDelete(selected)}
                     disabled={deleting}
-                    className="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    className="px-4 py-2 rounded-xl border border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-60"
                     title="حذف مدیا"
                   >
                     {deleting ? "در حال حذف..." : "حذف"}

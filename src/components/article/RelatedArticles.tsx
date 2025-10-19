@@ -64,7 +64,7 @@ export default function RelatedArticles({
     null;
 
   return (
-    <section className="mt-14" >
+    <section className="mt-14">
       <div className="flex items-center mb-6 gap-4">
         <Image
           src="/svg/Rectangle2.svg"
@@ -72,24 +72,22 @@ export default function RelatedArticles({
           width={5.73}
           height={31.11}
         />
-        <h3 className="font-bold text-2xl text-[#2E3232] whitespace-nowrap mt-2">
+        <h3 className="font-bold text-2xl text-[#2E3232] whitespace-nowrap mt-2 dark:text-skin-base">
           مقالات مشابه
         </h3>
       </div>
 
-      {/* کارت و عکس — ریسپانسیو */}
       <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-stretch w-full">
-
         <SideImage
           thumbnail={thumbnail ?? undefined}
           category={categoryName}
-          // نسبت 16:9 در موبایل، اندازه ثابت در دسکتاپ
           mobileAspectClass="aspect-[16/9]"
           desktopSizeClass="lg:aspect-auto lg:h-[163.5px] lg:w-[291.14px]"
           rounded="rounded-xl"
           badgeClass="bottom-2 right-2 sm:bottom-2 sm:right-2"
           categoryTextClass="bottom-2.5 right-4 sm:bottom-2.5 sm:right-4 text-xs"
-        />        <InlineNextCard
+        />{" "}
+        <InlineNextCard
           author={author}
           createdAt={createdAt}
           subject={subject}

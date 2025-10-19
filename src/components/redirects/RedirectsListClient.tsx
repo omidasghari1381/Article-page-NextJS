@@ -1,3 +1,4 @@
+// src/components/redirects/RedirectsListClient.tsx
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -11,8 +12,8 @@ export type RedirectDTO = {
   toPath: string;
   statusCode: 301 | 302 | 307 | 308;
   isActive: boolean;
-  createdAt: string; // ISO
-  updatedAt: string; // ISO
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ListResponse = {
@@ -55,14 +56,11 @@ export default function RedirectsListClient({
   const [sortDir, setSortDir] = useState<"ASC" | "DESC">("DESC");
   const [page, setPage] = useState(initialData.page || 1);
   const [pageSize, setPageSize] = useState(initialData.pageSize || 20);
-
-  // ------- داده‌ها -------
   const [data, setData] = useState<ListResponse | null>(initialData);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // ------- QueryString ساز -------
   const queryString = useMemo(() => {
     const p = new URLSearchParams();
     if (q.trim()) p.set("q", q.trim());
@@ -181,9 +179,10 @@ export default function RedirectsListClient({
         const t = await res.text().catch(() => "");
         throw new Error(t || "به‌روزرسانی وضعیت ناموفق بود");
       }
-      await fetchData();
     } catch (e: any) {
       alert(e?.message || "خطای به‌روزرسانی");
+    } finally {
+      await fetchData();
     }
   };
 
@@ -191,37 +190,37 @@ export default function RedirectsListClient({
   const redirects = dataSafe.items ?? [];
 
   return (
-    <main className="pb-24 pt-6">
+    <main className="pb-24 pt-6 text-skin-base">
       <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
         <Breadcrumb
           items={[
             { label: "مای پراپ", href: "/" },
-            { label: "ریدایرکت‌ها", href: "admin/redirects" },
+            { label: "ریدایرکت‌ها", href: "/admin/redirects" },
           ]}
         />
-        <section
-          className="mt-6 bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8"
-        >
+
+        <section className="mt-6 bg-skin-card rounded-2xl shadow-sm border border-skin-border p-4 sm:p-6 2xl:p-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 2xl:gap-8">
             <div className="md:col-span-3">
-              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">
+              <label className="block text-sm text-skin-muted mb-1 sm:mb-2">
                 جستجو
               </label>
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="روی from/to جستجو می‌کند…"
-                className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300 ltr"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-skin-border/70 ltr"
               />
             </div>
+
             <div className="md:col-span-3">
-              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">
+              <label className="block text-sm text-skin-muted mb-1 sm:mb-2">
                 فعال/غیرفعال
               </label>
               <select
                 value={isActive}
                 onChange={(e) => setIsActive(e.target.value as any)}
-                className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
               >
                 <option value="">همه</option>
                 <option value="true">فقط فعال</option>
@@ -230,31 +229,31 @@ export default function RedirectsListClient({
             </div>
 
             <div className="md:col-span-3">
-              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">
+              <label className="block text-sm text-skin-muted mb-1 sm:mb-2">
                 از تاریخ (ایجاد)
               </label>
               <input
                 type="date"
                 value={createdFrom}
                 onChange={(e) => setCreatedFrom(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
               />
             </div>
 
             <div className="md:col-span-3">
-              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">
+              <label className="block text-sm text-skin-muted mb-1 sm:mb-2">
                 تا تاریخ (ایجاد)
               </label>
               <input
                 type="date"
                 value={createdTo}
                 onChange={(e) => setCreatedTo(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 text-gray-800 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
               />
             </div>
 
             <div className="md:col-span-6">
-              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">
+              <label className="block text-sm text-skin-muted mb-1 sm:mb-2">
                 کدهای وضعیت (چندانتخاب)
               </label>
               <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -265,10 +264,10 @@ export default function RedirectsListClient({
                       key={c}
                       type="button"
                       onClick={() => toggleStatus(c as any)}
-                      className={`px-3 py-1.5 rounded-lg border whitespace-nowrap ${
+                      className={`px-3 py-1.5 rounded-lg border whitespace-nowrap transition ${
                         active
-                          ? "bg-black text-white border-black"
-                          : "bg-white text-gray-800 border-gray-200"
+                          ? "bg-skin-accent text-white border-transparent hover:opacity-90"
+                          : "bg-skin-card text-skin-base border-skin-border hover:bg-skin-card/60"
                       }`}
                     >
                       {c}
@@ -279,13 +278,13 @@ export default function RedirectsListClient({
             </div>
 
             <div className="md:col-span-3">
-              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">
+              <label className="block text-sm text-skin-muted mb-1 sm:mb-2">
                 مرتب‌سازی بر اساس
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
               >
                 {sortableFields.map((f) => (
                   <option key={f} value={f}>
@@ -296,13 +295,13 @@ export default function RedirectsListClient({
             </div>
 
             <div className="md:col-span-3">
-              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">
+              <label className="block text-sm text-skin-muted mb-1 sm:mb-2">
                 جهت مرتب‌سازی
               </label>
               <select
                 value={sortDir}
                 onChange={(e) => setSortDir(e.target.value as any)}
-                className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
               >
                 <option value="DESC">نزولی</option>
                 <option value="ASC">صعودی</option>
@@ -310,13 +309,13 @@ export default function RedirectsListClient({
             </div>
 
             <div className="md:col-span-3">
-              <label className="block text-sm text-gray-800 mb-1 sm:mb-2">
+              <label className="block text-sm text-skin-muted mb-1 sm:mb-2">
                 تعداد در صفحه
               </label>
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
-                className="w-full rounded-lg border border-gray-200 bg-white text-gray-800 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
               >
                 {[10, 20, 50, 100].map((n) => (
                   <option key={n} value={n}>
@@ -328,22 +327,22 @@ export default function RedirectsListClient({
 
             <div className="md:col-span-12 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 justify-end">
               <Link
-                href="/redirects/editor"
-                className="px-4 py-2.5 rounded-lg border text-gray-800 hover:bg-gray-50 text-center whitespace-nowrap"
+                href="/admin/redirects/editor"
+                className="px-4 py-2.5 rounded-lg border border-skin-border bg-skin-card text-skin-base hover:bg-skin-card/60 text-center whitespace-nowrap"
               >
                 +افزودن ریدایرکت
               </Link>
               <button
                 type="button"
                 onClick={resetFilters}
-                className="px-4 py-2.5 rounded-lg border text-gray-800 hover:bg-gray-50 font-medium whitespace-nowrap"
+                className="px-4 py-2.5 rounded-lg border border-skin-border bg-skin-card text-skin-base hover:bg-skin-card/60 whitespace-nowrap"
               >
                 پاکسازی
               </button>
               <button
                 type="button"
                 onClick={fetchData}
-                className="px-5 py-2.5 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap"
+                className="px-5 py-2.5 rounded-lg bg-skin-accent hover:bg-skin-accent-hover text-white disabled:opacity-50 whitespace-nowrap"
                 disabled={loading}
               >
                 {loading ? "در حال به‌روزرسانی…" : "اعمال فیلترها"}
@@ -354,18 +353,18 @@ export default function RedirectsListClient({
 
         <section className="mt-6">
           {error && (
-            <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
+            <div className="mb-4 rounded border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40 p-3 text-red-700 dark:text-red-300">
               {error}
             </div>
           )}
 
           <div className="grid grid-cols-1 gap-3 sm:gap-4">
             {loading ? (
-              <div className="px-4 py-10 text-center text-gray-800">
+              <div className="px-4 py-10 text-center text-skin-base">
                 در حال بارگذاری…
               </div>
             ) : (dataSafe?.items?.length ?? 0) === 0 ? (
-              <div className="px-4 py-10 text-center text-gray-500">
+              <div className="px-4 py-10 text-center text-skin-muted">
                 آیتمی یافت نشد.
               </div>
             ) : (
@@ -382,18 +381,19 @@ export default function RedirectsListClient({
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 justify-between px-0 py-6">
-            <div className="text-sm text-gray-500 order-2 sm:order-1 text-center sm:text-right">
+            <div className="text-sm text-skin-muted order-2 sm:order-1 text-center sm:text-right">
               {dataSafe ? (
                 <>
                   نمایش{" "}
-                  <strong>
+                  <strong className="text-skin-base">
                     {(dataSafe.page - 1) * dataSafe.pageSize + 1}–
                     {Math.min(
                       dataSafe.page * dataSafe.pageSize,
                       dataSafe.total
                     )}
                   </strong>{" "}
-                  از <strong>{dataSafe.total}</strong>
+                  از{" "}
+                  <strong className="text-skin-base">{dataSafe.total}</strong>
                 </>
               ) : (
                 "—"
@@ -401,17 +401,17 @@ export default function RedirectsListClient({
             </div>
             <div className="order-1 sm:order-2 flex items-center gap-2">
               <button
-                className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg border border-skin-border bg-skin-card text-skin-base hover:bg-skin-card/60 disabled:opacity-50"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={loading || (dataSafe?.page || 1) <= 1}
               >
                 قبلی
               </button>
-              <span className="text-sm text-gray-800">
+              <span className="text-sm text-skin-base">
                 صفحه {dataSafe?.page || 1} از {dataSafe?.pages || 1}
               </span>
               <button
-                className="px-3 py-1.5 rounded-lg border text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg border border-skin-border bg-skin-card text-skin-base hover:bg-skin-card/60 disabled:opacity-50"
                 onClick={() =>
                   setPage((p) =>
                     dataSafe ? Math.min(dataSafe.pages, p + 1) : p + 1

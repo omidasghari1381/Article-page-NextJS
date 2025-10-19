@@ -6,7 +6,7 @@ export default function Video() {
     <section className="my-10">
       <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
+          <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} className="dark:invert"/>
           <h3 className="text-xl font-semibold text-[#1C2121] dark:text-white">
             آخرین ویدیوها
           </h3>
@@ -44,7 +44,6 @@ export default function Video() {
               alt="play"
               width={160}
               height={160}
-              className="dark:invert"
             />
           </div>
         </div>

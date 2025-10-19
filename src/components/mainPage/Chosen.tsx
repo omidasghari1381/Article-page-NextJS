@@ -29,16 +29,25 @@ export default function Chosen({
   const [selected, setSelected] = useState<articleCategoryEnum | null>(null);
 
   const baseBtn =
-    "text-sm font-semibold px-4 py-2 rounded-md border border-skin-border bg-skin-bg text-skin-base hover:bg-skin-card/60 transition whitespace-nowrap";
+    "text-sm font-semibold px-4 py-2 rounded-md border transition whitespace-nowrap duration-200";
   const active =
-    "text-white bg-skin-accent hover:opacity-90 border-transparent";
-  const inactive = "";
+    "bg-[#1B1B1B] text-white border-transparent dark:bg-white dark:text-[#1B1B1B]";
+  const inactive =
+    "bg-transparent text-skin-base border-skin-border hover:bg-skin-card/60 dark:hover:bg-skin-card/80";
 
   return (
     <section className="text-skin-base">
       <div className="flex items-center gap-3">
-        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
-        <h3 className="text-xl font-semibold text-skin-heading">انتخاب سردبیر</h3>
+        <Image
+          src="/svg/Rectangle.svg"
+          alt="thumb"
+          width={8}
+          height={36}
+          className="dark:invert"
+        />
+        <h3 className="text-xl font-semibold text-skin-heading">
+          انتخاب سردبیر
+        </h3>
       </div>
 
       <div className="my-5 flex gap-2 overflow-x-auto no-scrollbar sm:flex-wrap sm:overflow-visible">
@@ -93,13 +102,20 @@ function ArticleCard({ article }: { article: ArticleLite | null }) {
               alt="date"
               width={20}
               height={20}
+              className="dark:invert"
             />
             <span>
               {article?.createdAt ? timeAgoFa(article.createdAt) : "—"}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Image src={"/svg/eye.svg"} alt="views" width={18} height={14} />
+            <Image
+              src={"/svg/eye.svg"}
+              alt="views"
+              width={18}
+              height={14}
+              className="dark:invert"
+            />
             <span>بازدید {article?.viewCount ?? 0}</span>
           </div>
         </div>

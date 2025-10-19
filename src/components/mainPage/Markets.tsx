@@ -45,7 +45,7 @@ function Market({ title, pair }: { title: string; pair: Pair[] }) {
   return (
     <div className="p-4 sm:p-5">
       <div className="flex items-center gap-3 mb-4">
-        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
+        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} className="dark:invert"/>
         <h3 className="text-lg sm:text-xl font-bold text-[#1C2121] dark:text-white">
           {title}
         </h3>

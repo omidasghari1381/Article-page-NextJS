@@ -76,7 +76,7 @@ export default async function HomePage() {
       </Reveal>
 
       <div className="px-4 sm:px-6 lg:px-10 xl:px-20 pb-10">
-        <Reveal as="section" once={false}>
+        <Reveal as="section" >
           <Chosen categories={categories} article={latest[0] ?? null} />
         </Reveal>
 

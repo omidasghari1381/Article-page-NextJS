@@ -32,20 +32,16 @@ export default function MediaEditorClient({
   initialRecord: MediaDTO | null;
 }) {
   const router = useRouter();
-
   const id = initialId;
   const isEdit = !!id;
 
   const [name, setName] = useState("");
   const [type, setType] = useState<MediaType>("image");
   const [description, setDescription] = useState("");
-
   const [temp, setTemp] = useState<TempUpload | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-
   const [record, setRecord] = useState<MediaDTO | null>(initialRecord);
-
   const [loading, setLoading] = useState<boolean>(isEdit && !initialRecord);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,17 +62,14 @@ export default function MediaEditorClient({
   useEffect(() => {
     if (!isEdit || !id || initialRecord) return;
     let active = true;
-
     (async () => {
       try {
         setLoading(true);
         const res = await fetch(`/api/media/${id}`, { cache: "no-store" });
         if (res.status === 404) throw new Error("آیتم مدیا پیدا نشد");
         if (!res.ok) throw new Error("خطا در دریافت آیتم");
-
         const data = (await res.json()) as MediaDTO;
         if (!active) return;
-
         setRecord(data);
         setName(data.name ?? "");
         setType((data.type as MediaType) ?? "image");
@@ -88,7 +81,6 @@ export default function MediaEditorClient({
         if (active) setLoading(false);
       }
     })();
-
     return () => {
       active = false;
     };
@@ -102,28 +94,19 @@ export default function MediaEditorClient({
     const cleanTemp = async () => {
       if (hasUnsavedTempRef.current && temp?.tempId) {
         try {
-          await fetch(`/api/upload-temp/${encodeURIComponent(temp.tempId)}`, {
-            method: "DELETE",
-          });
-        } catch {
-          // silent
-        }
+          await fetch(`/api/upload-temp/${encodeURIComponent(temp.tempId)}`, { method: "DELETE" });
+        } catch {}
       }
     };
-
-    const onBeforeUnload = () => {};
-
     const onPageHide = () => {
       cleanTemp();
     };
-
     window.addEventListener("pagehide", onPageHide);
-    window.addEventListener("beforeunload", onBeforeUnload);
-
+    window.addEventListener("beforeunload", () => {});
     return () => {
       cleanTemp();
       window.removeEventListener("pagehide", onPageHide);
-      window.removeEventListener("beforeunload", onBeforeUnload as any);
+      window.removeEventListener("beforeunload", () => {});
     };
   }, [temp?.tempId]);
 
@@ -132,7 +115,6 @@ export default function MediaEditorClient({
   const handleFiles = async (files: FileList | null) => {
     if (!files || !files.length) return;
     const file = files[0];
-
     const isImg = file.type.startsWith("image/");
     const isVid = file.type.startsWith("video/");
     if (!isImg && !isVid) {
@@ -140,15 +122,12 @@ export default function MediaEditorClient({
       return;
     }
     setType(isImg ? "image" : "video");
-
     setUploading(true);
     setUploadProgress(0);
     setError(null);
-
     try {
       const form = new FormData();
       form.append("file", file);
-
       const xhr = new XMLHttpRequest();
       const promise = new Promise<Response>((resolve, reject) => {
         xhr.open("POST", "/api/upload-temp");
@@ -164,8 +143,7 @@ export default function MediaEditorClient({
               new Response(xhr.responseText, {
                 status: xhr.status,
                 headers: new Headers({
-                  "Content-Type":
-                    xhr.getResponseHeader("Content-Type") || "application/json",
+                  "Content-Type": xhr.getResponseHeader("Content-Type") || "application/json",
                 }),
               })
             );
@@ -176,10 +154,8 @@ export default function MediaEditorClient({
         xhr.onerror = () => reject(new Error("ارتباط با سرور قطع شد"));
         xhr.send(form);
       });
-
       const res = await promise;
       if (!res.ok) throw new Error("خطا در آپلود");
-
       const data = (await res.json()) as TempUpload;
       setTemp(data);
       hasUnsavedTempRef.current = true;
@@ -207,49 +183,42 @@ export default function MediaEditorClient({
       alert("نام الزامی است");
       return;
     }
-
     const finalUrl = temp?.url ?? record?.url;
     if (!finalUrl) {
       alert("ابتدا فایل را آپلود کنید");
       return;
     }
-
     const payload = {
       name: name.trim(),
       url: finalUrl,
       type,
       description: description.trim() ? description.trim() : null,
     };
-
     try {
       setSaving(true);
       setError(null);
-
       const url = isEdit ? `/api/media/${record?.id}` : `/api/media`;
       const method = isEdit ? "PATCH" : "POST";
-
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       if (!res.ok) {
         const msg = await res.text().catch(() => "");
         throw new Error(msg || "خطا در ذخیره");
       }
-
       if (!isEdit) {
         const saved = (await res.json()) as MediaDTO;
-        hasUnsavedTempRef.current = false;
-        setTemp(null);
-        router.push(`/media`);
-        return;
+        if (saved?.id) {
+          hasUnsavedTempRef.current = false;
+          setTemp(null);
+          router.push(`/media`);
+          return;
+        }
       }
-
       hasUnsavedTempRef.current = false;
       setTemp(null);
-
       alert("ذخیره شد ✅");
       router.refresh();
     } catch (e: any) {
@@ -262,9 +231,7 @@ export default function MediaEditorClient({
   const handleDeleteTemp = async () => {
     if (!temp?.tempId) return;
     try {
-      await fetch(`/api/upload-temp/${encodeURIComponent(temp.tempId)}`, {
-        method: "DELETE",
-      });
+      await fetch(`/api/upload-temp/${encodeURIComponent(temp.tempId)}`, { method: "DELETE" });
     } catch {}
     setTemp(null);
     hasUnsavedTempRef.current = false;
@@ -273,11 +240,11 @@ export default function MediaEditorClient({
   const previewUrl = temp?.url ?? record?.url ?? null;
 
   if (loading) {
-    return <div className="mx-20 my-10">در حال بارگذاری…</div>;
+    return <div className="mx-20 my-10 text-skin-base">در حال بارگذاری…</div>;
   }
 
   return (
-    <main className="pb-24 pt-10 px-4 2xl:pb-28" dir="rtl">
+    <main className="pb-24 pt-10 px-4 2xl:pb-28 text-skin-base">
       <div className="mx-auto w-full max-w-[92rem] 2xl:max-w-[110rem]">
         <Breadcrumb
           items={[
@@ -288,7 +255,7 @@ export default function MediaEditorClient({
         />
 
         {error && (
-          <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
+          <div className="mb-4 rounded border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40 p-3 text-red-700 dark:text-red-300">
             {error}
           </div>
         )}
@@ -300,32 +267,24 @@ export default function MediaEditorClient({
               onDragOver={preventDefault}
               onDragEnter={preventDefault}
               onDragLeave={preventDefault}
-              className="border-2 border-dashed rounded-2xl p-4 sm:p-6 2xl:p-8 flex flex-col items-center justify-center text-center min-h-[200px] sm:min-h-[220px] 2xl:min-h-[260px] bg-gray-50"
+              className="border-2 border-dashed rounded-2xl p-4 sm:p-6 2xl:p-8 flex flex-col items-center justify-center text-center min-h-[200px] sm:min-h-[220px] 2xl:min-h-[260px] bg-skin-card border-skin-border"
             >
               {previewUrl ? (
                 <div className="w-full">
-                  <div className="rounded-xl overflow-hidden bg-gray-100 mb-3 aspect-square 2xl:aspect-[16/10]">
+                  <div className="rounded-xl overflow-hidden bg-skin-border/40 mb-3 aspect-square 2xl:aspect-[16/10]">
                     {type === "image" ? (
-                      <img
-                        src={previewUrl}
-                        alt={name || "preview"}
-                        className="w-full h-full object-cover"
-                      />
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={previewUrl} alt={name || "preview"} className="w-full h-full object-cover" />
                     ) : (
-                      <video
-                        src={previewUrl}
-                        className="w-full h-full object-cover"
-                        controls
-                      />
+                      <video src={previewUrl} className="w-full h-full object-cover" controls />
                     )}
                   </div>
                   <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-center gap-2">
                     <button
                       type="button"
-                      className="text-black px-3 py-2 rounded-lg border hover:bg-gray-100"
+                      className="px-3 py-2 rounded-lg border border-skin-border bg-skin-card hover:bg-skin-card/60"
                       onClick={() => {
-                        if (previewUrl)
-                          navigator.clipboard.writeText(previewUrl);
+                        if (previewUrl) navigator.clipboard.writeText(previewUrl);
                         alert("آدرس کپی شد!");
                       }}
                     >
@@ -334,7 +293,7 @@ export default function MediaEditorClient({
                     {temp ? (
                       <button
                         type="button"
-                        className="px-3 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50"
+                        className="px-3 py-2 rounded-lg border border-red-300 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
                         onClick={handleDeleteTemp}
                       >
                         حذف فایل موقت
@@ -342,7 +301,7 @@ export default function MediaEditorClient({
                     ) : (
                       <button
                         type="button"
-                        className="text-black px-3 py-2 rounded-lg border hover:bg-gray-100"
+                        className="px-3 py-2 rounded-lg border border-skin-border bg-skin-card hover:bg-skin-card/60"
                         onClick={handlePickFile}
                       >
                         جایگزینی فایل…
@@ -352,50 +311,35 @@ export default function MediaEditorClient({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="text-gray-700">فایل را اینجا دراپ کنید</div>
-                  <div className="text-xs text-gray-500">
-                    فقط تصویر یا ویدئو
-                  </div>
+                  <div className="text-skin-base">فایل را اینجا دراپ کنید</div>
+                  <div className="text-xs text-skin-muted">فقط تصویر یا ویدئو</div>
                   <button
                     type="button"
                     onClick={handlePickFile}
-                    className="px-3 py-2 rounded-lg border hover:bg-gray-100 text-gray-700"
+                    className="px-3 py-2 rounded-lg border border-skin-border bg-skin-card hover:bg-skin-card/60"
                   >
                     انتخاب فایل…
                   </button>
                 </div>
               )}
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                hidden
-                accept="image/*,video/*"
-                onChange={(e) => handleFiles(e.target.files)}
-              />
+              <input ref={fileInputRef} type="file" hidden accept="image/*,video/*" onChange={(e) => handleFiles(e.target.files)} />
             </div>
 
             {uploading && (
               <div className="w-full">
                 <div className="text-sm mb-1">در حال آپلود…</div>
-                <div className="w-full h-2 bg-gray-200 rounded">
-                  <div
-                    className="h-2 bg-black rounded"
-                    style={{
-                      width: `${uploadProgress ?? 0}%`,
-                      transition: "width .2s",
-                    }}
-                  />
+                <div className="w-full h-2 rounded bg-skin-border/60">
+                  <div className="h-2 rounded bg-skin-accent" style={{ width: `${uploadProgress ?? 0}%`, transition: "width .2s" }} />
                 </div>
               </div>
             )}
           </div>
 
           <div className="md:col-span-7 2xl:col-span-7">
-            <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-t p-3 flex items-center gap-2 justify-end">
+            <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-skin-card/95 backdrop-blur border-t border-skin-border p-3 flex items-center gap-2 justify-end">
               <button
                 type="button"
-                className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 rounded-lg border border-skin-border bg-skin-card hover:bg-skin-card/60"
                 onClick={() => {
                   setName("");
                   setDescription("");
@@ -408,7 +352,7 @@ export default function MediaEditorClient({
               <button
                 type="button"
                 onClick={() => handleSave()}
-                className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                className="px-5 py-2 rounded-lg bg-skin-accent hover:bg-skin-accent-hover text-white disabled:opacity-50"
                 disabled={saving || uploading}
               >
                 {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت مدیا"}
@@ -420,12 +364,12 @@ export default function MediaEditorClient({
                 e.preventDefault();
                 handleSave();
               }}
-              className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8 space-y-5"
+              className="bg-skin-card text-skin-base rounded-2xl shadow-sm border border-skin-border p-4 sm:p-6 2xl:p-8 space-y-5"
             >
               <div>
-                <label className="block text-sm text-black mb-2">نام</label>
+                <label className="block text-sm text-skin-muted mb-2">نام</label>
                 <input
-                  className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="مثلاً: کاور مقاله بازار"
@@ -434,9 +378,9 @@ export default function MediaEditorClient({
               </div>
 
               <div>
-                <label className="block text-sm text-black mb-2">نوع</label>
+                <label className="block text-sm text-skin-muted mb-2">نوع</label>
                 <select
-                  className="w-full rounded-lg border border-gray-200 text-black bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
                   value={type}
                   onChange={(e) => setType(e.target.value as MediaType)}
                 >
@@ -446,9 +390,9 @@ export default function MediaEditorClient({
               </div>
 
               <div>
-                <label className="block text-sm text-black mb-2">توضیح</label>
+                <label className="block text-sm text-skin-muted mb-2">توضیح</label>
                 <textarea
-                  className="w-full min-h-[120px] 2xl:min-h-[160px] text-black rounded-lg border border-gray-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  className="w-full min-h-[120px] 2xl:min-h-[160px] rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="توضیح کوتاه (اختیاری)…"
@@ -459,7 +403,7 @@ export default function MediaEditorClient({
               <div className="hidden md:flex items-center justify-end gap-3">
                 <button
                   type="button"
-                  className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 rounded-lg border border-skin-border bg-skin-card hover:bg-skin-card/60"
                   onClick={() => {
                     setName("");
                     setDescription("");
@@ -469,17 +413,12 @@ export default function MediaEditorClient({
                 >
                   پاک‌سازی
                 </button>
-
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                  className="px-5 py-2 rounded-lg bg-skin-accent hover:bg-skin-accent-hover text-white disabled:opacity-50"
                   disabled={saving || uploading}
                 >
-                  {saving
-                    ? "در حال ذخیره…"
-                    : isEdit
-                    ? "ثبت تغییرات"
-                    : "ثبت مدیا"}
+                  {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت مدیا"}
                 </button>
               </div>
             </form>

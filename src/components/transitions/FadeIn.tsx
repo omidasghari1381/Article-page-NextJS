@@ -31,20 +31,33 @@ export default function FadeIn<T extends ElementType = "div">({
   const Tag = (as ?? "div") as ElementType;
   const ref = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+useEffect(() => {
+  const el = ref.current;
+  if (!el) return;
 
-    el.style.opacity = "0";
-    el.style.transform = `translateY(${distance}px)`;
-    el.style.transition = `opacity ${duration}ms ease-out ${delay}ms, transform ${duration}ms ease-out ${delay}ms`;
+  el.style.opacity = "0";
+  el.style.transform = `translateY(${distance}px)`;
+  el.style.transition = `opacity ${duration}ms ease-out ${delay}ms, transform ${duration}ms ease-out ${delay}ms`;
+  el.style.willChange = "opacity, transform";
 
-    // شروع انیمیشن در فریم بعدی
-    requestAnimationFrame(() => {
-      el.style.opacity = "1";
-      el.style.transform = "translateY(0)";
-    });
-  }, [duration, delay, distance]);
+  const raf = requestAnimationFrame(() => {
+    el.style.opacity = "1";
+    el.style.transform = "translateY(0)";
+  });
+
+  const total = duration + delay + 50;
+  const timer = window.setTimeout(() => {
+    // پاک می‌کنیم تا ترنزیشن تمِ سراسری فعال شود
+    el.style.transition = "";
+    el.style.willChange = "";
+  }, total);
+
+  return () => {
+    cancelAnimationFrame(raf);
+    clearTimeout(timer);
+    el.style.willChange = "";
+  };
+}, [duration, delay, distance]);
 
   // نکته: از createElement استفاده می‌کنیم تا TS درباره JSX ElementType غر نزند
   return React.createElement(

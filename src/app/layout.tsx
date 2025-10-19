@@ -29,7 +29,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} 
-                    bg-white text-gray-900 antialiased
+                    bg-white text-gray-900 antialiased theme-anim
                     dark:bg-neutral-950 dark:text-gray-100`}
       >
         <ThemeProvider>

@@ -25,21 +25,49 @@ export default function Reveal<T extends ElementType = "div">({
   const Tag = (as || "div") as ElementType;
   const ref = useRef<HTMLElement | null>(null);
   const rafId = useRef<number | null>(null);
+  const revealedRef = useRef(false); // ← فلگ پایدار بین رندرها
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    // اگر قبلاً ریویل شده و once=true، اصلاً انیمیشن رو شروع نکن
+    if (once && (revealedRef.current || el.dataset.revealed === "1")) {
+      el.style.opacity = "1";
+      el.style.transform = "translateY(0)";
+      el.style.willChange = "";
+      return;
+    }
 
     const mql = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     const reduced = !!mql?.matches;
 
     if (disabled || reduced) {
       el.style.opacity = "1";
-      el.style.transform = "translateY(0px)";
+      el.style.transform = "translateY(0)";
       return;
     }
 
     el.style.willChange = "transform, opacity";
+
+    // اگر هم‌اکنون توی ویو هست، در حالت once مستقیم نهایی کن تا فلیکر نداشته باشه
+    if (mode === "scroll") {
+      const rect0 = el.getBoundingClientRect();
+      const vh0 = window.innerHeight;
+      const anchor0 = rect0.top + rect0.height / 2;
+      const start0 = vh0 * 3;
+      const end0 = vh0 * 0.35;
+      const denom0 = Math.max(1, start0 - end0);
+      const initialProgress = Math.max(0, Math.min(1, (start0 - anchor0) / denom0));
+      if (once && initialProgress >= 1) {
+        revealedRef.current = true;
+        el.dataset.revealed = "1";
+        el.style.opacity = "1";
+        el.style.transform = "translateY(0)";
+        el.style.willChange = "";
+        return;
+      }
+    }
 
     if (mode === "mount") {
       let start = 0;
@@ -59,6 +87,9 @@ export default function Reveal<T extends ElementType = "div">({
         if (progress < 1) {
           rafId.current = requestAnimationFrame(loop);
         } else {
+          // پایان — مارک کن که ریویل شده
+          revealedRef.current = true;
+          el.dataset.revealed = "1";
           el.style.willChange = "";
           rafId.current = null;
         }
@@ -74,6 +105,7 @@ export default function Reveal<T extends ElementType = "div">({
       };
     }
 
+    // mode === "scroll"
     let stopped = false;
     let last = -1;
     const distance = 16;
@@ -89,7 +121,6 @@ export default function Reveal<T extends ElementType = "div">({
       const vh = window.innerHeight;
 
       const anchor = rect.top + rect.height / 2;
-
       const start = vh * 3;
       const end = vh * 0.35;
 
@@ -103,6 +134,9 @@ export default function Reveal<T extends ElementType = "div">({
       }
 
       if (once && progress >= 1) {
+        // پایان — مارک کن که ریویل شده و حلقه رو متوقف کن
+        revealedRef.current = true;
+        el.dataset.revealed = "1";
         stopped = true;
         el.style.willChange = "";
         rafId.current = null;
@@ -129,6 +163,7 @@ export default function Reveal<T extends ElementType = "div">({
       className={className}
       {...(rest as any)}
       style={{ opacity: 0, transform: "translateY(16px)" }}
+      data-revealed={revealedRef.current ? "1" : undefined}
     >
       {children}
     </Tag>

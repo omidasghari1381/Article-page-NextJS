@@ -191,7 +191,7 @@ function MiniEducationHeader() {
           alt="broker1"
           width={22}
           height={23}
-          className="bg-skin-card"
+          className="bg-skin-card dark:invert"
         />
         <h3>برخی از آموزش ها</h3>
         <Image
@@ -199,7 +199,7 @@ function MiniEducationHeader() {
           alt="broker1"
           width={8}
           height={8}
-          className="bg-skin-card"
+          className="bg-skin-card dark:invert"
         />
       </div>
     </div>
@@ -218,6 +218,7 @@ function Licenses() {
           alt="question mark"
           width={12}
           height={12}
+          className="dark:invert"
         />
       </div>
       <div className="flex items-center gap-2 justify-center md:justify-start">
@@ -278,13 +279,25 @@ function ContactInfoCopy() {
         <li>
           <div className="font-semibold text-sm flex justify-end items-center gap-2">
             <span>۰۲۱-۹۱۰۱۴۰۴۹</span>
-            <Image src="/svg/Phone.svg" alt="phone" width={22} height={23} />
+            <Image
+              src="/svg/Phone.svg"
+              alt="phone"
+              width={22}
+              height={23}
+              className="dark:invert"
+            />
           </div>
         </li>
         <li className="mt-2.5">
           <div className="text-sm font-semibold flex justify-end items-center gap-2">
             <span>MyProp@gmail.com</span>
-            <Image src="/svg/Group.svg" alt="email" width={22} height={23} />
+            <Image
+              src="/svg/Group.svg"
+              alt="email"
+              width={22}
+              height={23}
+              className="dark:invert"
+            />
           </div>
         </li>
         <li className="mt-2.5">
@@ -297,6 +310,7 @@ function ContactInfoCopy() {
               alt="location"
               width={22}
               height={23}
+              className="dark:invert"
             />
           </div>
         </li>
@@ -329,8 +343,8 @@ function SocialsBlock() {
 
 function BottomBar() {
   return (
-    <div className="my-10 flex flex-col gap-4 text-skin-base text-sm lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex items-center gap-3">
+    <div className="my-10 flex flex-col items-center gap-4 text-skin-base text-sm lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col items-center gap-3 lg:flex-row lg:items-center">
         <Image
           src="/image/arrowUp.png"
           alt="arrowUp"
@@ -339,8 +353,11 @@ function BottomBar() {
           className="rounded-sm cursor-pointer"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         />
-        <span>تمامی حقوق برای این وب سایت محفوظ است</span>
+        <span className="text-center lg:text-right">
+          تمامی حقوق برای این وب سایت محفوظ است
+        </span>
       </div>
+
       <span className="text-center lg:text-right">
         طراحی و توسعه توسط‌ مای پراپ
       </span>
@@ -522,14 +539,14 @@ function TrainingsSliderList({
 
       <ul className="space-y-3 sm:space-y-4 text-sm sm:text-base font-semibold mt-6 sm:mt-10">
         {visible.map((it) => (
-          <li key={it.id} className="flex justify-between gap-3">
+          <li key={it.id} className="flex justify-between gap-3 text-right">
             <Link href={it.href} aria-label="مشاهده آموزش" className="shrink-0">
               <Image
                 src="/svg/Arrowleft.svg"
                 alt="arrow"
                 width={16.05}
                 height={16.05}
-                className="ml-1.5"
+                className="ml-1.5 dark:invert"
               />
             </Link>
             <Link

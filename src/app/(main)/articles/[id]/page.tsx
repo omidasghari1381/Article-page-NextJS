@@ -213,7 +213,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   };
 
   return (
-    <main className="px-4 sm:px-6 lg:px-20 py-6 mx-auto ">
+    <main className="px-4 sm:px-6 lg:px-20 py-6 mx-auto text-skin-base">
       <JsonLd a={a} />
 
       <Reveal as="div" mode="mount">
@@ -243,7 +243,6 @@ export default async function Page({ params }: { params: { id: string } }) {
               category={a.category.name}
               summery={a.summery}
             />
-
             <ArticleBody
               mainText={a.mainText}
               quotes={a.quotes}
@@ -314,8 +313,9 @@ export default async function Page({ params }: { params: { id: string } }) {
 
 function Divider() {
   return (
-    <div className="w-full h-0.5 bg-gray-200 relative my-20">
-      <div className="absolute right-0 top-0 h-0.5 bg-emerald-400 w-1/3"></div>
+    <div className="w-full h-0.5 bg-gray-200 dark:bg-skin-divider relative my-20 transition-colors">
+      <div className="absolute right-0 top-0 h-0.5 bg-emerald-400 w-1/3 transition-all"></div>
     </div>
   );
 }
+

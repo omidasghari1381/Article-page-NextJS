@@ -8,16 +8,28 @@ type Props = {
   options?: readonly number[];
   onChange: (v: number) => void;
   helper?: React.ReactNode;
+  labelClassName?: string;
+  selectClassName?: string;
 };
 
-export default function StatusSelect({ label, value, options = STATUS_OPTIONS, onChange, helper }: Props) {
+export default function StatusSelect({
+  label,
+  value,
+  options = STATUS_OPTIONS,
+  onChange,
+  helper,
+  labelClassName = "",
+  selectClassName = "",
+}: Props) {
   return (
     <div>
-      <label className="block text-sm text-black mb-2">{label}</label>
+      <label className={`block text-sm text-skin-muted mb-2 ${labelClassName}`}>
+        {label}
+      </label>
       <select
-        className="w-full rounded-lg border border-gray-200 bg-white text-black px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        className={`w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70 ${selectClassName}`}
       >
         {options.map((c) => (
           <option key={c} value={c}>
@@ -25,7 +37,7 @@ export default function StatusSelect({ label, value, options = STATUS_OPTIONS, o
           </option>
         ))}
       </select>
-      {helper}
+      {helper && <div className="text-xs mt-1 text-skin-muted">{helper}</div>}
     </div>
   );
 }

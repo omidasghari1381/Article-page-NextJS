@@ -72,19 +72,21 @@ function CommentsInner({
   }, [articleId]);
 
   return (
-    <div className="rounded-sm bg-white border border-slate-200 p-4 sm:p-6 md:p-8">
+    <div className="rounded-sm bg-white dark:bg-skin-card border border-slate-200 dark:border-skin-border p-4 sm:p-6 md:p-8 transition-colors">
       <section>
         <div className="flex items-center gap-3">
           <Image src="/svg/Rectangle2.svg" alt="thumb" width={6} height={32} />
-          <Image src="/svg/comment.svg" alt="thumb" width={21} height={21} />
-          <h3 className="font-extrabold text-base sm:text-lg text-slate-900">نظرات کاربران</h3>
+          <Image src="/svg/comment.svg" alt="thumb" width={21} height={21} className="dark:invert" />
+          <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
+            نظرات کاربران
+          </h3>
         </div>
 
         <AddComment articleId={articleId} onSubmitted={fetchComments} />
       </section>
 
       {loading ? (
-        <div className="mt-6 text-sm text-slate-500">در حال بارگیری نظرات…</div>
+        <div className="mt-6 text-sm text-slate-500 dark:text-skin-muted">در حال بارگیری نظرات…</div>
       ) : (
         <div className="mt-6 space-y-4 md:space-y-5">
           {comments.map((c) => (
@@ -108,10 +110,14 @@ function CommentItem({
   const when = c.createdAt ? timeAgoFa(c.createdAt) : "—";
 
   return (
-    <article className="rounded-2xl border border-slate-200 p-3 sm:p-4 md:p-5 shadow-xs bg-[#FBFBFB]" dir="rtl">
+    <article
+      className="rounded-2xl border border-slate-200 dark:border-skin-border p-3 sm:p-4 md:p-5 shadow-xs
+                 bg-[#FBFBFB] dark:bg-skin-card transition-colors"
+      dir="rtl"
+    >
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="flex items-start sm:items-center gap-3 min-w-0">
-          <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden ring-1 ring-slate-200 bg-slate-100 shrink-0">
+          <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden ring-1 ring-slate-200 dark:ring-skin-border bg-slate-100 dark:bg-skin-card shrink-0">
             <Image
               src={"/image/guy2.png"}
               alt={authorName}
@@ -120,13 +126,19 @@ function CommentItem({
               sizes="40px"
             />
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 text-[13px] sm:text-sm text-[#1C2121] min-w-0">
-            <span className="font-semibold text-[15px] sm:text-base truncate text-slate-900">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 text-[13px] sm:text-sm text-[#1C2121] dark:text-skin-base min-w-0">
+            <span className="font-semibold text-[15px] sm:text-base truncate text-slate-900 dark:text-white">
               {authorName}
             </span>
-            <span className="hidden sm:inline text-slate-400">,</span>
-            <div className="flex items-center gap-1.5 text-slate-600">
-              <Image src={"/svg/CalendarM.svg"} alt="date" width={20} height={20} className="object-cover rounded-sm" />
+            <span className="hidden sm:inline text-slate-400 dark:text-skin-divider">,</span>
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-skin-muted">
+              <Image
+                src={"/svg/CalendarM.svg"}
+                alt="date"
+                width={20}
+                height={20}
+                className="object-cover rounded-sm dark:invert"
+              />
               <span className="text-xs sm:text-sm font-medium">{when}</span>
             </div>
           </div>
@@ -137,7 +149,7 @@ function CommentItem({
             className="w-10 h-10 sm:w-[42.67px] sm:h-[42.67px] rounded-md flex justify-center items-center active:scale-95 transition"
             aria-label="dislike"
           >
-            <Image src={"/svg/dislike.svg"} alt="dislike" width={18} height={17} />
+            <Image src={"/svg/dislike.svg"} alt="dislike" width={18} height={17} className="dark:invert" />
           </button>
           <button
             className="w-10 h-10 sm:w-[42.67px] sm:h-[42.67px] rounded-md bg-[#E8FAF6] flex justify-center items-center active:scale-95 transition"
@@ -165,7 +177,7 @@ function CommentItem({
         </div>
       </div>
 
-      <p className="mt-3 text-[15px] sm:text-[17px] md:text-[18px] font-semibold leading-7 text-[#3B3F3F] break-words">
+      <p className="mt-3 text-[15px] sm:text-[17px] md:text-[18px] font-semibold leading-7 text-[#3B3F3F] dark:text-skin-base break-words">
         {c.text}
       </p>
 

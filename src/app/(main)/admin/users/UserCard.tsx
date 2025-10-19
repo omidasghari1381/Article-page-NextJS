@@ -1,4 +1,3 @@
-// app/admin/users/UserCard.tsx
 import CopyPhone from "@/components/users/CopyPhone";
 import Link from "next/link";
 
@@ -51,23 +50,24 @@ export default function UserListItem({
 
   return (
     <div
-      className={`rounded-2xl border shadow-sm bg-white p-4 sm:p-5 2xl:p-6 text-black border-gray-300 ${
-        isDeleted === 1 ? "opacity-75" : ""
-      }`}
+      className={[
+        "rounded-2xl border border-skin-border shadow-sm bg-skin-card p-4 sm:p-5 2xl:p-6 text-skin-base",
+        isDeleted === 1 ? "opacity-75" : "",
+      ].join(" ")}
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="min-w-0">
-            <div className="text-[13px] text-gray-500 mb-1">نام و نقش</div>
+            <div className="text-[13px] text-skin-muted mb-1">نام و نقش</div>
             <div className="flex items-center flex-wrap gap-2 min-w-0">
-              <div className="text-base md:text-lg font-semibold truncate max-w-[30ch]">
+              <div className="text-base md:text-lg font-semibold truncate max-w-[30ch] text-skin-heading">
                 {firstName} {lastName}
               </div>
-              <span className="inline-flex items-center gap-1 px-2 py-1 text-gray-700">
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-skin-base">
                 نقش: <strong className="font-semibold">{String(role)}</strong>
               </span>
               {isDeleted === 1 && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px]">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-[11px]">
                   حذف‌شده
                 </span>
               )}
@@ -75,24 +75,24 @@ export default function UserListItem({
           </div>
 
           <div className="min-w-0">
-            <div className="text-[13px] text-gray-500 mb-1">تلفن</div>
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="text-[13px] text-skin-muted mb-1">تلفن</div>
+            <div className="flex items-center gap-2 min-w-0 [&_*]:text-skin-heading dark:[&_*]:text-white">
               <CopyPhone text={phone} />
             </div>
           </div>
         </div>
 
         {showDates && (createdAt || updatedAt) && (
-          <div className="text-xs text-gray-500 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 md:order-none">
+          <div className="text-xs text-skin-muted flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 md:order-none">
             {createdAt && (
               <div>
-                <span className="text-gray-400">ایجاد: </span>
+                <span className="text-skin-muted/70">ایجاد: </span>
                 <time dateTime={createdAt}>{formatDateTime(createdAt)}</time>
               </div>
             )}
             {updatedAt && (
               <div>
-                <span className="text-gray-400">ویرایش: </span>
+                <span className="text-skin-muted/70">ویرایش: </span>
                 <time dateTime={updatedAt}>{formatDateTime(updatedAt)}</time>
               </div>
             )}
@@ -102,7 +102,7 @@ export default function UserListItem({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:gap-4 md:shrink-0">
           {typeof onEditClick === "function" ? (
             <button
-              className="h-[44px] w-full sm:w-auto px-3 rounded-lg border text-gray-700 hover:bg-gray-50 flex justify-center items-center"
+              className="h-[44px] w-full sm:w-auto px-3 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card/60 flex justify-center items-center"
               onClick={() => onEditClick(id)}
             >
               ویرایش
@@ -110,7 +110,7 @@ export default function UserListItem({
           ) : (
             <Link
               href={finalEditHref}
-              className="h-[44px] w-full sm:w-auto px-3 rounded-lg border text-gray-700 hover:bg-gray-50 flex justify-center items-center"
+              className="h-[44px] w-full sm:w-auto px-3 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card/60 flex justify-center items-center"
             >
               ویرایش
             </Link>
@@ -120,8 +120,8 @@ export default function UserListItem({
             <button
               className={`h-[44px] w-full sm:w-auto px-3 rounded-lg text-white text-center ${
                 canDelete
-                  ? "bg-red-700 hover:bg-red-800"
-                  : "bg-gray-300 cursor-not-allowed"
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-skin-border/60 cursor-not-allowed"
               }`}
               onClick={() => canDelete && onDeleteClick(id)}
               disabled={!canDelete}

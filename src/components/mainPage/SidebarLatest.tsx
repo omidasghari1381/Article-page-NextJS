@@ -34,7 +34,13 @@ export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
   return (
     <aside>
       <div className="flex items-center gap-3 px-2 sm:px-4 py-6">
-        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
+        <Image
+          src="/svg/Rectangle.svg"
+          alt="thumb"
+          width={8}
+          height={36}
+          className="dark:invert"
+        />
         <h3 className="text-lg sm:text-xl font-semibold text-[#1C2121] dark:text-white">
           محبوب‌ترین مقالات
         </h3>

@@ -1,3 +1,4 @@
+// components/tags/TagCard.tsx
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { TagsService } from "@/server/modules/tags/services/tag.service";
@@ -30,53 +31,46 @@ export default function TagCard({ item, editHref, showDates = true }: Props) {
     "use server";
     const tagId = String(formData.get("id") || "");
     if (!tagId) return;
-
     const svc = new TagsService();
     await svc.deleteTag(tagId);
-
     revalidatePath("/admin/tags");
   }
 
   return (
-    <div className="rounded-2xl border shadow-sm bg-white p-4 sm:p-5 2xl:p-6 text-black">
+    <div className="rounded-2xl border border-skin-border shadow-sm bg-skin-bg p-4 sm:p-5 2xl:p-6 text-skin-base">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex-1 min-w-0">
-          <div className="text-base font-semibold truncate">{name}</div>
-          <div className="text-sm text-gray-500 mt-1 truncate">@{slug}</div>
+          <div className="text-base font-semibold truncate text-skin-heading">{name}</div>
+          <div className="text-sm text-skin-muted mt-1 truncate">@{slug}</div>
           {description && (
-            <p className="text-sm text-gray-700 mt-2 line-clamp-2 sm:line-clamp-1">
-              {description}
-            </p>
+            <p className="text-sm text-skin-base/80 mt-2 line-clamp-2 sm:line-clamp-1">{description}</p>
           )}
         </div>
-
         {showDates && (createdAt || updatedAt) && (
-          <div className="text-xs text-gray-500 flex flex-col text-left sm:text-right shrink-0">
+          <div className="text-xs text-skin-muted flex flex-col text-left sm:text-right shrink-0">
             {createdAt && (
               <div>
-                <span className="text-gray-400">ایجاد: </span>
+                <span className="text-skin-muted/70">ایجاد: </span>
                 <time dateTime={createdAt}>{formatDateTime(createdAt)}</time>
               </div>
             )}
             {updatedAt && (
               <div>
-                <span className="text-gray-400">ویرایش: </span>
+                <span className="text-skin-muted/70">ویرایش: </span>
                 <time dateTime={updatedAt}>{formatDateTime(updatedAt)}</time>
               </div>
             )}
           </div>
         )}
-
         <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-2 shrink-0">
           {editLink ? (
             <Link
               href={editLink}
-              className="px-3 py-1.5 rounded-lg border text-gray-700 hover:bg-gray-50 text-center whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card text-center whitespace-nowrap"
             >
               ویرایش
             </Link>
           ) : null}
-
           <form action={deleteAction} className="contents">
             <input type="hidden" name="id" value={id} />
             <button
@@ -96,11 +90,8 @@ function formatDateTime(iso?: string) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
-    return new Intl.DateTimeFormat("fa-IR", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(d);
+    return new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(d);
   } catch {
-    return iso;
+    return iso!;
   }
 }

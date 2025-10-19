@@ -88,7 +88,7 @@ export default async function Page({
   }
 
   return (
-    <main className="pb-24 pt-6" dir="rtl">
+    <main className="pb-24 pt-6 text-skin-base" dir="rtl">
       <Breadcrumb
         items={[
           { label: "مای پراپ", href: "/" },
@@ -97,11 +97,7 @@ export default async function Page({
         ]}
       />
       <div className="mt-5">
-        <TagFormClient
-          initialRecord={initialRecord}
-          onSave={saveAction}
-          onDelete={deleteAction}
-        />
+        <TagFormClient initialRecord={initialRecord} onSave={saveAction} onDelete={deleteAction} />
       </div>
     </main>
   );

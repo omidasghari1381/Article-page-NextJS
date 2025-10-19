@@ -22,7 +22,7 @@ export default async function LatestArticle({ items }: { items?: ArticleLite[] }
   return (
     <section>
       <div className="flex items-center gap-3 py-6">
-        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
+        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} className="dark:invert"/>
         <h3 className="text-xl font-semibold text-[#1C2121] dark:text-white">آخرین مقالات</h3>
       </div>
 

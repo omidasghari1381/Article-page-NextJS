@@ -141,20 +141,19 @@ body {
 }
 
 @layer base {
-  .theme-anim,
   .theme-anim * {
     transition:
       background-color 220ms ease,
       color 220ms ease,
       border-color 220ms ease,
       fill 220ms ease,
-      stroke 220ms ease !important;
+      stroke 220ms ease,
+      filter 220ms ease;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .theme-anim,
   .theme-anim * {
-    transition: none !important;
+    transition: none;
   }
 }

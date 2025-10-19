@@ -37,16 +37,13 @@ export default async function Page({
   }
 
   return (
-    <main className="pb-24 pt-6">
+    <main className="pb-24 pt-6 text-skin-base">
       <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
         <Breadcrumb
           items={[
             { label: "مای پراپ", href: "/" },
             { label: "ریدایرکت‌ها", href: "/admin/redirects" },
-            {
-              label: "افزودن/ویرایش ریدایرکت",
-              href: "/admin/redirects/new-redirect",
-            },
+            { label: "افزودن/ویرایش ریدایرکت", href: "/admin/redirects/new-redirect" },
           ]}
         />
         <div className="mt-5">

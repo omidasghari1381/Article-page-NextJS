@@ -5,10 +5,7 @@ import ArticleCard from "@/components/article/ArticleCart";
 import ArticleFilters from "@/components/article/ArticleFilter";
 import Breadcrumb from "@/components/Breadcrumb";
 import { ArticleService } from "@/server/modules/articles/services/article.service";
-import type {
-  SortDir,
-  Sortable,
-} from "@/server/modules/articles/services/article.service";
+import type { SortDir, Sortable } from "@/server/modules/articles/services/article.service";
 import { CategoryService } from "@/server/modules/categories/services/category.service";
 
 type LiteArticleCardShape = {
@@ -23,14 +20,7 @@ type LiteArticleCardShape = {
 };
 
 function coerceSortBy(v: string | undefined): Sortable {
-  const allow: Sortable[] = [
-    "createdAt",
-    "updatedAt",
-    "viewCount",
-    "readingPeriod",
-    "title",
-    "slug",
-  ];
+  const allow: Sortable[] = ["createdAt","updatedAt","viewCount","readingPeriod","title","slug"];
   return allow.includes(v as Sortable) ? (v as Sortable) : "createdAt";
 }
 function coerceSortDir(v: string | undefined): SortDir {
@@ -88,28 +78,19 @@ export default async function Page({
     createdAt: a.createdAt,
     category: a.categories ? { id: "", name: a.categories } : null,
     author: a.author
-      ? {
-          id: a.author.id,
-          firstName: a.author.firstName,
-          lastName: a.author.lastName,
-        }
+      ? { id: a.author.id, firstName: a.author.firstName, lastName: a.author.lastName }
       : null,
     thumbnail: a.thumbnail ?? null,
     readingPeriod: a.readingPeriod ?? 0,
   }));
 
   return (
-    <main className="space-y-7">
-      <Breadcrumb
-        items={[
-          { label: "مای پراپ", href: "/" },
-          { label: "مقالات", href: "/articles" },
-        ]}
-      />
+    <main className="space-y-7 text-skin-base">
+      <Breadcrumb items={[{ label: "مای پراپ", href: "/" }, { label: "مقالات", href: "/articles" }]} />
 
-      <div className="text-black text-2xl font-semibold mb-4">
+      <div className="text-2xl font-semibold mb-4 text-skin-heading">
         <span>تعداد مقالات </span>
-        <span>({total})</span>
+        <span className="text-skin-muted">({total})</span>
       </div>
 
       <ArticleFilters categories={categories} />

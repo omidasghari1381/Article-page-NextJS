@@ -6,13 +6,14 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#F7F8FA] text-[#1C2121]">
+    <div className="min-h-screen bg-skin-bg text-skin-base transition-colors duration-300">
       <input id="admin-drawer" type="checkbox" className="peer hidden" />
 
-      <header className="md:hidden h-14 bg-white border-b flex items-center justify-between px-4">
+      {/* Header (mobile) */}
+      <header className="md:hidden h-14 bg-white dark:bg-skin-card border-b border-skin-border flex items-center justify-between px-4 transition-colors">
         <label
           htmlFor="admin-drawer"
-          className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-skin-border/40 cursor-pointer transition-colors"
         >
           <svg
             width="20"
@@ -20,6 +21,7 @@ export default function AdminLayout({
             viewBox="0 0 24 24"
             fill="none"
             aria-hidden
+            className="text-skin-base"
           >
             <path
               d="M4 6h16M4 12h16M4 18h16"
@@ -29,33 +31,36 @@ export default function AdminLayout({
             />
           </svg>
         </label>
-        <span className="font-bold">منو</span>
+        <span className="font-bold text-skin-heading">منو</span>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] h-[calc(100vh-56px)] md:h-screen gap-0 bg-white">
+      {/* Layout grid */}
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] h-[calc(100vh-56px)] md:h-screen gap-0 bg-white dark:bg-skin-bg transition-colors">
+        {/* Sidebar */}
         <aside
           className={[
-            "hidden md:flex md:static md:translate-x-0 md:opacity-100 md:visible  md:top-0 md:h-screen md:z-10",
-            "bg-white md:border-s md:border-gray-200 border-l",
+            "hidden md:flex md:static md:translate-x-0 md:opacity-100 md:visible md:top-0 md:h-screen md:z-10",
+            "bg-white dark:bg-skin-card md:border-s md:border-skin-border border-l border-skin-border",
             "fixed top-14 bottom-0 right-0 z-40 w-[84%] max-w-[320px] p-4",
             "transition-all duration-300 translate-x-full opacity-0 invisible",
             "peer-checked:translate-x-0 peer-checked:opacity-100 peer-checked:visible",
-            "flex-col",
+            "flex-col shadow-sm md:shadow-none",
           ].join(" ")}
         >
-          <nav className="">
+          <nav>
             <SidebarLink href="/admin/users" label="کاربران" />
             <SidebarLink href="/admin/articles" label="مقالات" />
             <SidebarLink href="/admin/media" label="رسانه" />
             <SidebarLink href="/admin/redirects" label="ریدایرکت" />
-            <SidebarLink href="/admin/tags" label="تگ ها" />
+            <SidebarLink href="/admin/tags" label="تگ‌ها" />
             <SidebarLink href="/admin/faq/editor" label="سوالات پرکاربرد" />
-            <SidebarLink href="/admin/langueges" label="زبان ها" />
+            <SidebarLink href="/admin/langueges" label="زبان‌ها" />
           </nav>
         </aside>
 
-        <main className="overflow-auto bg-white p-0 md:pl-10">
-          <section className="rounded-none md:rounded-2xl bg-white p-4 md:p-4">
+        {/* Main */}
+        <main className="overflow-auto bg-white dark:bg-skin-bg transition-colors md:pl-10">
+          <section className="rounded-none md:rounded-2xl bg-white dark:bg-skin-card border border-skin-border p-4 md:p-4 shadow-sm transition-colors">
             {children}
           </section>
         </main>
@@ -68,9 +73,9 @@ function SidebarLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="flex gap-1 px-3 h-14 items-center rounded hover:bg-gray-100 border-b border-gray-100"
+      className="flex gap-2 px-3 h-14 items-center rounded border-b border-skin-border hover:bg-gray-100 dark:hover:bg-skin-border/40 text-skin-base transition-colors"
     >
-      <span className="h-2 w-2 rounded-full " aria-hidden />
+      <span className="h-2 w-2 rounded-full bg-skin-border" aria-hidden />
       <span className="text-lg">{label}</span>
     </Link>
   );

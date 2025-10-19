@@ -12,7 +12,7 @@ type summeryItem = {
 interface SummeryDropdownProps extends React.HTMLAttributes<HTMLElement> {
   title?: string;
   items?: summeryItem[];
-  children?: React.ReactNode; // ← اضافه شد
+  children?: React.ReactNode;
 }
 
 export default function SummeryDropdown({
@@ -27,9 +27,8 @@ export default function SummeryDropdown({
   return (
     <section
       {...rest}
-      className={`relative rounded-sm border border-[#EBEBEB] bg-white p-5 ${className ?? ""}`}
+      className={`relative rounded-sm border border-[#EBEBEB] dark:border-skin-border bg-white dark:bg-skin-card p-5 transition-colors ${className ?? ""}`}
     >
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Image
@@ -38,14 +37,22 @@ export default function SummeryDropdown({
             width={5.910609245300293}
             height={32.08616638183594}
           />
-          <Image src="/svg/Notes.svg" alt="thumb" width={28} height={28} />
-          <h3 className="text-xl font-extrabold text-slate-900">{title}</h3>
+          <Image
+            src="/svg/Notes.svg"
+            alt="thumb"
+            width={28}
+            height={28}
+          />
+          <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+            {title}
+          </h3>
         </div>
 
         <button
           onClick={() => setOpen((p) => !p)}
-          className="w-9 h-9 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-700"
+          className="w-9 h-9 rounded-xl border border-slate-200 dark:border-skin-border hover:bg-slate-50 dark:hover:bg-skin-card/60 flex items-center justify-center text-slate-700 dark:text-white transition-colors"
           aria-label="toggle"
+          aria-expanded={open}
         >
           <svg
             className={`transition-transform ${open ? "rotate-180" : "rotate-0"}`}
@@ -70,12 +77,8 @@ export default function SummeryDropdown({
           open ? "mt-4 max-h-[480px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        {/*
-          اگر children دادی، همون رو نشون می‌دیم؛
-          در غیر این صورت، لیست items رندر می‌شه.
-        */}
         {children ? (
-          <div className="pr-2">{children}</div>
+          <div className="pr-2 text-slate-800 dark:text-skin-base">{children}</div>
         ) : (
           <ul className="space-y-3 pr-2">
             {items.map((it, idx) => (
@@ -85,17 +88,17 @@ export default function SummeryDropdown({
                   alt="thumb"
                   width={5}
                   height={22}
-                  className="rotate-90"
+                  className="rotate-90 dark:invert"
                 />
                 {it.href ? (
                   <a
                     href={it.href}
-                    className="text-slate-800 hover:text-emerald-600 font-medium line-clamp-1"
+                    className="text-slate-800 dark:text-skin-base hover:text-emerald-600 transition-colors font-medium line-clamp-1"
                   >
                     {it.text}
                   </a>
                 ) : (
-                  <span className="text-slate-800 font-medium line-clamp-1">
+                  <span className="text-slate-800 dark:text-skin-base font-medium line-clamp-1">
                     {it.text}
                   </span>
                 )}

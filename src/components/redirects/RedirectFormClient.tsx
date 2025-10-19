@@ -1,3 +1,4 @@
+// src/components/redirects/RedirectFormClient.tsx
 "use client";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -43,15 +44,9 @@ export default function RedirectFormClient({
     const errs: string[] = [];
     if (!form.fromPath.trim()) errs.push("fromPath الزامی است.");
     if (!form.toPath.trim()) errs.push("toPath الزامی است.");
-    if (form.fromPath.trim() && !validFrom(form.fromPath.trim()))
-      errs.push("fromPath باید با / شروع شود.");
-    if (form.toPath.trim() && !validTo(form.toPath.trim()))
-      errs.push("toPath باید مسیر داخلی یا URL معتبر باشد.");
-    if (
-      form.fromPath.trim() &&
-      form.toPath.trim() &&
-      form.fromPath.trim() === form.toPath.trim()
-    )
+    if (form.fromPath.trim() && !validFrom(form.fromPath.trim())) errs.push("fromPath باید با / شروع شود.");
+    if (form.toPath.trim() && !validTo(form.toPath.trim())) errs.push("toPath باید مسیر داخلی یا URL معتبر باشد.");
+    if (form.fromPath.trim() && form.toPath.trim() && form.fromPath.trim() === form.toPath.trim())
       errs.push("fromPath و toPath نباید یکسان باشند.");
     return errs;
   }, [form]);
@@ -71,9 +66,7 @@ export default function RedirectFormClient({
     if (!confirm("آیا از حذف این ریدایرکت مطمئن هستید؟")) return;
     try {
       setDeleting(true);
-      const res = await fetch(`/api/redirect/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/redirect/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("حذف ناموفق بود");
       alert("حذف شد ✅");
       router.push("/admin/redirects");
@@ -118,13 +111,13 @@ export default function RedirectFormClient({
   };
 
   return (
-    <section className="w-full">
+    <section className="w-full text-skin-base">
       <form
         onSubmit={onSubmit}
-        className="bg-white rounded-2xl shadow-sm border p-4 sm:p-6 2xl:p-8 w-full mx-auto"
+        className="bg-skin-card rounded-2xl shadow-sm border border-skin-border p-4 sm:p-6 2xl:p-8 w-full mx-auto"
       >
         {error && (
-          <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
+          <div className="mb-4 rounded border border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40 p-3 text-red-700 dark:text-red-300">
             {error}
           </div>
         )}
@@ -135,12 +128,16 @@ export default function RedirectFormClient({
               placeholder="/old-url"
               value={form.fromPath}
               onChange={handleChange("fromPath")}
+              inputClassName="bg-skin-bg text-skin-base border-skin-border focus:ring-skin-border/70"
+              labelClassName="text-skin-muted"
             />
             <TextInput
               label="toPath"
               placeholder="/new-url یا https://example.com/new-url"
               value={form.toPath}
               onChange={handleChange("toPath")}
+              inputClassName="bg-skin-bg text-skin-base border-skin-border focus:ring-skin-border/70"
+              labelClassName="text-skin-muted"
             />
           </div>
 
@@ -151,12 +148,15 @@ export default function RedirectFormClient({
                 value={form.statusCode}
                 onChange={(n) => handleChange("statusCode")(n)}
                 options={STATUS_OPTIONS}
+                selectClassName="bg-skin-bg text-skin-base border-skin-border focus:ring-skin-border/70"
+                labelClassName="text-skin-muted"
               />
               <ActiveCheckbox
                 id="isActive"
                 label="فعال باشد"
                 checked={form.isActive}
                 onChange={handleChange("isActive")}
+                labelClassName="text-skin-muted"
               />
             </div>
 
@@ -164,14 +164,9 @@ export default function RedirectFormClient({
               <button
                 type="button"
                 onClick={() =>
-                  setForm({
-                    fromPath: "",
-                    toPath: "",
-                    statusCode: 301,
-                    isActive: true,
-                  })
+                  setForm({ fromPath: "", toPath: "", statusCode: 301, isActive: true })
                 }
-                className="h-[44px] w-full sm:w-auto px-4 rounded-lg border text-gray-700 hover:bg-gray-50 text-center"
+                className="h-[44px] w-full sm:w-auto px-4 rounded-lg border border-skin-border bg-skin-card text-skin-base hover:bg-skin-card/60 text-center"
               >
                 پاکسازی
               </button>
@@ -181,7 +176,7 @@ export default function RedirectFormClient({
                   type="button"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="h-[44px] w-full sm:w-auto px-4 rounded-lg border border-red-400 text-red-600 hover:bg-red-50 disabled:opacity-50 text-center"
+                  className="h-[44px] w-full sm:w-auto px-4 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 disabled:opacity-50 text-center"
                 >
                   حذف
                 </button>
@@ -190,17 +185,18 @@ export default function RedirectFormClient({
               <button
                 type="submit"
                 disabled={saving}
-                className="h-[44px] w-full sm:w-auto px-6 rounded-lg bg-black text-white hover:bg-gray-800 disabled:opacity-50 text-center"
+                className="h-[44px] w-full sm:w-auto px-6 rounded-lg bg-skin-accent hover:bg-skin-accent-hover text-white disabled:opacity-50 text-center"
               >
-                {saving
-                  ? "در حال ذخیره…"
-                  : isEdit
-                  ? "ثبت تغییرات"
-                  : "ثبت ریدایرکت"}
+                {saving ? "در حال ذخیره…" : isEdit ? "ثبت تغییرات" : "ثبت ریدایرکت"}
               </button>
             </div>
 
-            <ProblemsList problems={problems} />
+            <ProblemsList
+              problems={problems}
+              className="text-skin-muted"
+              itemClassName="text-skin-base"
+            />
+
             <div className="h-16 md:h-0" />
           </div>
         </div>

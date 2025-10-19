@@ -1,20 +1,16 @@
 "use client";
-
 import DropBox from "@/components/DropBox";
 import { useEffect, useState } from "react";
 import { absolute } from "@/app/utils/base-url";
 import { faqCategory } from "@/server/modules/faq/enums/faqCategory.enum";
 import BannerWithBox from "./BannerWithBox";
-
 export type FAQDetail = {
   id: string;
   question: string;
   answer: string;
   category: faqCategory;
 };
-
 type ListResponse = { items: FAQDetail[] };
-
 export default function FaqClient() {
   const [faq, setFaq] = useState<FAQDetail[]>([]);
   const [category, setCategory] = useState<faqCategory>(faqCategory.BUYSELL);

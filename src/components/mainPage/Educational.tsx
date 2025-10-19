@@ -22,8 +22,7 @@ export default function Educational({ items }: { items: ArticleLite[] }) {
   return (
     <section>
       <div className="flex items-center gap-3">
-        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} />
-        {/* فقط این خط تغییر کرده: */}
+        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} className="dark:invert"/>
         <h3 className="text-xl font-semibold text-[#1C2121] dark:text-white">
           مقالات آموزشی
         </h3>
@@ -32,7 +31,7 @@ export default function Educational({ items }: { items: ArticleLite[] }) {
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[540px]">
         <div className="relative rounded-md overflow-hidden aspect-[16/10] sm:aspect-[4/3] lg:aspect-auto lg:h-full">
           <button
-            className="absolute top-3 right-3 z-10 w-11 h-11 bg-gradient-to-r from-[#111414] to-[#272F2F] flex items-center justify-center rounded-md"
+            className="absolute top-3 right-3 z-10 w-11 h-11 bg-gradient-to-r from-[#111414] to-[#272F2F] flex items-center justify-center rounded-md dark:invert"
             aria-label="اشتراک‌گذاری"
             type="button"
           >
