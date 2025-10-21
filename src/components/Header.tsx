@@ -1,9 +1,14 @@
 "use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Logo from "./Logo";
 import { useTheme } from "next-themes";
+import i18next from "@/lib/i18n/client";
+import { useRouter, usePathname } from "next/navigation";
+import { switchLangInPathname } from "@/app/utils/locale-path";
+import { useTranslation } from "react-i18next";
 
 const navLink =
   "flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-skin-base hover:bg-skin-card/60 transition";
@@ -40,9 +45,25 @@ function DD({
 export default function Header() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const langFromPath = useMemo<"fa" | "en">(() => {
+    const seg = (pathname || "/").split("/")[1];
+    return seg === "en" ? "en" : "fa";
+  }, [pathname]);
+  const { t } = useTranslation("header");
+
   useEffect(() => setMounted(true), []);
   const current = mounted ? resolvedTheme : undefined;
+useEffect(() => {
+  i18next.changeLanguage(langFromPath);
 
+  document.documentElement.lang = langFromPath;
+  document.documentElement.dir = langFromPath === "fa" ? "rtl" : "ltr";
+  document.cookie = `lng=${langFromPath}; path=/`;
+}, [langFromPath]);
   const toggleTheme = () => {
     const root = document.documentElement;
     root.classList.add("theme-anim");
@@ -54,7 +75,17 @@ export default function Header() {
     });
   };
 
-  const [open, setOpen] = useState(false);
+  const toggleLanguage = () => {
+    const nextLang: "fa" | "en" = langFromPath === "fa" ? "en" : "fa";
+    i18next.changeLanguage(nextLang);
+
+    const nextPath = switchLangInPathname(pathname || "/", nextLang);
+    router.replace(nextPath);
+
+    document.documentElement.lang = nextLang;
+    document.documentElement.dir = nextLang === "fa" ? "rtl" : "ltr";
+    document.cookie = `lng=${nextLang}; path=/`;
+  };
 
   useEffect(() => {
     if (!open) {
@@ -115,12 +146,12 @@ export default function Header() {
                     height={20}
                     className="dark:invert"
                   />
-                  پراپ تریدینگ
+                  {t("propTrading")}
                 </span>
               }
             />
             <span className="inline-flex justify-center items-center whitespace-nowrap bg-[#19CCA7] border border-skin-border px-4 py-2 rounded-sm text-xs font-medium transition w-[64px] h-[28px] text-black">
-              اپدیت شده
+                  {t("updated")}
             </span>
             <DD
               title={
@@ -129,10 +160,10 @@ export default function Header() {
                     src="/svg/plan.svg"
                     alt="plan"
                     width={40}
-                    height={40}                    className="dark:invert"
-
+                    height={40}
+                    className="dark:invert"
                   />
-                  پلن‌های ما
+                  {t("plans")}
                 </span>
               }
             />
@@ -144,10 +175,10 @@ export default function Header() {
                 src="/svg/groupmen.svg"
                 alt="team"
                 width={40}
-                height={40}                    className="dark:invert"
-
+                height={40}
+                className="dark:invert"
               />
-              همکاری با ما
+                  {t("collabration")}
             </Link>
             <DD
               title={
@@ -166,7 +197,7 @@ export default function Header() {
                       d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
                     />
                   </svg>
-                  درباره ما
+                  {t("aboutUs")}
                 </span>
               }
             />
@@ -199,14 +230,27 @@ export default function Header() {
             )}
           </button>
 
+          <button
+            onClick={toggleLanguage}
+            className="flex items-center justify-center w-11 h-11 lg:w-[51px] lg:h-[51px] bg-skin-card rounded-full hover:bg-skin-card/70 border border-skin-border transition text-skin-base text-sm"
+            aria-label="change language"
+          >
+            {langFromPath === "fa" ? "EN" : "فا"}
+          </button>
+
           <div className="hidden lg:flex items-center gap-2">
             <Link
               href="/contact"
               className="flex items-center justify-center leading-6 text-base gap-2 border border-skin-border px-4 py-2 rounded-sm font-medium hover:bg-skin-card/60 transition text-skin-base w-[150px] h-[51px]"
             >
-              <Image src="/svg/phone2.svg" alt="phone" width={20} height={20}                     className="dark:invert"
-/>
-              تماس با ما
+              <Image
+                src="/svg/phone2.svg"
+                alt="phone"
+                width={20}
+                height={20}
+                className="dark:invert"
+              />
+                  {t("contact")}
             </Link>
 
             <Link
@@ -229,11 +273,12 @@ export default function Header() {
                   <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
-                ورود و ثبت‌ نام
+                  {t("signup")}
               </span>
             </Link>
           </div>
 
+          {/* دکمه منوی موبایل */}
           <button
             className="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-md border border-skin-border hover:bg-skin-card/60 text-skin-base"
             onClick={() => setOpen(true)}
@@ -258,181 +303,6 @@ export default function Header() {
           </button>
         </div>
       </div>
-
-      <div
-        className={`lg:hidden fixed inset-0 z-40 transition ${
-          open ? "bg-black/10 pointer-events-auto" : "pointer-events-none"
-        }`}
-        onClick={() => setOpen(false)}
-      />
-
-      <aside
-        className={`lg:hidden fixed top-0 right-0 left-0 z-50
-              bg-skin-bg border-b border-skin-border shadow-xl
-              transition-transform duration-300 will-change-transform
-              ${open ? "translate-y-0" : "-translate-y-full"}`}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="flex items-center justify-between h-[64px] border-b border-skin-border px-4">
-          <div className="flex-1" />
-          <Logo />
-          <div className="flex-1 flex justify-end">
-            <button
-              className="inline-flex items-center justify-center w-10 h-10 rounded-md hover:bg-skin-card/60 text-skin-base"
-              onClick={() => setOpen(false)}
-              aria-label="close menu"
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-skin-base"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <nav className="p-6">
-          <ul className="flex flex-col items-center text-center gap-2 text-base">
-            <li className="w-full">
-              <DD
-                summeryClassName="justify-center w-full"
-                menuClassName="right-1/2 translate-x-1/2 w-64"
-                title={
-                  <span className="flex gap-2 items-center justify-center">
-                    <Image
-                      src="/svg/money.svg"
-                      alt="money"
-                      width={20}
-                      height={20}                    className="dark:invert"
-
-                    />
-                    پراپ تریدینگ
-                  </span>
-                }
-              />
-            </li>
-
-            <li className="w-full">
-              <span
-                style={{ backgroundColor: "#19CCA7" }}
-                className="inline-flex w-full justify-center items-center gap-2 px-4 py-3 rounded-md text-sm font-medium
-                           border border-skin-border text-black"
-              >
-                اپدیت شده
-              </span>
-            </li>
-
-            <li className="w-full">
-              <DD
-                summeryClassName="justify-center w-full"
-                menuClassName="right-1/2 translate-x-1/2 w-64"
-                title={
-                  <span className="flex items-center gap-2 justify-center">
-                    <Image
-                      src="/svg/plan.svg"
-                      alt="plan"
-                      width={20}
-                      height={20}                    className="dark:invert"
-
-                    />
-                    پلن‌های ما
-                  </span>
-                }
-              />
-            </li>
-
-            <li className="w-full">
-              <Link
-                href="/careers"
-                className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-md font-medium
-                           border border-transparent text-skin-base hover:bg-skin-card/60"
-                onClick={() => setOpen(false)}
-              >
-                <Image
-                  src="/svg/groupmen.svg"
-                  alt="team"
-                  width={24}
-                  height={24}                    className="dark:invert"
-
-                />
-                همکاری با ما
-              </Link>
-            </li>
-
-            <li className="w-full">
-              <DD
-                summeryClassName="justify-center w-full"
-                menuClassName="right-1/2 translate-x-1/2 w-64"
-                title={
-                  <span className="flex items-center gap-2 justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="size-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
-                      />
-                    </svg>
-                    درباره ما
-                  </span>
-                }
-              />
-            </li>
-          </ul>
-
-          <div className="mt-6 grid gap-3">
-            <Link
-              href="/contact"
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md font-medium
-                         border text-skin-base hover:bg-skin-card/60 border-skin-border"
-              onClick={() => setOpen(false)}
-            >
-              <Image src="/svg/phone2.svg" alt="phone" width={20} height={20}                     className="dark:invert"
-/>
-              تماس با ما
-            </Link>
-
-            <Link
-              href="/login"
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-md text-white
-                         [background:linear-gradient(180deg,#111414_0%,#272F2F_100%)] dark:invert"
-              onClick={() => setOpen(false)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              ورود و ثبت‌ نام
-            </Link>
-          </div>
-        </nav>
-      </aside>
     </header>
   );
 }
