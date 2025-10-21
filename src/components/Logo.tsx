@@ -1,15 +1,21 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
-
+import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 type Props = {
   className?: string;
 };
-
 export default function Logo({ className = "" }: Props) {
+  const { t } = useTranslation("common");
+  const pathname = usePathname();
+  const langFromPath = (pathname || "/").split("/")[1] === "en" ? "en" : "fa";
   return (
-    <div className={`${className}`}>
-      <Link href="/" className="flex items-center gap-2 sm:gap-3">
+    <div className={className}>
+      <Link
+        href={`/${langFromPath}`}
+        className="flex items-center gap-2 sm:gap-3"
+      >
         <div className="relative w-10 h-14 sm:w-[77px] sm:h-[109px]">
           <Image
             src="/image/mainLogo.png"
@@ -22,9 +28,11 @@ export default function Logo({ className = "" }: Props) {
         </div>
 
         <div className="leading-tight">
-          <b className="text-base sm:text-xl text-black dark:text-white">مای پراپ</b>
+          <b className="text-base sm:text-xl text-black dark:text-white">
+            {t("firmName")}
+          </b>
           <div className="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-200">
-            معتبرترین سایت پراپ ایرانی
+            {t("slogen")}
           </div>
         </div>
       </Link>

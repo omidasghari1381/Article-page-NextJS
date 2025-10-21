@@ -53,7 +53,7 @@ export default function Header() {
     const seg = (pathname || "/").split("/")[1];
     return seg === "en" ? "en" : "fa";
   }, [pathname]);
-  const { t } = useTranslation("header");
+  const { t } = useTranslation("common");
 
   useEffect(() => setMounted(true), []);
   const current = mounted ? resolvedTheme : undefined;
@@ -178,7 +178,7 @@ useEffect(() => {
                 height={40}
                 className="dark:invert"
               />
-                  {t("collabration")}
+                  {t("collaboration")}
             </Link>
             <DD
               title={

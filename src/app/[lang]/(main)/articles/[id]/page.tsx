@@ -8,7 +8,6 @@ import RelatedArticles from "@/components/article/RelatedArticles";
 import CommentsBlock from "@/components/article/CommentsBlock";
 import SidebarLatest from "@/components/mainPage/SidebarLatest";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import type { Metadata } from "next";
 
 import { ArticleService } from "@/server/modules/articles/services/article.service";
@@ -20,6 +19,7 @@ import {
 import { SeoMetaService } from "@/server/modules/metaData/services/seoMeta.service";
 
 import Reveal from "@/components/transitions/Reveal";
+import { authOptions } from "@/app/[lang]/api/auth/[...nextauth]/route";
 
 function robotsToMetadata(robots?: RobotsSetting | null): Metadata["robots"] {
   if (!robots) return undefined;

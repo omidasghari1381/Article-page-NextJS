@@ -2,6 +2,7 @@ import i18next, { type InitOptions } from "i18next";
 import LocizeBackend from "i18next-locize-backend";
 import { defaultNS, fallbackLng } from "./settings";
 
+
 const initOptions: InitOptions = {
   lng: fallbackLng,
   fallbackLng,

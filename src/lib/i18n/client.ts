@@ -15,31 +15,20 @@ if (!i18next.isInitialized) {
     .use(LocizeBackend)
     .use(LanguageDetector)
     .use(initReactI18next)
-    .init({
-      lng: initialLng, // 👈 زبان اولیه از <html lang>
-      load: "languageOnly", // fa-IR → fa
-      supportedLngs: ["fa", "en"],
-      fallbackLng: "fa",
-
-      ns: ["common", "header"], // 👈 namespace header
-      defaultNS: "common",
-
-      backend: {
-        projectId: process.env.NEXT_PUBLIC_LOCIZE_PROJECT_ID!,
-        version: process.env.NEXT_PUBLIC_LOCIZE_VERSION || "latest",
-      },
-
-      // 👇 فقط همین دو منبع؛ navigator/localStorage را حذف کن
-      detection: {
-        order: ["cookie", "htmlTag"],
-        caches: ["cookie"],
-        lookupCookie: "lng",
-      },
-
-      interpolation: { escapeValue: false },
-      react: { useSuspense: false },
-      // debug: true,
-    });
+.init({
+  lng: initialLng,
+  load: "languageOnly",
+  supportedLngs: ["fa","en"],
+  fallbackLng: "fa",
+  defaultNS: "common",
+  fallbackNS: "common",
+  backend: {
+    projectId: process.env.NEXT_PUBLIC_LOCIZE_PROJECT_ID!,
+    version: process.env.NEXT_PUBLIC_LOCIZE_VERSION || "latest",
+  },
+  interpolation: { escapeValue: false },
+  react: { useSuspense: false },
+});
 }
 
 export default i18next;

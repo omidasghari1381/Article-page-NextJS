@@ -9,8 +9,8 @@ import axios from "axios";
 import { timeAgoFa } from "@/app/utils/date";
 import AddComment from "@/components/AddComment";
 import { SessionProvider, useSession } from "next-auth/react";
-import SidebarLatest from "@/components/SidebarLatest";
 import SummeryDropdown from "./Summery";
+import SidebarLatest from "./mainPage/SidebarLatest";
 
 type Author = { id: string; firstName: string; lastName: string };
 

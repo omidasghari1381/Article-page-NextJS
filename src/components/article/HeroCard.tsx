@@ -1,4 +1,3 @@
-// components/article/HeroCard.tsx
 import Image from "next/image";
 import SummeryDropdown from "../Summery";
 

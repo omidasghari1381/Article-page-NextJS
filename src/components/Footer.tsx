@@ -3,6 +3,7 @@ import Image from "next/image";
 import Logo from "./Logo";
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 type AccordionCardProps = {
   title: string;
@@ -24,81 +25,166 @@ type Props = {
   nextIcon?: React.ReactNode;
 };
 
+type FooterTexts = {
+  top_intro: string;
+  quick_links_title: string;
+  quick_links: {
+    home: string;
+    prop: string;
+    plans: string;
+    careers: string;
+    brokers: string;
+    rules: string;
+  };
+  useful_links_title: string;
+  useful_links: {
+    contact: string;
+    about: string;
+    policy: string;
+    faq: string;
+  };
+  licenses_title: string;
+  contact_center: {
+    title: string;
+    support: string;
+    note: string;
+  };
+  contact_info: {
+    phone: string;
+    email: string;
+    address: string;
+  };
+  socials: {
+    instagram: string;
+    whatsapp: string;
+    youtube: string;
+    telegram: string;
+  };
+  bottom_bar: {
+    rights: string;
+    dev: string;
+  };
+  warnings: {
+    risk_title: string;
+    risk_text: string;
+    jurisdiction_title: string;
+    jurisdiction_text: string;
+  };
+  trainings: {
+    title: string;
+    items: Record<string, string>;
+  };
+};
+
 export default function Footer() {
+  const { t } = useTranslation("footer");
+  const texts: FooterTexts = {
+    top_intro: t("top_intro"),
+    quick_links_title: t("quick_links_title"),
+    quick_links: {
+      home: t("quick_links.home"),
+      prop: t("quick_links.prop"),
+      plans: t("quick_links.plans"),
+      careers: t("quick_links.careers"),
+      brokers: t("quick_links.brokers"),
+      rules: t("quick_links.rules"),
+    },
+    useful_links_title: t("useful_links_title"),
+    useful_links: {
+      contact: t("useful_links.contact"),
+      about: t("useful_links.about"),
+      policy: t("useful_links.policy"),
+      faq: t("useful_links.faq"),
+    },
+    licenses_title: t("licenses_title"),
+    contact_center: {
+      title: t("contact_center.title"),
+      support: t("contact_center.support"),
+      note: t("contact_center.note"),
+    },
+    contact_info: {
+      phone: t("contact_info.phone"),
+      email: t("contact_info.email"),
+      address: t("contact_info.address"),
+    },
+    socials: {
+      instagram: t("socials.instagram"),
+      whatsapp: t("socials.whatsapp"),
+      youtube: t("socials.youtube"),
+      telegram: t("socials.telegram"),
+    },
+    bottom_bar: {
+      rights: t("bottom_bar.rights"),
+      dev: t("bottom_bar.dev"),
+    },
+    warnings: {
+      risk_title: t("warnings.risk_title"),
+      risk_text: t("warnings.risk_text"),
+      jurisdiction_title: t("warnings.jurisdiction_title"),
+      jurisdiction_text: t("warnings.jurisdiction_text"),
+    },
+    trainings: {
+      title: t("trainings.title"),
+      items: {
+        "1": t("trainings.items.1"),
+        "2": t("trainings.items.2"),
+        "3": t("trainings.items.3"),
+        "4": t("trainings.items.4"),
+        "5": t("trainings.items.5"),
+        "6": t("trainings.items.6"),
+        "7": t("trainings.items.7"),
+        "8": t("trainings.items.8"),
+      },
+    },
+  };
+
   return (
     <footer className="bg-skin-bg text-skin-base w-full border border-skin-border px-4 sm:px-6 lg:px-20 py-8 lg:py-16">
       <div className="mx-auto max-w-screen-2xl">
-        <TopIntro />
+        <TopIntro texts={texts} />
         <Divider />
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[1fr_1fr_587px_auto] lg:items-start">
-          <QuickLinks />
-          <UsefulLinks />
-          <TrainingsSliderList />
-          <Licenses />
+          <QuickLinks texts={texts} />
+          <UsefulLinks texts={texts} />
+          <TrainingsSliderList texts={texts} />
+          <Licenses texts={texts} />
         </div>
         <Divider />
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between mb-8">
-          <ContactCenterCopy />
-          <ContactInfoCopy />
-          <SocialsBlock />
+          <ContactCenterCopy texts={texts} />
+          <ContactInfoCopy texts={texts} />
+          <SocialsBlock texts={texts} />
         </div>
         <AccordionCard
-          title="Risk Warning"
+          title={texts.warnings.risk_title}
           defaultOpen
           image="/svg/warning.svg"
         >
           <p className="text-sm leading-7 text-skin-muted">
-            Trading financial instruments, including but not limited to forex,
-            commodities, indices, and cryptocurrencies, involves a high level of
-            risk and may not be suitable for all investors. Leveraged trading
-            can result in significant gains as well as substantial losses. You
-            should carefully consider your investment objectives, level of
-            experience, and risk appetite before engaging in any financial
-            activity. Past performance is not indicative of future results. It
-            is possible to lose all or more than your initial investment. You
-            should not invest money that you cannot afford to lose. Myprop Ltd
-            does not provide any personalized investment advice or guarantees of
-            profit. Please ensure that you fully understand the risks involved
-            and seek independent financial advice if necessary. Trading with
-            Myprop Ltd is subject to local regulations, and services may not be
-            available in certain jurisdictions.
+            {texts.warnings.risk_text}
           </p>
         </AccordionCard>
         <AccordionCard
-          title="Jurisdiction Disclaimer"
+          title={texts.warnings.jurisdiction_title}
           className="mt-3"
           image="/svg/disclaimer.svg"
         >
           <p className="text-sm leading-7 text-skin-muted">
-            The information, products, and services provided on this website are
-            intended for use only in jurisdictions where they may lawfully be
-            offered. By accessing or using this website, you agree that your use
-            complies with all applicable laws and regulations in your
-            jurisdiction. [Company/Website Name] makes no representation that
-            the content is appropriate, legal, or available for use in all
-            locations. Users who access the website from outside [Country/State]
-            do so at their own initiative and are responsible for compliance
-            with their local laws. Any legal disputes arising from the use of
-            this website shall be governed exclusively by the laws of [Specify
-            Country/State], and you agree to submit to the exclusive
-            jurisdiction of the courts located in [City, Country/State].
+            {texts.warnings.jurisdiction_text}
           </p>
         </AccordionCard>
-        <BottomBar />
+        <BottomBar texts={texts} />
       </div>
     </footer>
   );
 }
 
-function TopIntro() {
+function TopIntro({ texts }: { texts: FooterTexts }) {
   return (
     <div className="flex flex-col gap-4 items-start justify-between lg:flex-row lg:items-center">
       <Logo className="shrink-0" />
       <span className="text-skin-base text-sm sm:text-base lg:h-[56px] w-full lg:mx-11">
-        با زیرساختی سریع، پلتفرمی امن، و تحلیل‌هایی مبتنی بر داده‌های لحظه‌ای،
-        ما به تو کمک می‌کنیم تا فرصت‌ها را زودتر ببینی، دقیق‌تر تحلیل کنی و
-        هوشمندانه‌تر معامله کنی. کمک می‌کنیم تا فرصت‌ها را زودتر ببینی، دقیق‌تر
-        تحلیل کنی و هوشمندانه‌تر معامله کنی.
+        {texts.top_intro}
       </span>
     </div>
   );
@@ -108,41 +194,41 @@ function Divider() {
   return <div className="w-full h-px bg-skin-divider mx-auto my-8" />;
 }
 
-function QuickLinks() {
+function QuickLinks({ texts }: { texts: FooterTexts }) {
   return (
     <div className="text-skin-base font-semibold text-sm flex justify-center">
       <ul className="space-y-4 text-base font-medium text-center md:text-right">
         <h3 className="text-base font-bold py-1 text-skin-heading">
-          دسترسی های سریع
+          {texts.quick_links_title}
         </h3>
         <li>
           <Link className="hover:text-skin-accent transition" href="/">
-            صفحه اصلی
+            {texts.quick_links.home}
           </Link>
         </li>
         <li>
           <Link className="hover:text-skin-accent transition" href="/faq">
-            پراپ تریدینگ
+            {texts.quick_links.prop}
           </Link>
         </li>
         <li>
           <Link className="hover:text-skin-accent transition" href="/faq">
-            پلن‌ها
+            {texts.quick_links.plans}
           </Link>
         </li>
         <li>
           <Link className="hover:text-skin-accent transition" href="/faq">
-            همکاری با ما
+            {texts.quick_links.careers}
           </Link>
         </li>
         <li>
           <Link className="hover:text-skin-accent transition" href="/faq">
-            بروکر ها
+            {texts.quick_links.brokers}
           </Link>
         </li>
         <li>
           <Link className="hover:text-skin-accent transition" href="/faq">
-            قوانین و مقررات
+            {texts.quick_links.rules}
           </Link>
         </li>
       </ul>
@@ -150,31 +236,31 @@ function QuickLinks() {
   );
 }
 
-function UsefulLinks() {
+function UsefulLinks({ texts }: { texts: FooterTexts }) {
   return (
     <div className="text-skin-base flex justify-center">
       <ul className="space-y-4 text-base font-medium text-center md:text-left">
         <h3 className="text-base py-1 font-bold text-skin-heading">
-          لینک های مفید
+          {texts.useful_links_title}
         </h3>
         <li>
           <Link className="hover:text-skin-accent transition" href="/">
-            تماس با ما
+            {texts.useful_links.contact}
           </Link>
         </li>
         <li>
           <Link className="hover:text-skin-accent transition" href="/prop">
-            درباره ما
+            {texts.useful_links.about}
           </Link>
         </li>
         <li>
           <Link className="hover:text-skin-accent transition" href="/plans">
-            قوانین و مقررات
+            {texts.useful_links.policy}
           </Link>
         </li>
         <li>
           <Link className="hover:text-skin-accent transition" href="/faq">
-            سوالات متداول
+            {texts.useful_links.faq}
           </Link>
         </li>
       </ul>
@@ -182,21 +268,21 @@ function UsefulLinks() {
   );
 }
 
-function MiniEducationHeader() {
+function MiniEducationHeader({ texts }: { texts: FooterTexts }) {
   return (
     <div className="text-skin-base flex">
       <div className="h-7 flex items-center gap-2">
         <Image
           src="/svg/arrow.svg"
-          alt="broker1"
+          alt="arrow"
           width={22}
           height={23}
           className="bg-skin-card dark:invert"
         />
-        <h3>برخی از آموزش ها</h3>
+        <h3>{texts.trainings.title}</h3>
         <Image
           src="/svg/arrow.svg"
-          alt="broker1"
+          alt="arrow"
           width={8}
           height={8}
           className="bg-skin-card dark:invert"
@@ -206,12 +292,12 @@ function MiniEducationHeader() {
   );
 }
 
-function Licenses() {
+function Licenses({ texts }: { texts: FooterTexts }) {
   return (
     <div className="text-skin-base">
       <div className="flex items-center gap-3 lg:gap-5 mb-6 mr-0 lg:mr-3.5 justify-center md:justify-start">
         <h3 className="text-xs font-bold text-skin-heading">
-          دارای مجوز از لگولاتوری های معتبر
+          {texts.licenses_title}
         </h3>
         <Image
           src="/svg/questionMark.svg"
@@ -224,21 +310,21 @@ function Licenses() {
       <div className="flex items-center gap-2 justify-center md:justify-start">
         <Image
           src="/svg/ASIC.svg"
-          alt="broker1"
+          alt="ASIC"
           width={73.35}
           height={73.35}
           className="rounded-full border-2 border-skin-border bg-white"
         />
         <Image
           src="/image/FSA.png"
-          alt="broker2"
+          alt="FSA"
           width={73.35}
           height={73.35}
           className="rounded-full border-2 border-skin-border bg-white"
         />
         <Image
           src="/image/FC.png"
-          alt="broker3"
+          alt="FC"
           width={73.35}
           height={73.35}
           className="rounded-full border-2 border-skin-border"
@@ -248,23 +334,23 @@ function Licenses() {
   );
 }
 
-function ContactCenterCopy() {
+function ContactCenterCopy({ texts }: { texts: FooterTexts }) {
   return (
     <div className="text-skin-base">
       <ul>
         <li className="flex">
           <span className="font-bold text-sm text-skin-heading">
-            مرکز تماس مشتریان
+            {texts.contact_center.title}
           </span>
         </li>
         <li className="flex pt-2.5">
           <span className="font-bold text-sm">
-            به صورت شبانه روزی پشتیبان شما هستیم
+            {texts.contact_center.support}
           </span>
         </li>
         <li className="flex pt-2.5">
           <span className="font-semibold text-xs mt-3 mb-2.5 text-skin-muted">
-            رضایت مشتری برای ما در اولویت است
+            {texts.contact_center.note}
           </span>
         </li>
       </ul>
@@ -272,13 +358,13 @@ function ContactCenterCopy() {
   );
 }
 
-function ContactInfoCopy() {
+function ContactInfoCopy({ texts }: { texts: FooterTexts }) {
   return (
     <div className="text-skin-base text-left">
       <ul className="ml-0 lg:ml-[99px]">
         <li>
           <div className="font-semibold text-sm flex justify-end items-center gap-2">
-            <span>۰۲۱-۹۱۰۱۴۰۴۹</span>
+            <span>{texts.contact_info.phone}</span>
             <Image
               src="/svg/Phone.svg"
               alt="phone"
@@ -290,7 +376,7 @@ function ContactInfoCopy() {
         </li>
         <li className="mt-2.5">
           <div className="text-sm font-semibold flex justify-end items-center gap-2">
-            <span>MyProp@gmail.com</span>
+            <span>{texts.contact_info.email}</span>
             <Image
               src="/svg/Group.svg"
               alt="email"
@@ -302,9 +388,7 @@ function ContactInfoCopy() {
         </li>
         <li className="mt-2.5">
           <div className="text-sm font-semibold flex justify-end items-center gap-2">
-            <span>
-              میدان توحید ، خیابان امیرلو ، خیابان طوسی ، پلاک 100 ، واحد 3
-            </span>
+            <span>{texts.contact_info.address}</span>
             <Image
               src="/svg/location.svg"
               alt="location"
@@ -319,18 +403,19 @@ function ContactInfoCopy() {
   );
 }
 
-function SocialsBlock() {
+function SocialsBlock({ texts }: { texts: FooterTexts }) {
+  const socials = [
+    { src: "/image/insta.png", label: texts.socials.instagram },
+    { src: "/image/whatsapp.png", label: texts.socials.whatsapp },
+    { src: "/image/youtube.png", label: texts.socials.youtube },
+    { src: "/image/telegram.png", label: texts.socials.telegram },
+  ];
   return (
     <div className="flex justify-center gap-4">
-      {[
-        { src: "/image/insta.png", label: "اینستاگرام" },
-        { src: "/image/whatsapp.png", label: "واتس آپ" },
-        { src: "/image/youtube.png", label: "یوتیوب" },
-        { src: "/image/telegram.png", label: "تلگرام" },
-      ].map((s, i) => (
+      {socials.map((s, i) => (
         <div key={i} className="text-center">
           <div className="flex h-[56px] w-[56px] lg:h-[62px] lg:w-[62px] bg-[#19CCA7] rounded items-center justify-center mb-2 lg:mb-4">
-            <Image src={s.src} alt={s.label} width={33} height={33} />
+            <Image src={s.src} alt={String(s.label)} width={33} height={33} />
           </div>
           <span className="text-[#0E1515] dark:text-white text-xs lg:text-sm flex justify-center">
             {s.label}
@@ -341,7 +426,7 @@ function SocialsBlock() {
   );
 }
 
-function BottomBar() {
+function BottomBar({ texts }: { texts: FooterTexts }) {
   return (
     <div className="my-10 flex flex-col items-center gap-4 text-skin-base text-sm lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-col items-center gap-3 lg:flex-row lg:items-center">
@@ -354,13 +439,10 @@ function BottomBar() {
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         />
         <span className="text-center lg:text-right">
-          تمامی حقوق برای این وب سایت محفوظ است
+          {texts.bottom_bar.rights}
         </span>
       </div>
-
-      <span className="text-center lg:text-right">
-        طراحی و توسعه توسط‌ مای پراپ
-      </span>
+      <span className="text-center lg:text-right">{texts.bottom_bar.dev}</span>
     </div>
   );
 }
@@ -375,7 +457,6 @@ function AccordionCard({
   icon,
 }: AccordionCardProps) {
   const [open, setOpen] = useState(defaultOpen);
-
   return (
     <section
       className={`rounded-2xl border border-skin-border bg-skin-card shadow-sm ${className}`}
@@ -408,7 +489,6 @@ function AccordionCard({
             />
           </svg>
         </button>
-
         <div className="flex items-center gap-2 text-skin-heading">
           <h4 className="text-sm sm:text-base font-semibold">{title}</h4>
           {icon ?? (
@@ -442,37 +522,29 @@ function AccordionCard({
 }
 
 function TrainingsSliderList({
-  title = "برخی آموزش‌ها",
+  texts,
+  title,
   items,
   pageSize = 4,
   className = "",
   prevIcon,
   nextIcon,
-}: Props) {
+}: Props & { texts: FooterTexts }) {
+  const resolvedTitle = title ?? texts.trainings.title;
+  const defaultItems: Item[] = [
+    { id: 1, title: texts.trainings.items["1"], href: "#" },
+    { id: 2, title: texts.trainings.items["2"], href: "#" },
+    { id: 3, title: texts.trainings.items["3"], href: "#" },
+    { id: 4, title: texts.trainings.items["4"], href: "#" },
+    { id: 5, title: texts.trainings.items["5"], href: "#" },
+    { id: 6, title: texts.trainings.items["6"], href: "#" },
+    { id: 7, title: texts.trainings.items["7"], href: "#" },
+    { id: 8, title: texts.trainings.items["8"], href: "#" },
+  ];
+
   const data = useMemo<Item[]>(
-    () =>
-      items && items.length
-        ? items
-        : [
-            {
-              id: 1,
-              title:
-                "نحوه دریافت سرمایه از وب‌سایت مای پراپ با سرعت و تمام جزئیات",
-              href: "#",
-            },
-            { id: 2, title: "آموزش انجام چالش‌های پراپ‌تریدینگ", href: "#" },
-            {
-              id: 3,
-              title: "بهترین روش‌های مدیریت ریسک در معاملات",
-              href: "#",
-            },
-            { id: 4, title: "آموزش سریع درخواست همکاری", href: "#" },
-            { id: 5, title: "راهنمای افتتاح حساب معاملاتی", href: "#" },
-            { id: 6, title: "اشتباهات رایج تریدرهای تازه‌کار", href: "#" },
-            { id: 7, title: "ساخت استراتژی شخصی قدم‌به‌قدم", href: "#" },
-            { id: 8, title: "روانشناسی معامله‌گری در عمل", href: "#" },
-          ],
-    [items]
+    () => (items && items.length ? items : defaultItems),
+    [items, defaultItems]
   );
 
   const [page, setPage] = useState(0);
@@ -511,7 +583,7 @@ function TrainingsSliderList({
           )}
         </button>
         <h3 className="text-sm font-semibold text-skin-heading text-left">
-          {title}
+          {resolvedTitle}
         </h3>
         <button
           onClick={() => canNext && setPage((p) => p + 1)}

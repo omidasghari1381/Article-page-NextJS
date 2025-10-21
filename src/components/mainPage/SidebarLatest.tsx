@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { getServerT } from "@/lib/i18n/get-server-t";
 
 type Author = { id: string; firstName: string; lastName: string };
 type CategoryObj = { id: string; name: string; slug: string };
@@ -30,31 +31,29 @@ function getCategoryName(categories: CategoryLike): string | null {
   return name?.length ? name : null;
 }
 
-export default function SidebarLatest({ posts = [] }: { posts: LatestItem[] }) {
+export default async function SidebarLatest({
+  posts = [],
+  lang = "fa",
+}: {
+  posts: LatestItem[];
+  lang?: string;
+}) {
+  const t = await getServerT(lang, "common");
+  const title = t("sidebar.popular");
+  const empty = t("sidebar.empty");
+
   return (
     <aside>
       <div className="flex items-center gap-3 px-2 sm:px-4 py-6">
-        <Image
-          src="/svg/Rectangle.svg"
-          alt="thumb"
-          width={8}
-          height={36}
-          className="dark:invert"
-        />
-        <h3 className="text-lg sm:text-xl font-semibold text-[#1C2121] dark:text-white">
-          محبوب‌ترین مقالات
-        </h3>
+        <Image src="/svg/Rectangle.svg" alt={t("alt.badge")} width={8} height={36} className="dark:invert" />
+        <h3 className="text-lg sm:text-xl font-semibold text-[#1C2121] dark:text-white">{title}</h3>
       </div>
 
       <div className="px-2 sm:px-4 pb-4 space-y-6 sm:space-y-8">
         {posts.length ? (
-          posts.map((p) => (
-            <SidebarCard key={p.id ?? `${p.title}-${Math.random()}`} post={p} />
-          ))
+          posts.map((p) => <SidebarCard key={p.id ?? `${p.title}-${Math.random()}`} post={p} />)
         ) : (
-          <div className="text-sm text-gray-500 dark:text-skin-muted">
-            موردی برای نمایش نیست.
-          </div>
+          <div className="text-sm text-gray-500 dark:text-skin-muted">{empty}</div>
         )}
       </div>
     </aside>
@@ -73,36 +72,22 @@ function SidebarCard({ post }: { post: LatestItem }) {
           alt={post.title || "thumbnail"}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          sizes="(max-width: 640px) 100vw,
-                 (max-width: 1024px) 50vw,
-                 33vw"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           priority={false}
         />
-
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
-
         {categoryName && (
           <div className="absolute top-3 right-3">
             <div className="relative inline-block">
-              <Image
-                src="/svg/arrowLeftBlack.svg"
-                alt="badge"
-                width={108}
-                height={35}
-                className="block dark:invert"
-                priority
-              />
-              <span className=" dark:text-black absolute inset-0 left-3 flex items-center justify-center text-white text-[10px] sm:text-xs font-semibold leading-none px-2">
+              <Image src="/svg/arrowLeftBlack.svg" alt="badge" width={108} height={35} className="block dark:invert" priority />
+              <span className="dark:text-black absolute inset-0 left-3 flex items-center justify-center text-white text-[10px] sm:text-xs font-semibold leading-none px-2">
                 {categoryName}
               </span>
             </div>
           </div>
         )}
-
         <div className="absolute bottom-3 right-4 left-4 text-white">
-          <h5 className="text-sm sm:text-base font-medium leading-7 line-clamp-2">
-            {post.title || "—"}
-          </h5>
+          <h5 className="text-sm sm:text-base font-medium leading-7 line-clamp-2">{post.title || "—"}</h5>
         </div>
       </div>
     </Link>
