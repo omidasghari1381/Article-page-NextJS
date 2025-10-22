@@ -38,7 +38,6 @@ export default function Loading() {
                 ))}
               </div>
             </div>
-            /* === ArticleBody (exact skeleton, no big image) === */
             <div className="bg-white space-y-6 leading-8 text-lg text-slate-700">
               <div className="my-6">
                 <Skeleton.Lines lines={5} heights={[16, 16, 16, 16, 16]} />

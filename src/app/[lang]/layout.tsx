@@ -1,4 +1,4 @@
-import i18next from "@/lib/i18n/i18n";
+import { clampLang, type Lang } from "@/lib/i18n/settings";
 import LanguageAttributes from "@/components/providers/LanguageAttributes";
 
 export default async function LangLayout({
@@ -6,10 +6,10 @@ export default async function LangLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ lang: "fa" | "en" }>;
+  params: Promise<{ lang: string }>;
 }) {
-  const { lang } = await params;
-  await i18next.changeLanguage(lang); 
+  const { lang: raw } = await params;     
+  const lang: Lang = clampLang(raw);   
 
   return (
     <>

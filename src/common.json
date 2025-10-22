@@ -1,0 +1,47 @@
+{
+  "breadcrumb": {
+    "articles": "مقالات",
+    "brand": "مای پراپ"
+  },
+
+  "chosen": {
+    "all": "همه",
+    "title": "انتخاب سردبیر",
+    "badge_alt": "نشان بخش",
+    "thumb_alt": "تصویر بندانگشتی",
+    "date_alt": "تاریخ",
+    "views_alt": "بازدید"
+  },
+
+  "edit_button": "ویرایش این مقاله",
+
+  "hero": {
+    "minutes_many": "{{n}} دقیقه",
+    "minutes_one": "یک دقیقه",
+    "summary_title": "خلاصه آنچه در مقاله می‌خوانیم",
+    "views_suffix": "بازدید"
+  },
+
+  "latest_video": "آخرین ویدیوها",
+  "not_found_title": "مقاله پیدا نشد",
+
+  "markets": {
+    "forex": "بازار فارکس",
+    "crypto": "ارز دیجیتال",
+    "price": "قیمت",
+    "difference": "تغییرات"
+  },
+
+  "educational": {
+    "title": "مقالات آموزشی"
+  },
+
+  "latest": {
+    "title": "آخرین مقالات",
+    "view_all": "مشاهده همه مقالات"
+  },
+
+  "video": {
+    "view_all": "مشاهده همه ویدیوها"
+  }
+}

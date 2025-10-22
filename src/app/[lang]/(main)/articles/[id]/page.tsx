@@ -318,4 +318,3 @@ function Divider() {
     </div>
   );
 }
-

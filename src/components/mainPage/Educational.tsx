@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
+import { getServerT } from "@/lib/i18n/get-server-t";
 import { timeAgoFa } from "@/app/utils/date";
+import type { Lang } from "@/lib/i18n/settings";
 
 export type ArticleLite = {
   id: string;
@@ -15,24 +17,39 @@ export type ArticleLite = {
 const articleHref = (a?: Pick<ArticleLite, "id"> | null) =>
   a?.id ? `/articles/${a.id}` : "#";
 
-export default function Educational({ items }: { items: ArticleLite[] }) {
+export default async function Educational({
+  items,
+  lang,
+}: {
+  items: ArticleLite[];
+  lang: Lang;
+}) {
+  const t = await getServerT(lang, "article");
+
   const main = items?.[0] ?? null;
   const rest = (items ?? []).slice(1, 5);
 
   return (
     <section>
       <div className="flex items-center gap-3">
-        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} className="dark:invert"/>
+        <Image
+          src="/svg/Rectangle.svg"
+          alt="section badge"
+          width={8}
+          height={36}
+          className="dark:invert"
+        />
         <h3 className="text-xl font-semibold text-[#1C2121] dark:text-white">
-          مقالات آموزشی
+          {t("educational.title")}
         </h3>
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[540px]">
+        {/* مقاله اصلی */}
         <div className="relative rounded-md overflow-hidden aspect-[16/10] sm:aspect-[4/3] lg:aspect-auto lg:h-full">
           <button
             className="absolute top-3 right-3 z-10 w-11 h-11 bg-gradient-to-r from-[#111414] to-[#272F2F] flex items-center justify-center rounded-md dark:invert"
-            aria-label="اشتراک‌گذاری"
+            aria-label="share"
             type="button"
           >
             <Image src="/svg/share.svg" alt="share" width={26} height={26} />
@@ -56,7 +73,11 @@ export default function Educational({ items }: { items: ArticleLite[] }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Image src={"/svg/whiteEye.svg"} alt="views" width={20} height={16} />
-                  <span>{main ? `${main.viewCount} بازدید` : "—"}</span>
+                  <span>
+                    {main
+                      ? t("common:view", { count: main.viewCount })
+                      : "—"}
+                  </span>
                 </div>
               </div>
               <h1 className="mt-2 text-white font-semibold line-clamp-2">
@@ -66,15 +87,16 @@ export default function Educational({ items }: { items: ArticleLite[] }) {
           </Link>
         </div>
 
+        {/* سایر کارت‌ها */}
         <div className="grid grid-rows-2 gap-6 lg:h-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {rest.slice(0, 2).map((it) => (
-              <SmallCard key={it.id} item={it} />
+              <SmallCard key={it.id} item={it} lang={lang} />
             ))}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {rest.slice(2, 4).map((it) => (
-              <SmallCard key={it.id} item={it} />
+              <SmallCard key={it.id} item={it} lang={lang} />
             ))}
           </div>
         </div>
@@ -83,7 +105,8 @@ export default function Educational({ items }: { items: ArticleLite[] }) {
   );
 }
 
-function SmallCard({ item }: { item: ArticleLite }) {
+async function SmallCard({ item, lang }: { item: ArticleLite; lang: Lang }) {
+  const t = getServerT(lang, "article");
   const title = item.subject || item.title;
   const cover = item.thumbnail?.trim() || "/image/a.png";
 
@@ -107,7 +130,7 @@ function SmallCard({ item }: { item: ArticleLite }) {
           </div>
           <div className="flex items-center gap-2">
             <Image src={"/svg/whiteEye.svg"} alt="views" width={18} height={14} />
-            <span>{item.viewCount} بازدید</span>
+            <span>{(await t)("common:view", { count: item.viewCount })}</span>
           </div>
         </div>
         <h2 className="mt-2 text-white font-semibold line-clamp-2">{title}</h2>

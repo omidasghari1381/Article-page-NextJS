@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { getServerT } from "@/lib/i18n/get-server-t";
+import type { Lang } from "@/lib/i18n/settings";
 
 type Pair = {
   icon: string;
@@ -8,35 +10,19 @@ type Pair = {
   difference: number;
 };
 
-export default function Markets() {
+export default async function Markets({ lang }: { lang: Lang }) {
+  const t = await getServerT(lang, "article");
+
   const defaultPairs: Pair[] = [
-    {
-      icon: "/svg/pair.svg",
-      name: "EURUSD",
-      price: 268,
-      market: "Forex",
-      difference: 5.71,
-    },
-    {
-      icon: "/svg/pair.svg",
-      name: "USDJPY",
-      price: 14.32,
-      market: "Forex",
-      difference: -0.82,
-    },
-    {
-      icon: "/svg/pair.svg",
-      name: "BTCUSD",
-      price: 280.45,
-      market: "Crypto",
-      difference: 2.14,
-    },
+    { icon: "/svg/pair.svg", name: "EURUSD", price: 268, market: "Forex", difference: 5.71 },
+    { icon: "/svg/pair.svg", name: "USDJPY", price: 14.32, market: "Forex", difference: -0.82 },
+    { icon: "/svg/pair.svg", name: "BTCUSD", price: 280.45, market: "Crypto", difference: 2.14 },
   ];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Market title="بازار فارکس" pair={defaultPairs} />
-      <Market title="ارز دیجیتال" pair={defaultPairs} />
+      <Market title={t("markets.forex")} pair={defaultPairs} />
+      <Market title={t("markets.crypto")} pair={defaultPairs} />
     </div>
   );
 }
@@ -45,7 +31,8 @@ function Market({ title, pair }: { title: string; pair: Pair[] }) {
   return (
     <div className="p-4 sm:p-5">
       <div className="flex items-center gap-3 mb-4">
-        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} className="dark:invert"/>
+        {/* alt انگلیسی و ثابت */}
+        <Image src="/svg/Rectangle.svg" alt="section badge" width={8} height={36} className="dark:invert" />
         <h3 className="text-lg sm:text-xl font-bold text-[#1C2121] dark:text-white">
           {title}
         </h3>
@@ -65,24 +52,17 @@ function PairRow({ item }: { item: Pair }) {
   return (
     <div className="flex items-center justify-between gap-4 px-3 py-3 border-b border-[#E6E9EE] dark:border-skin-divider text-[#2E3232] dark:text-white">
       <div className="flex items-center gap-3">
-        <Image src={item.icon} alt={item.name} width={48} height={34} />
+        {/* alt انگلیسی و مرتبط */}
+        <Image src={item.icon} alt="pair icon" width={48} height={34} />
         <div className="text-left">
           <div className="text-sm font-semibold">{item.name}</div>
-          <div className="text-xs text-[#666969] dark:text-skin-muted">
-            {item.market}
-          </div>
+          <div className="text-xs text-[#666969] dark:text-skin-muted">{item.market}</div>
         </div>
       </div>
 
       <div className="text-left min-w-[90px]">
-        <div className="text-sm font-semibold text-[#2E3232] dark:text-white">
-          ${item.price}
-        </div>
-        <div
-          className={`text-sm font-semibold ${
-            diffPositive ? "text-[#38CB89]" : "text-red-500"
-          }`}
-        >
+        <div className="text-sm font-semibold text-[#2E3232] dark:text-white">${item.price}</div>
+        <div className={`text-sm font-semibold ${diffPositive ? "text-[#38CB89]" : "text-red-500"}`}>
           {diffPositive ? "+" : ""}
           {item.difference}
         </div>

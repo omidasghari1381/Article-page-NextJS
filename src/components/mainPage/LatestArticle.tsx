@@ -1,6 +1,8 @@
 import Image from "next/image";
-import { timeAgoFa } from "@/app/utils/date";
 import Link from "next/link";
+import { timeAgoFa } from "@/app/utils/date";
+import { getServerT } from "@/lib/i18n/get-server-t";
+import type { Lang } from "@/lib/i18n/settings";
 
 export type ArticleLite = {
   id: string;
@@ -17,25 +19,35 @@ export type ArticleLite = {
 const articleHref = (a?: Pick<ArticleLite, "id"> | null) =>
   a?.id ? `/articles/${a.id}` : "#";
 
-export default async function LatestArticle({ items }: { items?: ArticleLite[] }) {
+export default async function LatestArticle({
+  items,
+  lang,
+}: {
+  items?: ArticleLite[];
+  lang: Lang;
+}) {
+  const t = await getServerT(lang, "article");
   const data = items ?? [];
+
   return (
     <section>
       <div className="flex items-center gap-3 py-6">
-        <Image src="/svg/Rectangle.svg" alt="thumb" width={8} height={36} className="dark:invert"/>
-        <h3 className="text-xl font-semibold text-[#1C2121] dark:text-white">آخرین مقالات</h3>
+        <Image src="/svg/Rectangle.svg" alt="section badge" width={8} height={36} className="dark:invert" />
+        <h3 className="text-xl font-semibold text-[#1C2121] dark:text-white">
+          {t("latest.title")}
+        </h3>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {data.slice(0, 4).map((item) => (
-          <LateArticle key={item.id} item={item} />
+          <LateArticle key={item.id} item={item} lang={lang} />
         ))}
         {!data.length && (
           <>
-            <LateArticlePlaceholder />
-            <LateArticlePlaceholder />
-            <LateArticlePlaceholder />
-            <LateArticlePlaceholder />
+            <LateArticlePlaceholder lang={lang} />
+            <LateArticlePlaceholder lang={lang} />
+            <LateArticlePlaceholder lang={lang} />
+            <LateArticlePlaceholder lang={lang} />
           </>
         )}
       </div>
@@ -43,19 +55,20 @@ export default async function LatestArticle({ items }: { items?: ArticleLite[] }
       <div className="mt-6 flex justify-center">
         <button className="px-6 sm:px-8 h-12 bg-[#19CCA7] rounded-md flex items-center gap-2 text-white">
           <Image src={"/svg/whiteEye.svg"} alt="more" width={24} height={19} />
-          <span className="text-base font-medium">مشاهده همه مقالات</span>
+          <span className="text-base font-medium">{t("latest.view_all")}</span>
         </button>
       </div>
     </section>
   );
 }
 
-function LateArticle({ item }: { item: ArticleLite }) {
+async function LateArticle({ item, lang }: { item: ArticleLite; lang: Lang }) {
+  const t = await getServerT(lang, ["article", "common"]);
   const catName = item.categories ?? "—";
-  const articleUrl = `/articles/${item.id}`;
+  const articleUrl = articleHref(item);
 
   return (
-    <Link href={articleUrl} className="block mb-2 hover:opacity-90 transition">
+    <Link href={articleUrl} className="block mb-2 hover:opacity-90 transition" aria-disabled={!item.id}>
       <div className="relative w-full aspect-[16/9]">
         <Image
           src={item.thumbnail ?? "/image/chart.png"}
@@ -89,14 +102,13 @@ function LateArticle({ item }: { item: ArticleLite }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* eye.svg تک‌رنگ → mask + bg تا با تم هماهنگ شه */}
           <span
             className="inline-block w-[18px] h-[14px] bg-[#373A41] dark:bg-white
                        [mask:url('/svg/eye.svg')] [mask-size:contain] [mask-repeat:no-repeat] [mask-position:center]"
             aria-hidden
           />
-          <span className="text-sm text-[#373A41] dark:text-skin-muted">
-            بازدید {item.viewCount}
+          <span className="text-sm text-[#373A41] dark:text-skin-muted" dir="auto">
+            {t("common:view", { count: item.viewCount })}
           </span>
         </div>
       </div>
@@ -111,7 +123,8 @@ function LateArticle({ item }: { item: ArticleLite }) {
   );
 }
 
-function LateArticlePlaceholder() {
+async function LateArticlePlaceholder({ lang }: { lang: Lang }) {
+  const t = await getServerT(lang, ["article", "common"]);
   return (
     <article className="mb-2">
       <div className="relative w-full aspect-[16/9]">
@@ -142,7 +155,9 @@ function LateArticlePlaceholder() {
                        [mask:url('/svg/eye.svg')] [mask-size:contain] [mask-repeat:no-repeat] [mask-position:center]"
             aria-hidden
           />
-          <span className="text-sm text-[#373A41] dark:text-skin-muted">بازدید 0</span>
+          <span className="text-sm text-[#373A41] dark:text-skin-muted" dir="auto">
+            {t("common:view", { count: 0 })}
+          </span>
         </div>
       </div>
 

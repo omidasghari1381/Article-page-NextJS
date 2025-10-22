@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { timeAgoFa } from "@/app/utils/date";
+import { getServerT } from "@/lib/i18n/get-server-t";
+import type { Lang } from "@/lib/i18n/settings";
 
 type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
 type CategoryLite = { id: string; name: string; slug?: string };
@@ -16,13 +18,17 @@ type ArticleLite = {
   categories?: CategoryLite[];
 };
 
-export default function HeroSection({
+export default async function HeroSection({
   article,
   items,
+  lang,
 }: {
   article: ArticleLite | null;
   items: ArticleLite[] | null;
+  lang: Lang;
 }) {
+  const t = await getServerT(lang, ["article", "common"]);
+
   const articleUrl = article?.id ? `/articles/${article.id}` : "#";
 
   return (
@@ -30,11 +36,11 @@ export default function HeroSection({
       <div className="relative mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-stretch overflow-hidden rounded-xl bg-neutral-900 dark:bg-neutral-900">
         <div className="relative flex flex-col justify-center space-y-4 md:space-y-6 py-8 md:py-10 z-10 order-2 md:order-1">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-200">
-            <Image src="/svg/write.svg" alt="نویسنده" width={22} height={22} className="dark:invert" />
+            <Image src="/svg/write.svg" alt="author" width={22} height={22} className="dark:invert" />
             <span>{article?.author?.firstName ?? ""}</span>
             <span>{article?.author?.lastName ?? ""}</span>
             <span className="opacity-60">·</span>
-            <Image src="/svg/whiteCalender.svg" alt="تاریخ" width={22} height={22} className="dark:invert" />
+            <Image src="/svg/whiteCalender.svg" alt="date" width={22} height={22} className="dark:invert" />
             <span>{article?.createdAt ? timeAgoFa(article.createdAt) : "—"}</span>
           </div>
 
@@ -52,7 +58,7 @@ export default function HeroSection({
               className="w-full sm:w-auto bg-[#19CCA7] hover:bg-[#15b697] disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 sm:px-6 py-3 rounded-lg font-medium transition-colors"
               aria-disabled={!article?.id}
             >
-              ← مطالعه مقاله
+              {t("hero.read_button")}
             </Link>
           </div>
         </div>
@@ -84,11 +90,12 @@ export default function HeroSection({
       <div className="mx-auto mt-6 sm:mt-8 lg:mt-10 px-4 sm:px-6 lg:px-8">
         <div className="rounded-xl p-4 sm:p-5 md:p-6 lg:-translate-y-10 bg-white/70 dark:bg-black/30 backdrop-blur-xl">
           <div className="mx-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 -translate-y-20 h-[303px] w-[1280px] rounded-lg justify-center bg-skin-card/80 dark:bg-skin-card/60 backdrop-blur-[100px]">
+            {/* موبایل اسلایدر */}
             <div className="md:col-span-full md:hidden">
               <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mb-2 align-middle">
                 {items?.map((item) => (
                   <Link
-                    href={`/article/${item.id}`}
+                    href={`/articles/${item.id}`}
                     key={item.id}
                     className="min-w-[260px] max-w-[260px] snap-start bg-skin-card border border-skin-border rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
                   >
@@ -107,7 +114,9 @@ export default function HeroSection({
                       </h3>
                       <div className="flex items-center gap-4 mt-3 text-xs text-skin-muted">
                         <span>{item.createdAt ? timeAgoFa(item.createdAt) : "—"}</span>
-                        <span>بازدید {item.viewCount}</span>
+                        <span dir="auto" className="whitespace-nowrap">
+                          {t("common:view", { count: item.viewCount })}
+                        </span>
                       </div>
                     </div>
                   </Link>
@@ -115,6 +124,7 @@ export default function HeroSection({
               </div>
             </div>
 
+            {/* دسکتاپ گرید */}
             {items?.map((item) => (
               <Link
                 href={`/articles/${item.id}`}
@@ -136,7 +146,9 @@ export default function HeroSection({
                   </h3>
                   <div className="flex items-center gap-6 mt-3 text-xs text-skin-muted">
                     <span>{item.createdAt ? timeAgoFa(item.createdAt) : "—"}</span>
-                    <span>بازدید {item.viewCount}</span>
+                    <span dir="auto" className="whitespace-nowrap">
+                      {t("common:view", { count: item.viewCount })}
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -144,7 +156,7 @@ export default function HeroSection({
 
             {!items?.length && (
               <div className="col-span-full text-center text-sm text-skin-muted py-8">
-                محتوایی برای نمایش وجود ندارد.
+                {t("no_content", { ns: "article" })}
               </div>
             )}
           </div>

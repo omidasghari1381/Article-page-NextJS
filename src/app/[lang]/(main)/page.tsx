@@ -10,6 +10,9 @@ import SidebarLatest from "@/components/mainPage/SidebarLatest";
 import { ArticleService } from "@/server/modules/articles/services/article.service";
 import Reveal from "@/components/transitions/Reveal";
 
+import { clampLang, type Lang } from "@/lib/i18n/settings";
+import { getServerT } from "@/lib/i18n/get-server-t";
+
 type AuthorDTO = { id: string; firstName: string; lastName: string } | null;
 type CategoryLite = { id: string; name: string; slug?: string };
 type ArticleLite = {
@@ -24,10 +27,19 @@ type ArticleLite = {
   category?: CategoryLite | null;
 };
 
-export default async function HomePage() {
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang: raw } = await params;
+  const lang: Lang = clampLang(raw);
+  const t = await getServerT(lang, "article");
+
   const categories = Object.values(
     articleCategoryEnum
   ) as articleCategoryEnum[];
+
   const svc = new ArticleService();
   const [latestRes, heroRes, educationalRes, sidebarLatestRes, mostViewedRes] =
     await Promise.all([
@@ -72,26 +84,30 @@ export default async function HomePage() {
   return (
     <main className="w-full">
       <Reveal as="section" mode="mount">
-        <HeroSection article={hero} items={latest} />
+        <HeroSection article={hero} items={latest} lang={lang} />
       </Reveal>
 
       <div className="px-4 sm:px-6 lg:px-10 xl:px-20 pb-10">
-        <Reveal as="section" >
-          <Chosen categories={categories} article={latest[0] ?? null} />
+        <Reveal as="section">
+          <Chosen
+            categories={categories}
+            article={latest[0] ?? null}
+            lang={lang}
+          />
         </Reveal>
 
         <Reveal as="section" className="mt-10" once={false}>
-          <Markets />
+          <Markets lang={lang} />
         </Reveal>
 
         <Reveal as="section" className="mt-12" once={false}>
-          <Educational items={educational} />
+          <Educational items={educational} lang={lang} />
         </Reveal>
 
         <Reveal as="section" className="mt-10" once={false}>
           <Image
             src="/image/banner.png"
-            alt="thumb"
+            alt={t("home.banner_alt", { defaultValue: "banner" })}
             width={1285}
             height={367}
             className="rounded-lg w-full h-auto"
@@ -101,16 +117,16 @@ export default async function HomePage() {
 
         <section className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <Reveal as="div" className="lg:col-span-2" once={false}>
-            <LatestArticle items={mostViewed} />
+            <LatestArticle items={mostViewed} lang={lang} />
           </Reveal>
 
           <Reveal as="aside" className="lg:col-span-1" once={false}>
-            <SidebarLatest posts={sidebarLatest} />
+            <SidebarLatest posts={sidebarLatest} lang={lang} />
           </Reveal>
         </section>
 
         <Reveal as="section" className="mt-25" once={false}>
-          <Video />
+          <Video lang={lang} />
         </Reveal>
       </div>
     </main>
