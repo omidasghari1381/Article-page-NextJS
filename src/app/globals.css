@@ -148,7 +148,9 @@ body {
       border-color 220ms ease,
       fill 220ms ease,
       stroke 220ms ease,
-      filter 220ms ease;
+      filter 220ms ease,
+      opacity 220ms ease,
+      transform 220ms ease;
   }
 }
 

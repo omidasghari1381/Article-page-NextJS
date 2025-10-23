@@ -19,7 +19,7 @@ import {
 import { SeoMetaService } from "@/server/modules/metaData/services/seoMeta.service";
 
 import Reveal from "@/components/transitions/Reveal";
-import { authOptions } from "@/app/[lang]/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 import { getServerT } from "@/lib/i18n/get-server-t";
 import { clampLang, type Lang } from "@/lib/i18n/settings";
@@ -306,9 +306,13 @@ export default async function Page({
           </div>
         </Reveal>
 
-        <aside className="lg:col-span-3 space-y-9 lg:mr-6 lg:w-[105%]">
+        <Reveal
+          as="aside"
+          className="lg:col-span-3 space-y-9 lg:mr-6 lg:w-[105%]"
+          once={false}
+        >
           <SidebarLatest posts={latest as any} lang={lang} />
-        </aside>
+        </Reveal>
       </div>
 
       <Reveal as="section">

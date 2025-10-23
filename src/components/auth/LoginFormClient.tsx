@@ -1,7 +1,12 @@
 "use client";
-import React, { useMemo, useState } from "react";
+
+import "@/lib/i18n/client";
+import i18n from "@/lib/i18n/client";
 import Image from "next/image";
 import PhoneInput from "@/components/PhoneInput";
+import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { Lang } from "@/lib/i18n/settings";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -12,8 +17,24 @@ type FormState = {
   remember: boolean;
 };
 
-export default function LoginFormClient() {
+export default function LoginFormClient({ lang }: { lang: Lang }) {
   const router = useRouter();
+  const { t } = useTranslation("auth");
+
+  // 👇 تریگر برای ری‌رندر ترجمه‌ها
+  const [languageKey, setLanguageKey] = useState(0);
+
+  useEffect(() => {
+    (async () => {
+      if (i18n.language !== lang) {
+        await i18n.changeLanguage(lang);
+        setLanguageKey((k) => k + 1); // ⬅️ تریگر ری‌رنـدر ترجمه‌ها
+      }
+      if (!i18n.hasLoadedNamespace("auth")) {
+        await i18n.loadNamespaces(["auth"]);
+      }
+    })();
+  }, [lang]);
 
   const [form, setForm] = useState<FormState>({
     phone: "",
@@ -32,9 +53,8 @@ export default function LoginFormClient() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (!form.phone.trim()) errs.phone = "phone number is essential";
-    if (form.password.length < 8)
-      errs.password = "your password must contain 8 letter";
+    if (!form.phone.trim()) errs.phone = t("errors.phone_required");
+    if (form.password.length < 8) errs.password = t("errors.password_min");
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
@@ -48,41 +68,36 @@ export default function LoginFormClient() {
       });
 
       if (!res || res.error) {
-        setErrors({ general: res?.error ?? "login failed" });
+        setErrors({ general: res?.error ?? t("errors.register_failed") });
         return;
       }
-
-      router.replace("/");
+      router.replace(`/${lang}`);
     } catch {
-      setErrors({ general: "Server error .Try again later" });
+      setErrors({ general: t("errors.server_error") });
     } finally {
       setLoading(false);
     }
   }
 
+  // 👇 key برای مجبور کردن ری‌اکت به ری‌رنـدر وقتی زبان تغییر کرد
   return (
-    <div className="p-6 sm:p-10">
-      <div className="flex items-center mb-6 justify-end gap-2.5">
-        <a href="/" className="text-sm text-gray-500 hover:text-gray-700">
-          صفحه اصلی
-        </a>
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl border-[#BFC1C0] border grid place-items-center">
-            <Image src="/svg/ArrowRight.svg" alt="" height={16} width={16} />
-          </div>
-        </div>
-      </div>
-
+    <div
+      key={languageKey}
+      className="p-6 sm:p-10 transition-opacity duration-300"
+    >
       <div className="justify-center items-center flex-col flex">
         <div className="w-[60px] h-[60px] bg-[#19C9A4] rounded-[14px] flex justify-center items-center my-8">
-          <Image src="/image/mainLogo.png" alt="logo" height={39} width={34} />
+          <Image
+            src="/image/mainLogo.png"
+            alt={t("logo_alt")}
+            height={39}
+            width={34}
+          />
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-          ورود به مای پراپ
+          {t("login.title")}
         </h1>
-        <p className="text-gray-500 mt-6">
-          لطفاً شماره موبایل و رمز عبور خود را وارد کنید.
-        </p>
+        <p className="text-gray-500 mt-6">{t("login.desc")}</p>
       </div>
 
       <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
@@ -96,9 +111,11 @@ export default function LoginFormClient() {
         >
           <PhoneInput
             className="w-full"
+            placeholder={t("placeholders.phone")}
             onChange={(val) => setForm((f) => ({ ...f, phone: val }))}
           />
         </div>
+        {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
 
         <div
           className={[
@@ -111,17 +128,16 @@ export default function LoginFormClient() {
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 z-10">
             <Image
               src="/image/password.png"
-              alt="password"
+              alt={t("alts.password")}
               width={18}
               height={18}
               className="opacity-70"
             />
           </span>
           <input
-            className="w-full bg-transparent h-11 px-3 border-0 outline-none focus:outline-none focus:ring-0 focus:border-transparent text-black"
-            style={{ paddingRight: "2rem", paddingInlineEnd: "2rem" }}
+            className="w-full bg-transparent h-11 px-3 border-0 outline-none text-black"
             type="password"
-            placeholder="رمز عبور خود را وارد نمایید"
+            placeholder={t("placeholders.password")}
             value={form.password}
             onChange={(e) =>
               setForm((f) => ({ ...f, password: e.target.value }))
@@ -129,6 +145,9 @@ export default function LoginFormClient() {
             autoComplete="current-password"
           />
         </div>
+        {errors.password && (
+          <p className="text-xs text-red-500">{errors.password}</p>
+        )}
 
         <label className="flex items-center gap-2 text-base text-[#1C2120]">
           <input
@@ -139,63 +158,24 @@ export default function LoginFormClient() {
               setForm((f) => ({ ...f, remember: e.target.checked }))
             }
           />
-          مرا به خاطر بسپار
+          {t("labels.remember")}
         </label>
 
         <button
           type="submit"
           disabled={!canSubmit}
-          className={`w-full h-12 rounded-xl text-white font-semibold [background:linear-gradient(180deg,#141414_0%,#313131_100%)] hover:[background:linear-gradient(180deg,#161919_0%,#2B3333_100%)] shadow-[inset_0_-12px_24px_rgba(255,255,255,0.08)] disabled:opacity-60 disabled:cursor-not-allowed`}
+          className="w-full h-12 rounded-xl text-white font-semibold [background:linear-gradient(180deg,#141414_0%,#313131_100%)] hover:[background:linear-gradient(180deg,#161919_0%,#2B3333_100%)] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <span className="inline-flex items-center gap-2">
-            {loading ? "در حال ورود..." : "ورود"}
+            {loading ? t("buttons.logging_in") : t("buttons.login")}
             <Image
               src="/svg/arrowPoint.svg"
-              alt="arrowPoint"
+              alt={t("alts.arrow_point")}
               height={24}
               width={24}
             />
           </span>
         </button>
-
-        <div className="relative text-center">
-          <div className="h-px bg-[#DEDFDE]" />
-          <span className="absolute inset-0 -top-3 mx-auto bg-white px-3 text-sm font-normal text-gray-400 w-fit">
-            یا
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => alert("ورود با گوگل - بعداً اتصال واقعی")}
-          className="w-full h-11 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium"
-        >
-          <span className="inline-flex items-center gap-3">
-            ورود با حساب گوگل
-            <Image
-              src="/svg/GoogleIcon.svg"
-              alt="google"
-              width={18}
-              height={18}
-            />
-          </span>
-        </button>
-
-        {errors.general && (
-          <div className="text-sm text-red-600 text-center">
-            {errors.general}
-          </div>
-        )}
-
-        <p className="text-sm text-gray-600 text-center">
-          حساب ندارید؟
-          <a
-            href="/signup"
-            className="text-[#19CCA7] font-semibold px-1 hover:underline"
-          >
-            همین حالا ثبت‌نام کنید
-          </a>
-        </p>
       </form>
     </div>
   );

@@ -1,11 +1,13 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { UserService } from "@/server/modules/users/services/users.service";
-import Breadcrumb from "@/components/Breadcrumb";
-import UserListItem from "./UserCard";
 import Link from "next/link";
+import Breadcrumb from "@/components/Breadcrumb";
+import { UserService } from "@/server/modules/users/services/users.service";
+import { clampLang, type Lang } from "@/lib/i18n/settings";
+import { getServerT } from "@/lib/i18n/get-server-t";
 import UsersFilter from "./UsersFilter";
+import UserListItem from "./UserCard";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -14,7 +16,21 @@ function arr(v?: string | string[]) {
   return Array.isArray(v) ? v : v.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
-export default async function UsersListPage({ searchParams }: { searchParams: SearchParams }) {
+function withLangPath(lang: Lang, path: string) {
+  return `/${lang}${path}`;
+}
+
+export default async function UsersListPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string }>;
+  searchParams: SearchParams;
+}) {
+  const { lang: raw } = await params;
+  const lang: Lang = clampLang(raw);
+  const t = await getServerT(lang, "admin");
+
   const svc = new UserService();
 
   const q = typeof searchParams.q === "string" ? searchParams.q : undefined;
@@ -41,47 +57,63 @@ export default async function UsersListPage({ searchParams }: { searchParams: Se
     deletedOnly: deletedOnly === "1",
   } as any);
 
+  const nf = new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US");
+
   return (
     <main className="pb-24 pt-6 text-skin-base">
       <div className="mx-auto w-full max-w-7xl 2xl:max-w-[110rem]">
         <Breadcrumb
           items={[
-            { label: "مای پراپ", href: "/" },
-            { label: "پنل ادمین", href: "/admin" },
-            { label: "کاربران", href: "/admin/users" },
+            { label: t("breadcrumb.brand"), href: withLangPath(lang, "/") },
+            { label: t("breadcrumb.admin"), href: withLangPath(lang, "/admin") },
+            { label: t("nav.users"), href: withLangPath(lang, "/admin/users") },
           ]}
         />
 
         <div className="mt-4 sm:mt-6 flex items-center justify-between">
-          <h1 className="text-xl sm:text-2xl font-semibold text-skin-heading">لیست کاربران</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-skin-heading">
+            {t("users.list.title")}
+          </h1>
         </div>
 
         <section className="mt-6 bg-skin-card rounded-2xl shadow-sm border border-skin-border p-4 sm:p-6 2xl:p-8">
-          <UsersFilter sp={searchParams} />
+          <UsersFilter sp={searchParams} lang={lang} />
         </section>
 
         <div className="mt-4 text-sm text-skin-muted">
-          {list.total.toLocaleString("fa-IR")} کاربر • صفحه {list.page} از {list.pages}
+          {t("users.list.summary", {
+            total: nf.format(list.total),
+            page: list.page,
+            pages: list.pages,
+          })}
         </div>
 
         <section className="mt-6 space-y-4">
           {list.items.map((u: any) => (
-            <UserListItem key={u.id} item={u} />
+            <UserListItem key={u.id} item={u} lang={lang} />
           ))}
         </section>
 
-        <Pagination total={list.total} page={list.page} pageSize={list.pageSize} sp={searchParams} />
+        <Pagination
+          lang={lang}
+          total={list.total}
+          page={list.page}
+          pageSize={list.pageSize}
+          sp={searchParams}
+        />
       </div>
     </main>
   );
 }
 
 function Pagination({
+  lang,
   total,
   page,
   pageSize,
   sp,
 }: {
+  lang: Lang;
   total: number;
   page: number;
   pageSize: number;
@@ -100,14 +132,18 @@ function Pagination({
     return `?${usp.toString()}`;
   };
 
+  const tPrev = "«";
+  const tNext = "»";
+
   return (
     <div className="mt-10 flex items-center justify-center gap-2">
       <Link
         href={makeHref(Math.max(1, page - 1))}
         className="px-3 py-2 rounded-xl border border-skin-border text-sm hover:bg-skin-card/60 aria-disabled:opacity-50"
         aria-disabled={page === 1}
+        hrefLang={lang}
       >
-        قبلی
+        {tPrev}
       </Link>
       <span className="px-3 py-2 text-sm text-skin-muted">
         {page} / {pages}
@@ -116,8 +152,9 @@ function Pagination({
         href={makeHref(Math.min(pages, page + 1))}
         className="px-3 py-2 rounded-xl border border-skin-border text-sm hover:bg-skin-card/60 aria-disabled:opacity-50"
         aria-disabled={page === pages}
+        hrefLang={lang}
       >
-        بعدی
+        {tNext}
       </Link>
     </div>
   );

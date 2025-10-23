@@ -1,92 +1,120 @@
 {
   "breadcrumb": {
+    "brand": "مای پراپ",
+    "admin": "پنل ادمین",
+    "users": "کاربران"
+  },
+  "menu": {
+    "title": "منو",
+    "open": "باز کردن منوی ادمین",
+    "sidebar": "نوار کناری مدیریت"
+  },
+  "nav": {
+    "dashboard": "داشبورد",
+    "users": "کاربران",
+    "categories": "دسته‌بندی‌ها",
     "articles": "مقالات",
-    "brand": "مای پراپ"
+    "media": "رسانه",
+    "redirects": "ریدایرکت‌ها",
+    "tags": "تگ‌ها",
+    "faq": "سوالات متداول",
+    "languages": "زبان‌ها",
+    "settings": "تنظیمات",
+    "logout": "خروج"
   },
-
-  "chosen": {
-    "all": "همه",
-    "title": "انتخاب سردبیر",
-    "badge_alt": "نشان بخش",
-    "thumb_alt": "تصویر بندانگشتی",
-    "date_alt": "تاریخ",
-    "views_alt": "بازدید"
+  "cards": {
+    "users": { "title": "تعداد کاربران" },
+    "articleViews": { "title": "تعداد بازدید مقالات" },
+    "revenue": { "title": "درآمد کل" },
+    "orders": { "title": "سفارشات جدید" }
   },
-
-  "edit_button": "ویرایش این مقاله",
-
-  "hero": {
-    "minutes_many": "{{n}} دقیقه",
-    "minutes_one": "یک دقیقه",
-    "read_button": "مطالعه مقاله",
-    "summary_title": "خلاصه آنچه در مقاله می‌خوانیم",
-    "views_suffix": "بازدید",
-    "thumb_alt": "کاور مقاله",
-    "minutes_alt": "مدت مطالعه"
+  "users": {
+    "list": {
+      "title": "لیست کاربران",
+      "summary": "{{total}} کاربر • صفحه {{page}} از {{pages}}",
+      "nameAndRole": "نام و نقش"
+    },
+    "role": "نقش:",
+    "phone": "تلفن",
+    "created": "ایجاد:",
+    "updated": "ویرایش:",
+    "alreadyDeleted": "این کاربر قبلاً حذف شده است",
+    "filters": {
+      "search": "جستجو",
+      "searchPlaceholder": "نام / نام‌خانوادگی / تلفن",
+      "fromDate": "از تاریخ",
+      "toDate": "تا تاریخ",
+      "sortBy": "مرتب‌سازی",
+      "role": "نقش",
+      "direction": "جهت",
+      "asc": "صعودی",
+      "desc": "نزولی",
+      "perPage": "در صفحه",
+      "sort": {
+        "createdAt": "تاریخ ایجاد",
+        "firstName": "نام",
+        "lastName": "نام‌خانوادگی",
+        "phone": "تلفن",
+        "role": "نقش",
+        "updatedAt": "تاریخ بروزرسانی"
+      }
+    },
+    "edit": {
+      "title": "ویرایش کاربر",
+      "invalidId": "شناسه کاربر نامعتبر است.",
+      "deleteUser": "حذف کاربر",
+      "restoreUser": "بازیابی کاربر",
+      "notDeleted": "این کاربر حذف نشده است"
+    },
+    "form": {
+      "firstName": "نام",
+      "lastName": "نام‌خانوادگی",
+      "role": "نقش",
+      "rolePlaceholder": "انتخاب نقش…",
+      "phone": "شماره تلفن",
+      "password": "پسورد (اختیاری)",
+      "passwordPlaceholder": "برای تغییر پسورد، اینجا بنویس",
+      "required": {
+        "firstName": "نام الزامی است.",
+        "lastName": "نام‌خانوادگی الزامی است.",
+        "role": "نقش کاربر را انتخاب کنید.",
+        "phone": "شماره تلفن الزامی است."
+      }
+    }
   },
-
-  "latest_video": "آخرین ویدیوها",
-  "not_found_title": "مقاله پیدا نشد",
-
-  "markets": {
-    "forex": "بازار فارکس",
-    "crypto": "ارز دیجیتال",
-    "price": "قیمت",
-    "difference": "تغییرات"
+  "roles": {
+    "ADMIN": "ادمین",
+    "EDITOR": "ویرایشگر",
+    "CLIENT": "کاربر"
   },
-
-  "educational": {
-    "title": "مقالات آموزشی"
+  "actions": {
+    "addNew": "افزودن مورد جدید",
+    "edit": "ویرایش",
+    "delete": "حذف",
+    "save": "ذخیره تغییرات",
+    "saveChanges": "ذخیره تغییرات",
+    "cancel": "انصراف",
+    "apply": "اعمال فیلتر",
+    "clear": "پاکسازی",
+    "clearPassword": "پاک‌سازی پسورد",
+    "pending": "در حال انجام…"
   },
-
-  "latest": {
-    "title": "آخرین مقالات",
-    "view_all": "مشاهده همه مقالات"
+  "table": {
+    "id": "شناسه",
+    "name": "نام",
+    "email": "ایمیل",
+    "status": "وضعیت",
+    "createdAt": "تاریخ ایجاد",
+    "actions": "عملیات"
   },
-
-  "video": {
-    "view_all": "مشاهده همه ویدیوها"
+  "status": {
+    "active": "فعال",
+    "inactive": "غیرفعال",
+    "deleted": "حذف‌شده"
   },
-
-  "home": {
-    "banner_alt": "بنر"
-  },
-
-  "body": {
-    "quote_alt": "نقل‌قول"
-  },
-
-  "inline": {
-    "written_by": "نوشته شده توسط",
-    "author_alt": "نویسنده",
-    "minutes_alt": "مدت مطالعه"
-  },
-
-  "comments": {
-    "title": "نظرات کاربران",
-    "icon_alt": "آیکون نظرات",
-    "loading": "در حال بارگیری نظرات…",
-    "reply": "پاسخ",
-    "like_alt": "پسندیدن",
-    "dislike_alt": "نپسندیدن",
-    "sample_reply": "این یک پاسخ تستی است",
-    "signin_prompt": "برای ثبت نظر خود وارد شوید.",
-    "placeholder": "نظر خود را بنویسید...",
-    "submit": "ارسال نظر",
-    "sending": "در حال ارسال...",
-    "must_signin": "ابتدا وارد شوید!",
-    "show_replies_with_count": "نمایش {{count}} پاسخ",
-    "hide_replies": "مخفی کردن پاسخ‌ها",
-    "loading_replies": "در حال دریافت پاسخ‌ها…",
-    "fetch_error": "خطا در دریافت پاسخ‌ها",
-    "load_more": "نمایش بیشتر",
-    "arrow_alt": "نمایش پاسخ‌ها"
-  },
-
-  "related": {
-    "title": "مقالات مشابه",
-    "badge_alt": "نشان مقالات مشابه"
-  },
-
-  "no_content": "محتوایی پیدا نشد"
+  "messages": {
+    "noData": "داده‌ای برای نمایش وجود ندارد",
+    "loading": "در حال بارگذاری...",
+    "error": "خطایی رخ داده است"
+  }
 }

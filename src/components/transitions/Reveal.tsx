@@ -25,13 +25,13 @@ export default function Reveal<T extends ElementType = "div">({
   const Tag = (as || "div") as ElementType;
   const ref = useRef<HTMLElement | null>(null);
   const rafId = useRef<number | null>(null);
-  const revealedRef = useRef(false); // ← فلگ پایدار بین رندرها
+  const revealedRef = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
-    // اگر قبلاً ریویل شده و once=true، اصلاً انیمیشن رو شروع نکن
+    // اگر قبلاً ریویل شده و once=true، مستقیم نهایی کن
     if (once && (revealedRef.current || el.dataset.revealed === "1")) {
       el.style.opacity = "1";
       el.style.transform = "translateY(0)";
@@ -42,33 +42,17 @@ export default function Reveal<T extends ElementType = "div">({
     const mql = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     const reduced = !!mql?.matches;
 
+    // حالت بدون انیمیشن
     if (disabled || reduced) {
       el.style.opacity = "1";
       el.style.transform = "translateY(0)";
+      el.style.willChange = "";
       return;
     }
 
     el.style.willChange = "transform, opacity";
 
-    // اگر هم‌اکنون توی ویو هست، در حالت once مستقیم نهایی کن تا فلیکر نداشته باشه
-    if (mode === "scroll") {
-      const rect0 = el.getBoundingClientRect();
-      const vh0 = window.innerHeight;
-      const anchor0 = rect0.top + rect0.height / 2;
-      const start0 = vh0 * 3;
-      const end0 = vh0 * 0.35;
-      const denom0 = Math.max(1, start0 - end0);
-      const initialProgress = Math.max(0, Math.min(1, (start0 - anchor0) / denom0));
-      if (once && initialProgress >= 1) {
-        revealedRef.current = true;
-        el.dataset.revealed = "1";
-        el.style.opacity = "1";
-        el.style.transform = "translateY(0)";
-        el.style.willChange = "";
-        return;
-      }
-    }
-
+    // حالت mount: انیمیشن یک‌باره روی مونت
     if (mode === "mount") {
       let start = 0;
       const distance = 14;
@@ -84,10 +68,10 @@ export default function Reveal<T extends ElementType = "div">({
         const eased = easeOut(progress);
         el.style.opacity = String(eased);
         el.style.transform = `translateY(${(1 - eased) * distance}px)`;
+
         if (progress < 1) {
           rafId.current = requestAnimationFrame(loop);
         } else {
-          // پایان — مارک کن که ریویل شده
           revealedRef.current = true;
           el.dataset.revealed = "1";
           el.style.willChange = "";
@@ -105,56 +89,57 @@ export default function Reveal<T extends ElementType = "div">({
       };
     }
 
-    // mode === "scroll"
-    let stopped = false;
-    let last = -1;
-    const distance = 16;
-    const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+    // حالت scroll: تشخیص ورود با IntersectionObserver
+    {
+      let cleaned = false;
+      const distance = 16;
 
-    el.style.opacity = "0";
-    el.style.transform = `translateY(${distance}px)`;
+      // حالت اولیه
+      el.style.opacity = "0";
+      el.style.transform = `translateY(${distance}px)`;
 
-    const loop = () => {
-      if (!el || stopped) return;
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (cleaned) return;
+          const entry = entries[0];
+          if (!entry) return;
 
-      const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight;
+          if (entry.isIntersecting) {
+            // انیمیشن نرم با Web Animations API
+            el.animate(
+              [
+                { opacity: 0, transform: `translateY(${distance}px)` },
+                { opacity: 1, transform: "translateY(0)" },
+              ],
+              { duration: 600, easing: "cubic-bezier(.17,.67,.32,1)" }
+            ).onfinish = () => {
+              el.style.opacity = "1";
+              el.style.transform = "translateY(0)";
+              el.style.willChange = "";
+            };
 
-      const anchor = rect.top + rect.height / 2;
-      const start = vh * 3;
-      const end = vh * 0.35;
+            if (once) {
+              revealedRef.current = true;
+              el.dataset.revealed = "1";
+              io.disconnect();
+            }
+          } else if (!once) {
+            // اگر once=false، با خروج از ویو برگرد به حالت قبل
+            el.style.opacity = "0";
+            el.style.transform = `translateY(${distance}px)`;
+          }
+        },
+        { rootMargin: "0px 0px -20% 0px", threshold: 0.1 }
+      );
 
-      const denom = Math.max(1, start - end);
-      const progress = clamp01((start - anchor) / denom);
+      io.observe(el);
 
-      if (Math.abs(progress - last) > 0.005) {
-        last = progress;
-        el.style.opacity = String(progress);
-        el.style.transform = `translateY(${(1 - progress) * distance}px)`;
-      }
-
-      if (once && progress >= 1) {
-        // پایان — مارک کن که ریویل شده و حلقه رو متوقف کن
-        revealedRef.current = true;
-        el.dataset.revealed = "1";
-        stopped = true;
+      return () => {
+        cleaned = true;
+        io.disconnect();
         el.style.willChange = "";
-        rafId.current = null;
-        return;
-      }
-
-      rafId.current = requestAnimationFrame(loop);
-    };
-
-    rafId.current = requestAnimationFrame(loop);
-
-    return () => {
-      if (rafId.current !== null) {
-        cancelAnimationFrame(rafId.current);
-        rafId.current = null;
-      }
-      el.style.willChange = "";
-    };
+      };
+    }
   }, [mode, once, disabled]);
 
   return (
@@ -162,6 +147,7 @@ export default function Reveal<T extends ElementType = "div">({
       ref={ref as any}
       className={className}
       {...(rest as any)}
+      // حالت اولیه برای SSR/hydration تا لحظه‌ی اجرا شدن افکت
       style={{ opacity: 0, transform: "translateY(16px)" }}
       data-revealed={revealedRef.current ? "1" : undefined}
     >

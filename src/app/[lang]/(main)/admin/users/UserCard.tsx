@@ -1,5 +1,7 @@
-import CopyPhone from "@/components/users/CopyPhone";
 import Link from "next/link";
+import CopyPhone from "@/components/users/CopyPhone";
+import { getServerT } from "@/lib/i18n/get-server-t";
+import type { Lang } from "@/lib/i18n/settings";
 
 export type UserDTO = {
   id: string;
@@ -18,15 +20,19 @@ type Props = {
   onEditClick?: (id: string) => void;
   onDeleteClick?: (id: string) => void;
   showDates?: boolean;
+  lang: Lang;
 };
 
-export default function UserListItem({
+export default async function UserListItem({
   item,
   editHref,
   onEditClick,
   onDeleteClick,
   showDates = true,
+  lang,
 }: Props) {
+  const t = await getServerT(lang, "admin");
+
   const {
     id,
     firstName,
@@ -45,7 +51,7 @@ export default function UserListItem({
       ? editHref
       : null;
 
-  const finalEditHref = providedEditLink ?? `/admin/users/${id}`;
+  const finalEditHref = providedEditLink ?? `/${lang}/admin/users/${id}`;
   const canDelete = typeof onDeleteClick === "function" && isDeleted !== 1;
 
   return (
@@ -58,24 +64,27 @@ export default function UserListItem({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
         <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="min-w-0">
-            <div className="text-[13px] text-skin-muted mb-1">نام و نقش</div>
+            <div className="text-[13px] text-skin-muted mb-1">
+              {t("users.list.nameAndRole")}
+            </div>
             <div className="flex items-center flex-wrap gap-2 min-w-0">
               <div className="text-base md:text-lg font-semibold truncate max-w-[30ch] text-skin-heading">
                 {firstName} {lastName}
               </div>
               <span className="inline-flex items-center gap-1 px-2 py-1 text-skin-base">
-                نقش: <strong className="font-semibold">{String(role)}</strong>
+                {t("users.role")}{" "}
+                <strong className="font-semibold">{String(role)}</strong>
               </span>
               {isDeleted === 1 && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 text-[11px]">
-                  حذف‌شده
+                  {t("status.deleted")}
                 </span>
               )}
             </div>
           </div>
 
           <div className="min-w-0">
-            <div className="text-[13px] text-skin-muted mb-1">تلفن</div>
+            <div className="text-[13px] text-skin-muted mb-1">{t("users.phone")}</div>
             <div className="flex items-center gap-2 min-w-0 [&_*]:text-skin-heading dark:[&_*]:text-white">
               <CopyPhone text={phone} />
             </div>
@@ -86,14 +95,14 @@ export default function UserListItem({
           <div className="text-xs text-skin-muted flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 md:order-none">
             {createdAt && (
               <div>
-                <span className="text-skin-muted/70">ایجاد: </span>
-                <time dateTime={createdAt}>{formatDateTime(createdAt)}</time>
+                <span className="text-skin-muted/70">{t("users.created")} </span>
+                <time dateTime={createdAt}>{formatDateTime(createdAt, lang)}</time>
               </div>
             )}
             {updatedAt && (
               <div>
-                <span className="text-skin-muted/70">ویرایش: </span>
-                <time dateTime={updatedAt}>{formatDateTime(updatedAt)}</time>
+                <span className="text-skin-muted/70">{t("users.updated")} </span>
+                <time dateTime={updatedAt}>{formatDateTime(updatedAt, lang)}</time>
               </div>
             )}
           </div>
@@ -105,14 +114,14 @@ export default function UserListItem({
               className="h-[44px] w-full sm:w-auto px-3 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card/60 flex justify-center items-center"
               onClick={() => onEditClick(id)}
             >
-              ویرایش
+              {t("actions.edit")}
             </button>
           ) : (
             <Link
               href={finalEditHref}
               className="h-[44px] w-full sm:w-auto px-3 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card/60 flex justify-center items-center"
             >
-              ویرایش
+              {t("actions.edit")}
             </Link>
           )}
 
@@ -125,9 +134,9 @@ export default function UserListItem({
               }`}
               onClick={() => canDelete && onDeleteClick(id)}
               disabled={!canDelete}
-              title={isDeleted === 1 ? "این کاربر قبلاً حذف شده است" : ""}
+              title={isDeleted === 1 ? t("users.alreadyDeleted") : ""}
             >
-              حذف
+              {t("actions.delete")}
             </button>
           )}
         </div>
@@ -136,11 +145,11 @@ export default function UserListItem({
   );
 }
 
-function formatDateTime(iso?: string) {
+function formatDateTime(iso?: string, lang?: Lang) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
-    return new Intl.DateTimeFormat("fa-IR", {
+    return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-US", {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(d);

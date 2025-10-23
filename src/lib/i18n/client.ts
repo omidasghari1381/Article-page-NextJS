@@ -15,7 +15,7 @@ const initialLng =
 if (!i18next.isInitialized) {
   i18next
     .use(LocizeBackend)
-    .use(LanguageDetector) // می‌تونی حذفش کنی اگر نمی‌خوای اتودیتکت باشه
+    .use(LanguageDetector) 
     .use(initReactI18next)
     .init({
       lng: initialLng,
