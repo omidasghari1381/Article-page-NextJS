@@ -1,8 +1,9 @@
 import Breadcrumb from "@/components/Breadcrumb";
-import CategoryRow from "./CategoryCart";
-import { type CategoryNode } from "./CategoryCart";
+import CategoryRow, { type CategoryNode } from "./CategoryCart";
 import { CategoryFilters } from "./CategoryFilters";
 import { CategoryService } from "@/server/modules/categories/services/category.service";
+import { clampLang, type Lang } from "@/lib/i18n/settings";
+import { getServerT } from "@/lib/i18n/get-server-t";
 
 type MaybeWrapped<T> =
   | T[]
@@ -13,6 +14,10 @@ type MaybeWrapped<T> =
       pageSize?: number;
       pages?: number;
     };
+
+function withLangPath(lang: Lang, path: string) {
+  return `/${lang}${path}`;
+}
 
 function normalizeCategory(raw: any): CategoryNode {
   return {
@@ -82,41 +87,53 @@ async function fetchCategoriesFromService(
 
   const items: CategoryNode[] = (res.items ?? []).map(normalizeCategory);
   const total = typeof res.total === "number" ? res.total : items.length;
-
   return { items, total };
 }
 
 export default async function Page({
+  params,
   searchParams,
 }: {
+  params: Promise<{ lang: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const { lang: raw } = await params;
+  const lang: Lang = clampLang(raw);
+  const t = await getServerT(lang, "admin");
+
   const sp = await searchParams;
   const { items: categories, total } = await fetchCategoriesFromService(sp);
+  const nf = new Intl.NumberFormat(lang === "fa" ? "fa-IR" : "en-US");
 
   return (
-    <main className="pb-24 pt-6 px-4 md:px-10 2xl:px-20">
+    <main className="pb-24 pt-6 px-4 md:px-10 2xl:px-20 text-skin-base">
       <Breadcrumb
         items={[
-          { label: "مای پراپ", href: "/" },
-          { label: "دسته ها", href: "/categories" },
+          { label: t("breadcrumb.brand"), href: withLangPath(lang, "/") },
+          {
+            label: t("nav.categories"),
+            href: withLangPath(lang, "/admin/categories"),
+          },
         ]}
       />
-      <div className="mt-6 flex items-center justify-between text-skin-base">
-        <h1 className="text-2xl font-semibold">لیست دسته ها</h1>
+
+      <div className="mt-6 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">{t("categories.list.title")}</h1>
       </div>
+
       <section className="mt-6 bg-skin-bg rounded-2xl shadow-sm border border-skin-border p-6 md:p-8">
         <CategoryFilters />
       </section>
+
       <div className="py-4 my-10">
-        <div className="text-skin-base text-2xl">
-          <span>تعداد دسته‌ها </span>
-          <span>({total})</span>
+        <div className="text-2xl">
+          {t("categories.list.count", { count: total })}{" "}
         </div>
+
         <div className="mt-6 bg-skin-bg border-skin-border">
           <div className="divide-y divide-skin-border">
             {categories.map((c: CategoryNode) => (
-              <CategoryRow key={c.id} item={c} />
+              <CategoryRow key={c.id} item={c} lang={lang} />
             ))}
           </div>
         </div>

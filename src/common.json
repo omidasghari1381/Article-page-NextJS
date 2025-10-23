@@ -1,55 +1,142 @@
 {
+  "actions": {
+    "addNew": "افزودن مورد جدید",
+    "apply": "اعمال فیلتر",
+    "cancel": "انصراف",
+    "clear": "پاکسازی",
+    "clearPassword": "پاک‌سازی پسورد",
+    "delete": "حذف",
+    "edit": "ویرایش",
+    "pending": "در حال انجام…",
+    "save": "ذخیره تغییرات",
+    "saveChanges": "ذخیره تغییرات"
+  },
   "breadcrumb": {
-    "brand": "مای پراپ",
     "admin": "پنل ادمین",
+    "brand": "مای پراپ",
     "users": "کاربران"
   },
-  "menu": {
-    "title": "منو",
-    "open": "باز کردن منوی ادمین",
-    "sidebar": "نوار کناری مدیریت"
-  },
-  "nav": {
-    "dashboard": "داشبورد",
-    "users": "کاربران",
-    "categories": "دسته‌بندی‌ها",
-    "articles": "مقالات",
-    "media": "رسانه",
-    "redirects": "ریدایرکت‌ها",
-    "tags": "تگ‌ها",
-    "faq": "سوالات متداول",
-    "languages": "زبان‌ها",
-    "settings": "تنظیمات",
-    "logout": "خروج"
-  },
   "cards": {
-    "users": { "title": "تعداد کاربران" },
-    "articleViews": { "title": "تعداد بازدید مقالات" },
-    "revenue": { "title": "درآمد کل" },
-    "orders": { "title": "سفارشات جدید" }
-  },
-  "users": {
-    "list": {
-      "title": "لیست کاربران",
-      "summary": "{{total}} کاربر • صفحه {{page}} از {{pages}}",
-      "nameAndRole": "نام و نقش"
+    "articleViews": {
+      "title": "تعداد بازدید مقالات"
     },
-    "role": "نقش:",
-    "phone": "تلفن",
-    "created": "ایجاد:",
-    "updated": "ویرایش:",
-    "alreadyDeleted": "این کاربر قبلاً حذف شده است",
+    "orders": {
+      "title": "سفارشات جدید"
+    },
+    "revenue": {
+      "title": "درآمد کل"
+    },
+    "users": {
+      "title": "تعداد کاربران"
+    }
+  },
+  "categories": {
+    "editor": {
+      "newTitle": "ایجاد دسته",
+      "editTitle": "ویرایش دسته"
+    },
     "filters": {
-      "search": "جستجو",
-      "searchPlaceholder": "نام / نام‌خانوادگی / تلفن",
-      "fromDate": "از تاریخ",
-      "toDate": "تا تاریخ",
-      "sortBy": "مرتب‌سازی",
-      "role": "نقش",
-      "direction": "جهت",
       "asc": "صعودی",
       "desc": "نزولی",
+      "direction": "جهت",
+      "fromDate": "از تاریخ",
+      "nodeType": "نوع گره",
+      "nodeTypeAll": "همه",
+      "nodeTypeChild": "فقط زیرشاخه",
+      "nodeTypeRoot": "فقط ریشه",
+      "parentId": "شناسه والد",
+      "parentIdPlaceholder": "UUID والد (اختیاری)",
       "perPage": "در صفحه",
+      "search": "جستجو",
+      "searchPlaceholder": "نام / اسلاگ / توضیحات",
+      "sort": {
+        "createdAt": "تاریخ ایجاد",
+        "name": "نام",
+        "slug": "اسلاگ",
+        "updatedAt": "تاریخ بروزرسانی"
+      },
+      "sortBy": "مرتب‌سازی",
+      "toDate": "تا تاریخ"
+    },
+    "list": {
+      "count": "تعداد دسته‌ها ({{count}})",
+      "title": "لیست دسته‌ها"
+    },
+    "row": {
+      "childrenCount": "تعداد فرزند",
+      "childrenOf": "فرزندان این دسته",
+      "childrenTag": "{{count}} زیرمجموعه",
+      "copied": "کپی شد",
+      "created": "ایجاد:",
+      "description": "توضیحات",
+      "name": "نام",
+      "noParent": "بدون والد",
+      "parent": "والد",
+      "slug": "اسلاگ",
+      "structure": "ساختار",
+      "updated": "ویرایش:"
+    }
+  },
+  "menu": {
+    "open": "باز کردن منوی ادمین",
+    "sidebar": "نوار کناری مدیریت",
+    "title": "منو"
+  },
+  "messages": {
+    "error": "خطایی رخ داده است",
+    "loading": "در حال بارگذاری...",
+    "noData": "داده‌ای برای نمایش وجود ندارد"
+  },
+  "nav": {
+    "articles": "مقالات",
+    "categories": "دسته‌بندی‌ها",
+    "dashboard": "داشبورد",
+    "faq": "سوالات متداول",
+    "languages": "زبان‌ها",
+    "logout": "خروج",
+    "media": "رسانه",
+    "redirects": "ریدایرکت‌ها",
+    "settings": "تنظیمات",
+    "tags": "تگ‌ها",
+    "users": "کاربران"
+  },
+  "roles": {
+    "ADMIN": "ادمین",
+    "CLIENT": "کاربر",
+    "EDITOR": "ویرایشگر"
+  },
+  "status": {
+    "active": "فعال",
+    "deleted": "حذف‌شده",
+    "inactive": "غیرفعال"
+  },
+  "table": {
+    "actions": "عملیات",
+    "createdAt": "تاریخ ایجاد",
+    "email": "ایمیل",
+    "id": "شناسه",
+    "name": "نام",
+    "status": "وضعیت"
+  },
+  "users": {
+    "alreadyDeleted": "این کاربر قبلاً حذف شده است",
+    "created": "ایجاد:",
+    "edit": {
+      "deleteUser": "حذف کاربر",
+      "invalidId": "شناسه کاربر نامعتبر است.",
+      "notDeleted": "این کاربر حذف نشده است",
+      "restoreUser": "بازیابی کاربر",
+      "title": "ویرایش کاربر"
+    },
+    "filters": {
+      "asc": "صعودی",
+      "desc": "نزولی",
+      "direction": "جهت",
+      "fromDate": "از تاریخ",
+      "perPage": "در صفحه",
+      "role": "نقش",
+      "search": "جستجو",
+      "searchPlaceholder": "نام / نام‌خانوادگی / تلفن",
       "sort": {
         "createdAt": "تاریخ ایجاد",
         "firstName": "نام",
@@ -57,64 +144,32 @@
         "phone": "تلفن",
         "role": "نقش",
         "updatedAt": "تاریخ بروزرسانی"
-      }
-    },
-    "edit": {
-      "title": "ویرایش کاربر",
-      "invalidId": "شناسه کاربر نامعتبر است.",
-      "deleteUser": "حذف کاربر",
-      "restoreUser": "بازیابی کاربر",
-      "notDeleted": "این کاربر حذف نشده است"
+      },
+      "sortBy": "مرتب‌سازی",
+      "toDate": "تا تاریخ"
     },
     "form": {
       "firstName": "نام",
       "lastName": "نام‌خانوادگی",
-      "role": "نقش",
-      "rolePlaceholder": "انتخاب نقش…",
-      "phone": "شماره تلفن",
       "password": "پسورد (اختیاری)",
       "passwordPlaceholder": "برای تغییر پسورد، اینجا بنویس",
+      "phone": "شماره تلفن",
       "required": {
         "firstName": "نام الزامی است.",
         "lastName": "نام‌خانوادگی الزامی است.",
-        "role": "نقش کاربر را انتخاب کنید.",
-        "phone": "شماره تلفن الزامی است."
-      }
-    }
-  },
-  "roles": {
-    "ADMIN": "ادمین",
-    "EDITOR": "ویرایشگر",
-    "CLIENT": "کاربر"
-  },
-  "actions": {
-    "addNew": "افزودن مورد جدید",
-    "edit": "ویرایش",
-    "delete": "حذف",
-    "save": "ذخیره تغییرات",
-    "saveChanges": "ذخیره تغییرات",
-    "cancel": "انصراف",
-    "apply": "اعمال فیلتر",
-    "clear": "پاکسازی",
-    "clearPassword": "پاک‌سازی پسورد",
-    "pending": "در حال انجام…"
-  },
-  "table": {
-    "id": "شناسه",
-    "name": "نام",
-    "email": "ایمیل",
-    "status": "وضعیت",
-    "createdAt": "تاریخ ایجاد",
-    "actions": "عملیات"
-  },
-  "status": {
-    "active": "فعال",
-    "inactive": "غیرفعال",
-    "deleted": "حذف‌شده"
-  },
-  "messages": {
-    "noData": "داده‌ای برای نمایش وجود ندارد",
-    "loading": "در حال بارگذاری...",
-    "error": "خطایی رخ داده است"
+        "phone": "شماره تلفن الزامی است.",
+        "role": "نقش کاربر را انتخاب کنید."
+      },
+      "role": "نقش",
+      "rolePlaceholder": "انتخاب نقش…"
+    },
+    "list": {
+      "nameAndRole": "نام و نقش",
+      "summary": "{{total}} کاربر • صفحه {{page}} از {{pages}}",
+      "title": "لیست کاربران"
+    },
+    "phone": "تلفن",
+    "role": "نقش:",
+    "updated": "ویرایش:"
   }
 }

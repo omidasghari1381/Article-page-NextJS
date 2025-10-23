@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { Lang } from "@/lib/i18n/settings";
 
 export type CategoryNode = {
   id: string;
@@ -12,15 +14,14 @@ export type CategoryNode = {
   updatedAt?: string;
   depth?: number;
   parent?:
-    | (Pick<CategoryNode, "id" | "name" | "slug"> & {
-        children?: CategoryNode[];
-      })
+    | (Pick<CategoryNode, "id" | "name" | "slug"> & { children?: CategoryNode[] })
     | null;
   children?: CategoryNode[];
 };
 
 type Props = {
   item: CategoryNode;
+  lang: Lang;
   href?: string | ((node: CategoryNode) => string);
   editHref?: string | ((id: string) => string);
   onEditClick?: (id: string) => void;
@@ -29,57 +30,20 @@ type Props = {
   showDates?: boolean;
 };
 
-function formatDateTime(iso?: string) {
+function formatDateTime(iso?: string, lang?: Lang) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
-    return new Intl.DateTimeFormat("fa-IR", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(d);
+    const locale = lang === "fa" ? "fa-IR" : "en-US";
+    return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(d);
   } catch {
     return iso ?? "—";
   }
 }
 
-function timeAgoFa(iso?: string) {
-  if (!iso) return "";
-  const now = Date.now();
-  const diffSec = Math.round((new Date(iso).getTime() - now) / 1000);
-  const rtf = new Intl.RelativeTimeFormat("fa", { numeric: "auto" });
-  const steps: [Intl.RelativeTimeFormatUnit, number][] = [
-    ["year", 31536000],
-    ["month", 2592000],
-    ["day", 86400],
-    ["hour", 3600],
-    ["minute", 60],
-    ["second", 1],
-  ];
-  for (const [unit, sec] of steps) {
-    if (Math.abs(diffSec) >= sec || unit === "second") {
-      return rtf.format(Math.round(diffSec / sec), unit);
-    }
-  }
-  return "";
-}
-
 const ChevronDown: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    width="18"
-    height="18"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-  >
-    <path
-      d="M6 9l6 6 6-6"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+  <svg className={className} viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden>
+    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -88,30 +52,24 @@ function TreeList({
   level = 0,
   makeHref,
   onPick,
+  t
 }: {
   node: CategoryNode;
   level?: number;
   makeHref: (n: CategoryNode) => string;
   onPick?: (n: CategoryNode) => void;
+  t: (k: string, o?: any) => string;
 }) {
   const pr = 8 + level * 12;
   return (
     <li className="py-1">
-      <div
-        className="flex items-center justify-between gap-2"
-        style={{ paddingRight: pr }}
-      >
-        <Link
-          href={makeHref(node)}
-          className="text-sm hover:underline truncate text-skin-base"
-          title={node.name}
-          onClick={() => onPick?.(node)}
-        >
+      <div className="flex items-center justify-between gap-2" style={{ paddingRight: pr }}>
+        <Link href={makeHref(node)} className="text-sm hover:underline truncate text-skin-base" title={node.name} onClick={() => onPick?.(node)}>
           {node.name}
         </Link>
         {node.children?.length ? (
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-skin-muted/10 text-skin-muted">
-            {node.children.length} زیرمجموعه
+            {t("categories.row.childrenTag", { count: node.children.length })}
           </span>
         ) : null}
       </div>
@@ -119,13 +77,7 @@ function TreeList({
       {!!node.children?.length && (
         <ul className="mt-1 border-r pr-3 mr-1 border-skin-border">
           {node.children!.map((c) => (
-            <TreeList
-              key={c.id}
-              node={c}
-              level={level + 1}
-              makeHref={makeHref}
-              onPick={onPick}
-            />
+            <TreeList key={c.id} node={c} level={level + 1} makeHref={makeHref} onPick={onPick} t={t} />
           ))}
         </ul>
       )}
@@ -135,6 +87,7 @@ function TreeList({
 
 export default function CategoryRow({
   item,
+  lang,
   href,
   editHref,
   onEditClick,
@@ -142,31 +95,20 @@ export default function CategoryRow({
   onViewClick,
   showDates = true,
 }: Props) {
-  const {
-    id,
-    name,
-    slug,
-    description,
-    createdAt,
-    updatedAt,
-    parent,
-    children,
-  } = item;
+  const { t } = useTranslation("admin");
+  const { id, name, slug, description, createdAt, updatedAt, parent, children } = item;
 
   const viewLink = useMemo(() => {
     if (typeof href === "function") return href(item);
     if (typeof href === "string") return href;
-    return `/admin/categories/editor/${id}`;
-  }, [href, item, slug]);
+    return `/${lang}/admin/categories/editor/${id}`;
+  }, [href, item, id, lang]);
 
   const [open, setOpen] = useState(false);
   const rowRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (rowRef.current && !rowRef.current.contains(e.target as Node))
-        setOpen(false);
-    };
+    const onDoc = (e: MouseEvent) => rowRef.current && !rowRef.current.contains(e.target as Node) && setOpen(false);
     const onEsc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onEsc);
@@ -179,58 +121,37 @@ export default function CategoryRow({
   const [copied, setCopied] = useState(false);
   const copyToClipboard = async (text: string) => {
     try {
-      if (navigator?.clipboard?.writeText)
-        await navigator.clipboard.writeText(text);
+      if (navigator?.clipboard?.writeText) await navigator.clipboard.writeText(text);
       else {
         const ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
+        ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
       }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
+      setCopied(true); setTimeout(() => setCopied(false), 1200);
     } catch {}
   };
 
   const resolvedEditLink =
-    typeof editHref === "function"
-      ? editHref(id)
-      : typeof editHref === "string"
-      ? editHref
-      : null;
+    typeof editHref === "function" ? editHref(id) : typeof editHref === "string" ? editHref : null;
 
   return (
-    <div
-      ref={rowRef}
-      className="rounded-2xl border border-skin-border mt-4 shadow-sm bg-skin-bg p-4"
-    >
+    <div ref={rowRef} className="rounded-2xl border border-skin-border mt-4 shadow-sm bg-skin-bg p-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex gap-10 flex-1 min-w-0">
           <div className="min-w-0">
-            <div className="text-[13px] text-skin-muted mb-1">نام</div>
+            <div className="text-[13px] text-skin-muted mb-1">{t("categories.row.name")}</div>
             <div className="flex items-center gap-2 min-w-0">
               {onViewClick ? (
-                <button
-                  onClick={() => onViewClick(id)}
-                  className="text-sm md:text-base font-medium text-skin-base truncate hover:underline"
-                  title={name}
-                >
+                <button onClick={() => onViewClick(id)} className="text-sm md:text-base font-medium text-skin-base truncate hover:underline" title={name}>
                   {name}
                 </button>
               ) : (
-                <Link
-                  href={viewLink}
-                  className="text-sm md:text-base font-medium text-skin-base truncate hover:underline"
-                  title={name}
-                >
+                <Link href={viewLink} className="text-sm md:text-base font-medium text-skin-base truncate hover:underline" title={name}>
                   {name}
                 </Link>
               )}
             </div>
 
-            <div className="text-[13px] text-skin-muted mt-3 mb-1">اسلاگ</div>
+            <div className="text-[13px] text-skin-muted mt-3 mb-1">{t("categories.row.slug")}</div>
             <div className="flex items-center gap-2 min-w-0">
               <button
                 type="button"
@@ -242,27 +163,22 @@ export default function CategoryRow({
               </button>
               {copied && (
                 <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px]">
-                  کپی شد
+                  {t("categories.row.copied")}
                 </span>
               )}
             </div>
           </div>
 
           <div className="min-w-0">
-            <div className="text-[13px] text-skin-muted mb-1">والد</div>
+            <div className="text-[13px] text-skin-muted mb-1">{t("categories.row.parent")}</div>
             {parent ? (
               <Link
                 href={
                   typeof href === "function"
-                    ? href({
-                        ...item,
-                        id: parent.id,
-                        name: parent.name,
-                        slug: parent.slug,
-                      })
+                    ? href({ ...item, id: parent.id, name: parent.name, slug: parent.slug })
                     : typeof href === "string"
                     ? href
-                    : `/articles/category/${parent.slug}`
+                    : `/${lang}/articles/category/${parent.slug}`
                 }
                 className="text-sm hover:underline truncate text-skin-base"
                 title={parent.name}
@@ -270,12 +186,10 @@ export default function CategoryRow({
                 {parent.name}
               </Link>
             ) : (
-              <div className="text-sm text-skin-muted">بدون والد</div>
+              <div className="text-sm text-skin-muted">{t("categories.row.noParent")}</div>
             )}
 
-            <div className="text-[13px] text-skin-muted mt-3 mb-1">
-              تعداد فرزند
-            </div>
+            <div className="text-[13px] text-skin-muted mt-3 mb-1">{t("categories.row.childrenCount")}</div>
             <div className="text-sm">
               <span className="px-2 py-1 rounded-lg border border-skin-border text-skin-base">
                 {children?.length ?? 0}
@@ -285,10 +199,8 @@ export default function CategoryRow({
 
           {description ? (
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] text-skin-muted mb-1">توضیحات</div>
-              <p className="text-sm text-skin-base/80 line-clamp-2">
-                {description}
-              </p>
+              <div className="text-[13px] text-skin-muted mb-1">{t("categories.row.description")}</div>
+              <p className="text-sm text-skin-base/80 line-clamp-2">{description}</p>
             </div>
           ) : null}
         </div>
@@ -297,14 +209,14 @@ export default function CategoryRow({
           <div className="gap-3 text-xs text-skin-muted flex">
             {createdAt && (
               <div>
-                <span className="text-skin-muted/70">ایجاد: </span>
-                <time dateTime={createdAt}>{formatDateTime(createdAt)}</time>
+                <span className="text-skin-muted/70">{t("categories.row.created")} </span>
+                <time dateTime={createdAt}>{formatDateTime(createdAt, lang)}</time>
               </div>
             )}
             {updatedAt && (
               <div>
-                <span className="text-skin-muted/70">ویرایش: </span>
-                <time dateTime={updatedAt}>{formatDateTime(updatedAt)}</time>
+                <span className="text-skin-muted/70">{t("categories.row.updated")} </span>
+                <time dateTime={updatedAt}>{formatDateTime(updatedAt, lang)}</time>
               </div>
             )}
           </div>
@@ -318,79 +230,51 @@ export default function CategoryRow({
             aria-expanded={open}
             aria-haspopup="menu"
           >
-            ساختار
-            <ChevronDown
-              className={`transition-transform ${open ? "rotate-180" : ""}`}
-            />
+            {t("categories.row.structure")}
+            <ChevronDown className={`transition-transform ${open ? "rotate-180" : ""}`} />
           </button>
 
           {resolvedEditLink ? (
-            <Link
-              href={resolvedEditLink}
-              className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card"
-            >
-              ویرایش
+            <Link href={resolvedEditLink} className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card">
+              {t("actions.edit")}
             </Link>
           ) : typeof onEditClick === "function" ? (
-            <button
-              className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card"
-              onClick={() => onEditClick(id)}
-            >
-              ویرایش
+            <button className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card" onClick={() => onEditClick(id)}>
+              {t("actions.edit")}
             </button>
           ) : null}
 
           {typeof onDeleteClick === "function" && (
-            <button
-              className="px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800"
-              onClick={() => onDeleteClick(id)}
-            >
-              حذف
+            <button className="px-3 py-1.5 rounded-lg bg-red-700 text-white hover:bg-red-800" onClick={() => onDeleteClick(id)}>
+              {t("actions.delete")}
             </button>
           )}
 
           {onViewClick ? (
-            <button
-              className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card"
-              onClick={() => onViewClick(id)}
-            >
-              ویرایش
+            <button className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card" onClick={() => onViewClick(id)}>
+              {t("actions.edit")}
             </button>
           ) : (
-            <Link
-              href={viewLink}
-              className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card"
-            >
-              ویرایش
+            <Link href={viewLink} className="px-3 py-1.5 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card">
+              {t("actions.edit")}
             </Link>
           )}
         </div>
       </div>
 
       {open && (
-        <div
-          role="menu"
-          className="mt-3 rounded-xl border border-skin-border shadow-sm bg-skin-bg p-3"
-        >
+        <div role="menu" className="mt-3 rounded-xl border border-skin-border shadow-sm bg-skin-bg p-3">
           <div className="mb-3">
-            <div className="text-xs font-semibold text-skin-muted mb-1">
-              والد
-            </div>
+            <div className="text-xs font-semibold text-skin-muted mb-1">{t("categories.row.parent")}</div>
             {parent ? (
               <div className="flex items-center justify-between gap-2">
                 <Link
                   href={
                     typeof href === "function"
-                      ? href({
-                          ...item,
-                          id: parent.id,
-                          name: parent.name,
-                          slug: parent.slug,
-                          children: parent.children,
-                        })
+                      ? href({ ...item, id: parent.id, name: parent.name, slug: parent.slug, children: parent.children })
                       : typeof href === "string"
                       ? href
-                      : `/articles/category/${parent.slug}`
+                      : `/${lang}/articles/category/${parent.slug}`
                   }
                   className="text-sm hover:underline text-skin-base"
                   title={parent.name}
@@ -399,32 +283,25 @@ export default function CategoryRow({
                 </Link>
                 {parent.children?.length ? (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-skin-muted/10 text-skin-muted">
-                    {parent.children.length} زیرمجموعه
+                    {t("categories.row.childrenTag", { count: parent.children.length })}
                   </span>
                 ) : null}
               </div>
             ) : (
-              <div className="text-sm text-skin-muted">بدون والد</div>
+              <div className="text-sm text-skin-muted">{t("categories.row.noParent")}</div>
             )}
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-skin-muted mb-1">
-              فرزندان این دسته
-            </div>
+            <div className="text-xs font-semibold text-skin-muted mb-1">{t("categories.row.childrenOf")}</div>
             {children?.length ? (
               <ul className="max-h-72 overflow-auto pr-1">
                 {children.map((child) => (
-                  <TreeList
-                    key={child.id}
-                    node={child}
-                    makeHref={() => viewLink}
-                    onPick={() => {}}
-                  />
+                  <TreeList key={child.id} node={child} makeHref={() => viewLink} onPick={() => {}} t={t} />
                 ))}
               </ul>
             ) : (
-              <div className="text-sm text-skin-muted">بدون فرزند</div>
+              <div className="text-sm text-skin-muted">{t("messages.noData")}</div>
             )}
           </div>
         </div>

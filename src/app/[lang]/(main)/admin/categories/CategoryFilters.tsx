@@ -2,21 +2,22 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 const SORT_BY = [
-  { label: "تاریخ ایجاد", value: "createdAt" },
-  { label: "تاریخ بروزرسانی", value: "updatedAt" },
-  { label: "نام", value: "name" },
-  { label: "اسلاگ", value: "slug" },
+  { i18n: "categories.filters.sort.createdAt", value: "createdAt" },
+  { i18n: "categories.filters.sort.updatedAt", value: "updatedAt" },
+  { i18n: "categories.filters.sort.name", value: "name" },
+  { i18n: "categories.filters.sort.slug", value: "slug" }
 ];
 
 export function CategoryFilters() {
   const router = useRouter();
   const sp = useSearchParams();
+  const { t } = useTranslation("admin");
 
   const initial = useMemo(() => {
     const get = (k: string, d = "") => sp.get(k) ?? d;
-
     return {
       q: get("q"),
       parentId: get("parentId"),
@@ -33,17 +34,12 @@ export function CategoryFilters() {
     (initial.hasParent as "" | "yes" | "no") || ""
   );
 
-  const updateQuery = (
-    patch: Record<string, string | string[] | undefined>
-  ) => {
+  const updateQuery = (patch: Record<string, string | string[] | undefined>) => {
     const usp = new URLSearchParams(sp.toString());
     Object.entries(patch).forEach(([k, v]) => {
       usp.delete(k);
-      if (Array.isArray(v)) {
-        v.filter(Boolean).forEach((val) => usp.append(k, val));
-      } else if (v) {
-        usp.set(k, v);
-      }
+      if (Array.isArray(v)) v.filter(Boolean).forEach((val) => usp.append(k, val));
+      else if (v) usp.set(k, v);
     });
     usp.set("page", "1");
     router.push(`?${usp.toString()}`);
@@ -81,27 +77,27 @@ export function CategoryFilters() {
   return (
     <form onSubmit={onSubmit} className="p-4 grid gap-4 md:grid-cols-12">
       <div className="md:col-span-3">
-        <label className="block text-sm text-skin-muted mb-1">جستجو</label>
+        <label className="block text-sm text-skin-muted mb-1">{t("categories.filters.search")}</label>
         <input
           name="q"
           defaultValue={initial.q}
-          placeholder="نام / اسلاگ / توضیحات"
+          placeholder={t("categories.filters.searchPlaceholder")}
           className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
         />
       </div>
 
       <div className="md:col-span-3">
-        <label className="block text-sm text-skin-muted mb-1">شناسه والد</label>
+        <label className="block text-sm text-skin-muted mb-1">{t("categories.filters.parentId")}</label>
         <input
           name="parentId"
           defaultValue={initial.parentId}
-          placeholder="UUID والد (اختیاری)"
+          placeholder={t("categories.filters.parentIdPlaceholder")}
           className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70 ltr"
         />
       </div>
 
       <div className="md:col-span-3">
-        <label className="block text-sm text-skin-muted mb-1">از تاریخ</label>
+        <label className="block text-sm text-skin-muted mb-1">{t("categories.filters.fromDate")}</label>
         <input
           type="date"
           name="createdFrom"
@@ -111,7 +107,7 @@ export function CategoryFilters() {
       </div>
 
       <div className="md:col-span-3">
-        <label className="block text-sm text-skin-muted mb-1">تا تاریخ</label>
+        <label className="block text-sm text-skin-muted mb-1">{t("categories.filters.toDate")}</label>
         <input
           type="date"
           name="createdTo"
@@ -121,12 +117,12 @@ export function CategoryFilters() {
       </div>
 
       <div className="md:col-span-3">
-        <label className="block text-sm text-skin-muted mb-1">نوع گره</label>
+        <label className="block text-sm text-skin-muted mb-1">{t("categories.filters.nodeType")}</label>
         <div className="flex gap-2">
           {[
-            { label: "همه", value: "" },
-            { label: "فقط ریشه", value: "no" },
-            { label: "فقط زیرشاخه", value: "yes" },
+            { label: t("categories.filters.nodeTypeAll"), value: "" },
+            { label: t("categories.filters.nodeTypeRoot"), value: "no" },
+            { label: t("categories.filters.nodeTypeChild"), value: "yes" },
           ].map((opt) => {
             const active = hasParent === (opt.value as "" | "yes" | "no");
             return (
@@ -149,7 +145,7 @@ export function CategoryFilters() {
       </div>
 
       <div className="md:col-span-3">
-        <label className="block text-sm text-skin-muted mb-1">مرتب‌سازی</label>
+        <label className="block text-sm text-skin-muted mb-1">{t("categories.filters.sortBy")}</label>
         <select
           name="sortBy"
           defaultValue={initial.sortBy}
@@ -157,36 +153,32 @@ export function CategoryFilters() {
         >
           {SORT_BY.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {t(o.i18n)}
             </option>
           ))}
         </select>
       </div>
 
       <div className="md:col-span-3">
-        <label className="block text-sm text-skin-muted mb-1">جهت</label>
+        <label className="block text-sm text-skin-muted mb-1">{t("categories.filters.direction")}</label>
         <select
           name="sortDir"
           defaultValue={initial.sortDir}
           className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
         >
-          <option value="DESC">نزولی</option>
-          <option value="ASC">صعودی</option>
+          <option value="DESC">{t("categories.filters.desc")}</option>
+          <option value="ASC">{t("categories.filters.asc")}</option>
         </select>
       </div>
 
       <div className="md:col-span-3">
-        <label className="block text-sm text-skin-muted mb-1">در صفحه</label>
+        <label className="block text-sm text-skin-muted mb-1">{t("categories.filters.perPage")}</label>
         <select
           name="pageSize"
           defaultValue={initial.pageSize}
           className="w-full rounded-lg border border-skin-border bg-skin-bg text-skin-base px-3 py-2 focus:outline-none focus:ring-2 focus:ring-skin-border/70"
         >
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="40">40</option>
-          <option value="80">80</option>
-          <option value="100">100</option>
+          {[10,20,40,80,100].map(n => <option key={n} value={n}>{n}</option>)}
         </select>
       </div>
 
@@ -196,13 +188,13 @@ export function CategoryFilters() {
           onClick={onReset}
           className="px-4 py-2 rounded-lg border border-skin-border text-skin-base hover:bg-skin-card"
         >
-          پاکسازی
+          {t("actions.clear")}
         </button>
         <button
           type="submit"
           className="px-4 py-2 rounded-xl bg-skin-accent text-white hover:bg-skin-accent/90 transition"
         >
-          اعمال فیلتر ها
+          {t("actions.apply")}
         </button>
       </div>
     </form>

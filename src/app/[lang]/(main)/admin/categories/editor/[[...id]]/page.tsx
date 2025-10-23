@@ -5,6 +5,9 @@ import CategoryEditWithTabs from "@/components/categories/CategoryEditWithTabs";
 import { CategoryService } from "@/server/modules/categories/services/category.service";
 import { SeoMetaService } from "@/server/modules/metaData/services/seoMeta.service";
 import { SeoEntityType } from "@/server/modules/metaData/enums/entity.enum";
+import Breadcrumb from "@/components/Breadcrumb";
+import { clampLang, type Lang } from "@/lib/i18n/settings";
+import { getServerT } from "@/lib/i18n/get-server-t";
 
 type CategoryDTO = {
   id: string;
@@ -20,12 +23,7 @@ type SeoMetaPayload = {
   seoTitle: string | null;
   seoDescription: string | null;
   canonicalUrl: string | null;
-  robots:
-    | "index,follow"
-    | "noindex,follow"
-    | "index,nofollow"
-    | "noindex,nofollow"
-    | null;
+  robots: "index,follow" | "noindex,follow" | "index,nofollow" | "noindex,nofollow" | null;
   ogTitle: string | null;
   ogDescription: string | null;
   ogImageUrl: string | null;
@@ -50,25 +48,23 @@ const getAllCategories = cache(async (): Promise<CategoryDTO[]> => {
   }));
 });
 
-const getCategoryById = cache(
-  async (id: string): Promise<CategoryDTO | null> => {
-    noStore();
-    if (!id) return null;
-    const svc = new CategoryService();
-    const c = await svc.getCategoryById(id);
-    if (!c) return null;
-    return {
-      id: String(c.id),
-      name: String(c.name),
-      slug: String(c.slug),
-      description: c.description ?? null,
-      parent: c.parent ? { id: String(c.parent.id) } : null,
-      depth: Number(c.depth ?? 0),
-    };
-  }
-);
+const getCategoryById = cache(async (id: string): Promise<CategoryDTO | null> => {
+  noStore();
+  if (!id) return null;
+  const svc = new CategoryService();
+  const c = await svc.getCategoryById(id);
+  if (!c) return null;
+  return {
+    id: String(c.id),
+    name: String(c.name),
+    slug: String(c.slug),
+    description: c.description ?? null,
+    parent: c.parent ? { id: String(c.parent.id) } : null,
+    depth: Number(c.depth ?? 0),
+  };
+});
 
-const getSeoForCategory = cache(async (id: string, locale = "") => {
+const getSeoForCategory = cache(async (id: string, locale: "fa-IR" | "en-US") => {
   noStore();
   if (!id) return { exists: false, data: null as SeoMetaPayload | null };
   const seoSvc = new SeoMetaService();
@@ -92,34 +88,55 @@ const getSeoForCategory = cache(async (id: string, locale = "") => {
   return { exists: true, data };
 });
 
+function withLangPath(lang: Lang, path: string) {
+  return `/${lang}${path}`;
+}
+
 export default async function Page({
   params,
   searchParams,
 }: {
-  params: Promise<{ id?: string }>;
+  params: Promise<{ lang: string; id?: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { id = "" } = await params;
+  const { lang: raw, id = "" } = await params;
+  const lang: Lang = clampLang(raw);
+  const t = await getServerT(lang, "admin");
   const sp = await searchParams;
   const initialTab = sp?.tab === "seo" ? "seo" : "category";
+
+  const locale = lang === "en" ? "en-US" : "fa-IR";
 
   const [allCategories, category, seo] = await Promise.all([
     getAllCategories(),
     id ? getCategoryById(id) : Promise.resolve(null),
-    id ? getSeoForCategory(id) : Promise.resolve({ exists: false, data: null }),
+    id ? getSeoForCategory(id, locale) : Promise.resolve({ exists: false, data: null }),
   ]);
 
+  const isNew = !id || !category;
+  const title = isNew ? t("categories.editor.newTitle") : t("categories.editor.editTitle");
+
   return (
-    <main className="pb-32 pt-4 sm:pt-6">
+    <main className="pb-32 pt-4 sm:pt-6 text-skin-base">
       <div className="mx-auto w-full max-w-8xl px-3 sm:px-6 lg:px-8">
-        <CategoryEditWithTabs
-          initialTab={initialTab as "category" | "seo"}
-          categoryId={category?.id ?? null}
-          allCategories={allCategories}
-          initialCategory={category}
-          initialSeoExists={seo.exists}
-          initialSeo={seo.data}
+        <Breadcrumb
+          items={[
+            { label: t("breadcrumb.brand"), href: withLangPath(lang, "/") },
+            { label: t("nav.categories"), href: withLangPath(lang, "/admin/categories") },
+            { label: title, href: "" }
+          ]}
         />
+
+        <div className="mt-4 sm:mt-6">
+          <CategoryEditWithTabs
+            initialTab={initialTab as "category" | "seo"}
+            categoryId={category?.id ?? null}
+            allCategories={allCategories}
+            initialCategory={category}
+            initialSeoExists={seo.exists}
+            initialSeo={seo.data}
+          />
+        </div>
       </div>
     </main>
   );
