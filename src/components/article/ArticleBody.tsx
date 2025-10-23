@@ -1,14 +1,20 @@
 import Image from "next/image";
+import { getServerT } from "@/lib/i18n/get-server-t";
+import type { Lang } from "@/lib/i18n/settings";
 
-export default function ArticleBody({
+export default async function ArticleBody({
   quotes,
   mainText,
   secondryText,
+  lang,
 }: {
   quotes?: string | null;
   mainText?: string | null;
   secondryText?: string | null;
+  lang: Lang;
 }) {
+  const t = await getServerT(lang, "article");
+
   return (
     <div className="space-y-6 leading-8 text-lg text-slate-700 dark:text-skin-base transition-colors">
       <p className="my-6">{mainText || ""}</p>
@@ -17,7 +23,7 @@ export default function ArticleBody({
         <div className="border border-[#EBEBEB] dark:border-skin-border px-6 rounded-md">
           <Image
             src="/svg/Frame.svg"
-            alt="cover"
+            alt={t("body.quote_alt")}
             width={32.57}
             height={32.57}
             className="my-5 dark:invert"
@@ -27,7 +33,7 @@ export default function ArticleBody({
           </p>
           <Image
             src="/svg/Frame.svg"
-            alt="cover"
+            alt={t("body.quote_alt")}
             width={32.57}
             height={32.57}
             className="block my-5 mr-auto rotate-180 dark:invert"

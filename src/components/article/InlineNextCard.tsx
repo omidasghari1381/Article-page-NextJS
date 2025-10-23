@@ -1,28 +1,39 @@
 import Image from "next/image";
 import { timeAgoFa } from "@/app/utils/date";
+import { getServerT } from "@/lib/i18n/get-server-t";
+import type { Lang } from "@/lib/i18n/settings";
 
 type Author = { id: string; firstName: string; lastName: string };
 
-function formatMinutes(v?: number | string | null) {
-  const n = typeof v === "string" ? Number(v) : v ?? 0;
-  if (!n || Number.isNaN(n) || n <= 1) return "یک دقیقه";
-  return `${n} دقیقه`;
-}
-
-export default function InlineNextCard({
+export default async function InlineNextCard({
   author,
   createdAt,
   subject,
   readingPeriod,
   className = "",
+  lang,
 }: {
   author?: Author | null;
   createdAt?: string | null;
   subject?: string | null;
   readingPeriod?: number | string | null;
   className?: string;
+  lang: Lang;
 }) {
-  const fullName = author ? `${author.firstName} ${author.lastName}` : "—";
+  const t = await getServerT(lang, "article");
+
+  const n =
+    typeof readingPeriod === "string"
+      ? Number(readingPeriod)
+      : readingPeriod ?? 0;
+  const readingText =
+    !n || Number.isNaN(n) || n <= 1
+      ? t("hero.minutes_one")
+      : t("hero.minutes_many", { n });
+
+  const fullName = author
+    ? `${author.firstName} ${author.lastName}`
+    : "—";
 
   return (
     <div
@@ -33,12 +44,14 @@ export default function InlineNextCard({
       <div className="flex items-center text-[#3B3F3F] dark:text-skin-base mb-3">
         <Image
           src="/image/author.png"
-          alt="next"
+          alt={t("inline.author_alt")}
           width={33}
           height={33}
           className="object-cover rounded-full ml-3"
         />
-        <span className="text-xs font-medium">نوشته شده توسط </span>
+        <span className="text-xs font-medium">
+          {t("inline.written_by")}
+        </span>
         <span className="text-xs font-medium ml-1">{fullName}</span>
       </div>
 
@@ -54,14 +67,12 @@ export default function InlineNextCard({
           >
             <Image
               src="/svg/time.svg"
-              alt="time"
+              alt={t("hero.minutes_alt")}
               width={14.38}
               height={14.38}
               className="dark:invert"
             />
-            <span className="whitespace-nowrap">
-              {formatMinutes(readingPeriod)}
-            </span>
+            <span className="whitespace-nowrap">{readingText}</span>
           </div>
 
           <div
@@ -70,7 +81,7 @@ export default function InlineNextCard({
           >
             <Image
               src="/svg/calender.svg"
-              alt="time"
+              alt={t("chosen.date_alt")}
               width={14.38}
               height={14.38}
               className="dark:invert"

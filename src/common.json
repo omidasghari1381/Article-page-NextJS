@@ -18,8 +18,11 @@
   "hero": {
     "minutes_many": "{{n}} دقیقه",
     "minutes_one": "یک دقیقه",
+    "read_button": "مطالعه مقاله",
     "summary_title": "خلاصه آنچه در مقاله می‌خوانیم",
-    "views_suffix": "بازدید"
+    "views_suffix": "بازدید",
+    "thumb_alt": "کاور مقاله",
+    "minutes_alt": "مدت مطالعه"
   },
 
   "latest_video": "آخرین ویدیوها",
@@ -43,5 +46,47 @@
 
   "video": {
     "view_all": "مشاهده همه ویدیوها"
-  }
+  },
+
+  "home": {
+    "banner_alt": "بنر"
+  },
+
+  "body": {
+    "quote_alt": "نقل‌قول"
+  },
+
+  "inline": {
+    "written_by": "نوشته شده توسط",
+    "author_alt": "نویسنده",
+    "minutes_alt": "مدت مطالعه"
+  },
+
+  "comments": {
+    "title": "نظرات کاربران",
+    "icon_alt": "آیکون نظرات",
+    "loading": "در حال بارگیری نظرات…",
+    "reply": "پاسخ",
+    "like_alt": "پسندیدن",
+    "dislike_alt": "نپسندیدن",
+    "sample_reply": "این یک پاسخ تستی است",
+    "signin_prompt": "برای ثبت نظر خود وارد شوید.",
+    "placeholder": "نظر خود را بنویسید...",
+    "submit": "ارسال نظر",
+    "sending": "در حال ارسال...",
+    "must_signin": "ابتدا وارد شوید!",
+    "show_replies_with_count": "نمایش {{count}} پاسخ",
+    "hide_replies": "مخفی کردن پاسخ‌ها",
+    "loading_replies": "در حال دریافت پاسخ‌ها…",
+    "fetch_error": "خطا در دریافت پاسخ‌ها",
+    "load_more": "نمایش بیشتر",
+    "arrow_alt": "نمایش پاسخ‌ها"
+  },
+
+  "related": {
+    "title": "مقالات مشابه",
+    "badge_alt": "نشان مقالات مشابه"
+  },
+
+  "no_content": "محتوایی پیدا نشد"
 }

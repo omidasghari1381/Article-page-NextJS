@@ -3,7 +3,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 import { timeAgoFa } from "@/app/utils/date";
+import type { Lang } from "@/lib/i18n/settings";
 
 type ApiAuthor = { id: string; firstName?: string; lastName?: string };
 type ApiReply = {
@@ -20,6 +22,7 @@ type RepliesAccordionProps = {
   className?: string;
   pageSize?: number;
   reloadSignal?: number;
+  lang: Lang;
 };
 
 export default function RepliesAccordion({
@@ -29,6 +32,8 @@ export default function RepliesAccordion({
   pageSize = 20,
   reloadSignal,
 }: RepliesAccordionProps) {
+  const { t } = useTranslation("article");
+
   const [open, setOpen] = useState(defaultOpen);
   const [loading, setLoading] = useState(false);
   const [replies, setReplies] = useState<ApiReply[]>([]);
@@ -56,7 +61,7 @@ export default function RepliesAccordion({
       } catch (e: any) {
         if (!axios.isCancel(e)) {
           console.error("fetch replies error:", e);
-          if (!cancel) setError("خطا در دریافت پاسخ‌ها");
+          if (!cancel) setError(t("comments.fetch_error"));
         }
       } finally {
         if (!cancel) setLoading(false);
@@ -69,7 +74,7 @@ export default function RepliesAccordion({
       cancel = true;
       source.cancel("abort replies fetch");
     };
-  }, [commentId, open, reloadSignal, pageSize]);
+  }, [commentId, open, reloadSignal, pageSize, t]);
 
   const displayCount = replies.length;
   const showToggle = displayCount > 0 || !open;
@@ -85,11 +90,13 @@ export default function RepliesAccordion({
           aria-controls={`replies-panel-${commentId}`}
         >
           <span className="hidden md:inline text-sm text-emerald-700 group-hover:text-emerald-800">
-            {open ? "مخفی کردن پاسخ‌ها" : `نمایش ${displayCount} پاسخ`}
+            {open
+              ? t("comments.hide_replies")
+              : t("comments.show_replies_with_count", { count: displayCount })}
           </span>
           <Image
             src={"/svg/arrow.svg"}
-            alt="arrow"
+            alt={t("comments.arrow_alt")}
             width={11}
             height={5}
             className={`mr-3 transition-transform duration-200 dark:invert ${
@@ -111,7 +118,7 @@ export default function RepliesAccordion({
           <div className="p-3 md:p-4">
             {loading && (
               <div className="text-xs text-slate-500 dark:text-skin-muted">
-                در حال دریافت پاسخ‌ها…
+                {t("comments.loading_replies")}
               </div>
             )}
             {error && <div className="text-xs text-red-600">{error}</div>}
@@ -133,7 +140,7 @@ export default function RepliesAccordion({
                         <div className="relative w-8 h-8 md:w-9 md:h-9 overflow-hidden rounded-full ring-1 ring-slate-200 dark:ring-skin-border bg-slate-100 dark:bg-skin-card shrink-0">
                           <Image
                             src={"/image/author.png"}
-                            alt={"author"}
+                            alt={t("inline.author_alt")}
                             fill
                             className="object-cover"
                             sizes="36px"
@@ -150,7 +157,7 @@ export default function RepliesAccordion({
                               <span>{when}</span>
                             </div>
                           </div>
-                          <p className="my-2.5 md:my-4 text-[14px] md:text-[15px] leading-7 text-slate-700 dark:text-skin-base break-words">
+                          <p className="my-2.5 md:my-4 text-[14px] md:text[15px] leading-7 text-slate-700 dark:text-skin-base break-words">
                             {r.text}
                           </p>
                         </div>
@@ -167,7 +174,7 @@ export default function RepliesAccordion({
                   onClick={() => setVisible((v) => v + pageSize)}
                   className="w-full md:w-auto px-3 py-2 md:px-0 md:py-0 text-xs text-emerald-700 hover:underline rounded-lg md:rounded-none border border-slate-200 dark:border-skin-border md:border-0 transition-colors"
                 >
-                  نمایش بیشتر
+                  {t("comments.load_more")}
                 </button>
               </div>
             )}

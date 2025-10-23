@@ -4,16 +4,17 @@ import { useState } from "react";
 import Image from "next/image";
 import axios from "axios";
 import { useSession, signIn } from "next-auth/react";
+import { useTranslation } from "react-i18next";
+import type { Lang } from "@/lib/i18n/settings";
 
 type AddCommentProps = {
   articleId?: string;
   onSubmitted?: () => void;
+  lang: Lang;
 };
 
-export default function AddComment({
-  articleId,
-  onSubmitted,
-}: AddCommentProps) {
+export default function AddComment({ articleId, onSubmitted }: AddCommentProps) {
+  const { t } = useTranslation(["article", "common"]);
   const { data: session, status } = useSession();
   const isAuth = status === "authenticated";
   const userId = (session?.user as any)?.id as string | undefined;
@@ -24,7 +25,10 @@ export default function AddComment({
   const handleSubmit = async () => {
     if (!articleId) return;
     if (!text.trim()) return;
-    if (!isAuth || !userId) return alert("ابتدا وارد شوید!");
+    if (!isAuth || !userId) {
+      alert(t("article:comments.must_signin"));
+      return;
+    }
 
     try {
       setLoading(true);
@@ -36,7 +40,7 @@ export default function AddComment({
       setText("");
       onSubmitted?.();
     } catch (err) {
-      console.error("خطا در ارسال کامنت:", err);
+      console.error("comment submit error:", err);
     } finally {
       setLoading(false);
     }
@@ -45,13 +49,16 @@ export default function AddComment({
   if (!isAuth) {
     return (
       <div className="border bg-[#F5F5F5] dark:bg-skin-card w-full border-[#DADADA] dark:border-skin-border my-9 px-4 flex justify-between items-center rounded-lg text-black dark:text-white transition-colors">
-        <span className="text-sm font-medium">برای ثبت نظر خود وارد شوید.</span>
+        <span className="text-sm font-medium">
+          {t("article:comments.signin_prompt")}
+        </span>
         <button
           onClick={() => signIn()}
           className="bg-[#19CCA7] text-white flex items-center justify-center w-[137px] h-[51px] rounded-md gap-1 text-sm"
+          aria-label={t("article:comments.signin_prompt")}
         >
-          ورود و ثبت نام
-          <Image src="/svg/userWrite.svg" alt="thumb" width={20} height={20} />
+          {t("common:signup")}
+          <Image src="/svg/userWrite.svg" alt={t("article:comments.icon_alt")} width={20} height={20} />
         </button>
       </div>
     );
@@ -62,7 +69,7 @@ export default function AddComment({
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="نظر خود را بنویسید..."
+        placeholder={t("article:comments.placeholder")}
         className="w-full h-18 sm:h-28 p-2 rounded-md border border-gray-300 dark:border-skin-border bg-white dark:bg-skin-bg/5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#19CCA7] transition-colors"
       />
       <div className="flex justify-end">
@@ -71,7 +78,7 @@ export default function AddComment({
           disabled={loading || !text.trim() || !articleId}
           className="bg-[#19CCA7] text-white px-6 py-2 rounded-md text-sm disabled:opacity-50 hover:cursor-pointer"
         >
-          {loading ? "در حال ارسال..." : "ارسال نظر"}
+          {loading ? t("article:comments.sending") : t("article:comments.submit")}
         </button>
       </div>
     </div>

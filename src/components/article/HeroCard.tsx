@@ -1,5 +1,7 @@
 import Image from "next/image";
 import SummeryDropdown from "../Summery";
+import { getServerT } from "@/lib/i18n/get-server-t";
+import type { Lang } from "@/lib/i18n/settings";
 
 type Props = {
   title?: string;
@@ -11,16 +13,14 @@ type Props = {
   viewCount?: number;
   category?: string | null;
   summery?: string[];
+  lang: Lang;
 };
 
-function formatMinutes(v?: number | string | null) {
-  const n = typeof v === "string" ? Number(v) : v ?? 0;
-  if (!n || Number.isNaN(n) || n <= 1) return "یک دقیقه";
-  const faNum = n.toLocaleString("fa-IR");
-  return `${faNum} دقیقه`;
+function toNumber(v?: number | string | null) {
+  return typeof v === "string" ? Number(v) : v ?? 0;
 }
 
-export default function HeroCard({
+export default async function HeroCard({
   title,
   introduction,
   thumbnail,
@@ -29,13 +29,22 @@ export default function HeroCard({
   subject,
   category,
   summery,
+  lang,
 }: Props) {
-  const items = (
-    summery?.length ? summery : ["چکیده ۱", "چکیده ۲", "چکیده ۳"]
-  ).map((t, i) => ({
-    id: i + 1,
-    text: t,
-  }));
+  const t = await getServerT(lang, ["article", "common"]);
+
+  // format reading minutes with i18n keys
+  const n = toNumber(readingPeriod);
+  const readingText =
+    !n || Number.isNaN(n) || n <= 1
+      ? t("hero.minutes_one", { ns: "article" })
+      : t("hero.minutes_many", { ns: "article", n });
+
+  // prepare summary items only if provided
+  const hasSummary = Array.isArray(summery) && summery.length > 0;
+  const items = hasSummary
+    ? summery!.map((text, i) => ({ id: i + 1, text }))
+    : [];
 
   return (
     <article className="overflow-hidden">
@@ -52,10 +61,12 @@ export default function HeroCard({
       <div className="relative">
         <div className="flex flex-wrap items-center gap-3 my-3 text-xs text-[#2E3232] dark:text-skin-muted">
           <Image src="/svg/time.svg" alt="time" width={24} height={24} className="dark:invert" />
-          <span>{formatMinutes(readingPeriod)}</span>
+          <span>{readingText}</span>
           <span>,</span>
           <Image src="/svg/eye.svg" alt="views" width={18} height={14} className="dark:invert" />
-          <span>{(viewCount ?? 0).toLocaleString("fa-IR")} بازدید</span>
+          <span dir="auto" className="whitespace-nowrap">
+            {t("common:view", { count: viewCount ?? 0 })}
+          </span>
         </div>
 
         <Thumbnail thumbnail={thumbnail} category={category ?? "—"} />
@@ -69,7 +80,9 @@ export default function HeroCard({
         </div>
       ) : null}
 
-      <SummeryDropdown title="خلاصه آنچه در مقاله می‌خوانیم" items={items} />
+      {hasSummary ? (
+        <SummeryDropdown title={t("hero.summary_title", { ns: "article" })} items={items} />
+      ) : null}
     </article>
   );
 }

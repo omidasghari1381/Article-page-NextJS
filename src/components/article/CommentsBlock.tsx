@@ -2,10 +2,12 @@
 import Image from "next/image";
 import axios from "axios";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { timeAgoFa } from "@/app/utils/date";
 import AddComment from "@/components/AddComment";
 import RepliesAccordion from "@/components/reply";
 import { SessionProvider } from "next-auth/react";
+import type { Lang } from "@/lib/i18n/settings";
 
 type Author = { id: string; firstName: string; lastName: string };
 
@@ -30,10 +32,12 @@ export default function CommentsBlock({
   initialComments,
   articleId,
   initialTotal,
+  lang,
 }: {
   initialComments: CommentWithReplies[];
   articleId: string;
   initialTotal: number;
+  lang: Lang;
 }) {
   return (
     <SessionProvider>
@@ -41,6 +45,7 @@ export default function CommentsBlock({
         initialComments={initialComments}
         articleId={articleId}
         initialTotal={initialTotal}
+        lang={lang}
       />
     </SessionProvider>
   );
@@ -49,12 +54,15 @@ export default function CommentsBlock({
 function CommentsInner({
   initialComments,
   articleId,
-  initialTotal, 
+  initialTotal,
+  lang,
 }: {
   initialComments: CommentWithReplies[];
   articleId: string;
   initialTotal: number;
+  lang: Lang;
 }) {
+  const { t } = useTranslation("article");
   const [comments, setComments] = useState<CommentWithReplies[]>(initialComments);
   const [loading, setLoading] = useState(false);
 
@@ -75,22 +83,22 @@ function CommentsInner({
     <div className="rounded-sm bg-white dark:bg-skin-card border border-slate-200 dark:border-skin-border p-4 sm:p-6 md:p-8 transition-colors">
       <section>
         <div className="flex items-center gap-3">
-          <Image src="/svg/Rectangle2.svg" alt="thumb" width={6} height={32} />
-          <Image src="/svg/comment.svg" alt="thumb" width={21} height={21} className="dark:invert" />
+          <Image src="/svg/Rectangle2.svg" alt={t("chosen.badge_alt")} width={6} height={32} />
+          <Image src="/svg/comment.svg" alt={t("comments.icon_alt")} width={21} height={21} className="dark:invert" />
           <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
-            نظرات کاربران
+            {t("comments.title")}
           </h3>
         </div>
 
-        <AddComment articleId={articleId} onSubmitted={fetchComments} />
+        <AddComment articleId={articleId} onSubmitted={fetchComments} lang={lang} />
       </section>
 
       {loading ? (
-        <div className="mt-6 text-sm text-slate-500 dark:text-skin-muted">در حال بارگیری نظرات…</div>
+        <div className="mt-6 text-sm text-slate-500 dark:text-skin-muted">{t("comments.loading")}</div>
       ) : (
         <div className="mt-6 space-y-4 md:space-y-5">
           {comments.map((c) => (
-            <CommentItem key={c.id} c={c} onSubmitted={fetchComments} />
+            <CommentItem key={c.id} c={c} onSubmitted={fetchComments} lang={lang} />
           ))}
         </div>
       )}
@@ -101,10 +109,13 @@ function CommentsInner({
 function CommentItem({
   c,
   onSubmitted,
+  lang,
 }: {
   c: CommentWithReplies;
   onSubmitted: () => void;
+  lang: Lang;
 }) {
+  const { t } = useTranslation("article");
   const authorName =
     [c.user?.firstName, c.user?.lastName].filter(Boolean).join(" ") || "—";
   const when = c.createdAt ? timeAgoFa(c.createdAt) : "—";
@@ -134,7 +145,7 @@ function CommentItem({
             <div className="flex items-center gap-1.5 text-slate-600 dark:text-skin-muted">
               <Image
                 src={"/svg/CalendarM.svg"}
-                alt="date"
+                alt={t("chosen.date_alt")}
                 width={20}
                 height={20}
                 className="object-cover rounded-sm dark:invert"
@@ -147,32 +158,33 @@ function CommentItem({
         <div className="flex items-center gap-2 sm:gap-3 mt-1 md:mt-0">
           <button
             className="w-10 h-10 sm:w-[42.67px] sm:h-[42.67px] rounded-md flex justify-center items-center active:scale-95 transition"
-            aria-label="dislike"
+            aria-label={t("comments.dislike_alt")}
           >
-            <Image src={"/svg/dislike.svg"} alt="dislike" width={18} height={17} className="dark:invert" />
+            <Image src={"/svg/dislike.svg"} alt={t("comments.dislike_alt")} width={18} height={17} className="dark:invert" />
           </button>
           <button
             className="w-10 h-10 sm:w-[42.67px] sm:h-[42.67px] rounded-md bg-[#E8FAF6] flex justify-center items-center active:scale-95 transition"
-            aria-label="like"
+            aria-label={t("comments.like_alt")}
           >
-            <Image src={"/svg/like.svg"} alt="like" width={18} height={17} />
+            <Image src={"/svg/like.svg"} alt={t("comments.like_alt")} width={18} height={17} />
           </button>
           <button
             onClick={async () => {
               try {
                 await axios.post(`/api/comments/${c.id}/replies`, {
                   userId: c.user.id,
-                  text: "این یک پاسخ تستی است",
+                  text: t("comments.sample_reply")
                 });
                 onSubmitted();
               } catch (e) {
-                console.error("خطا در ثبت ریپلای:", e);
+                console.error("reply error:", e);
               }
             }}
             className="h-10 sm:h-[42.67px] px-3 sm:w-[84.27px] rounded-md flex justify-center items-center bg-[#E8FAF6] gap-1.5 active:scale-95 transition"
+            aria-label={t("comments.reply")}
           >
-            <span className="hidden md:inline text-[#19CCA7] text-base">پاسخ</span>
-            <Image src={"/svg/reply.svg"} alt="reply" width={18} height={17} />
+            <span className="hidden md:inline text-[#19CCA7] text-base">{t("comments.reply")}</span>
+            <Image src={"/svg/reply.svg"} alt={t("comments.reply")} width={18} height={17} />
           </button>
         </div>
       </div>
@@ -183,7 +195,7 @@ function CommentItem({
 
       {c.replies?.length ? (
         <div className="mt-3">
-          <RepliesAccordion commentId={c.id} defaultOpen={false} className="mt-2" />
+          <RepliesAccordion commentId={c.id} defaultOpen={false} className="mt-2" lang={lang} />
         </div>
       ) : null}
     </article>

@@ -21,6 +21,9 @@ import { SeoMetaService } from "@/server/modules/metaData/services/seoMeta.servi
 import Reveal from "@/components/transitions/Reveal";
 import { authOptions } from "@/app/[lang]/api/auth/[...nextauth]/route";
 
+import { getServerT } from "@/lib/i18n/get-server-t";
+import { clampLang, type Lang } from "@/lib/i18n/settings";
+
 function robotsToMetadata(robots?: RobotsSetting | null): Metadata["robots"] {
   if (!robots) return undefined;
   switch (robots) {
@@ -37,7 +40,13 @@ function robotsToMetadata(robots?: RobotsSetting | null): Metadata["robots"] {
   }
 }
 
-function resolveSeoMetadata(article: any, meta: any | null): Metadata {
+const langToLocale = (lang: Lang) => (lang === "en" ? "en_US" : "fa_IR");
+
+function resolveSeoMetadata(
+  lang: Lang,
+  article: any,
+  meta: any | null
+): Metadata {
   const articleUrl = `/article/${encodeURIComponent(article.id)}`;
   const articleTitle = article.title;
   const articleDesc =
@@ -89,7 +98,7 @@ function resolveSeoMetadata(article: any, meta: any | null): Metadata {
       description: ogDescription,
       images: ogImage ? [{ url: ogImage }] : undefined,
       siteName: "MyProp",
-      locale: meta?.locale || "fa_IR",
+      locale: meta?.locale || langToLocale(lang),
       authors: authorName ? [authorName] : undefined,
       publishedTime,
       modifiedTime,
@@ -139,22 +148,40 @@ function JsonLd({ a }: { a: any }) {
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ lang: string; id: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { lang: raw, id } = await params;
+  const lang: Lang = clampLang(raw);
+
   const articleSrv = new ArticleService();
   const seoSrv = new SeoMetaService();
 
   const article = await articleSrv.getById(id);
   if (!article) {
-    return { title: "مقاله پیدا نشد", robots: { index: false, follow: false } };
+    const t = await getServerT(lang, "article");
+    return {
+      title: t("not_found_title"),
+      robots: { index: false, follow: false },
+    };
   }
-  const meta = await seoSrv.getBy(SeoEntityType.ARTICLE, id, "fa-IR");
-  return resolveSeoMetadata(article, meta);
+
+  const meta = await seoSrv.getBy(
+    SeoEntityType.ARTICLE,
+    id,
+    lang === "en" ? "en-US" : "fa-IR"
+  );
+  return resolveSeoMetadata(lang, article, meta);
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const { id } = await params;
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ lang: string; id: string }>;
+}) {
+  const { lang: raw, id } = await params;
+  const lang: Lang = clampLang(raw);
+  const t = await getServerT(lang, "article");
+
   const articleSrv = new ArticleService();
 
   const [apiArticle, latestRes, commentsRes, session] = await Promise.all([
@@ -172,7 +199,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   if (!apiArticle) {
     return (
       <main className="px-7 py-10">
-        <h1 className="text-xl font-bold">مقاله پیدا نشد</h1>
+        <h1 className="text-xl font-bold">{t("not_found_title")}</h1>
       </main>
     );
   }
@@ -217,17 +244,19 @@ export default async function Page({ params }: { params: { id: string } }) {
       <JsonLd a={a} />
 
       <Reveal as="div" mode="mount">
-        <Breadcrumb
-          items={[
-            { label: "مای پراپ", href: "/" },
-            { label: "مقالات", href: "/articles" },
-            {
-              label: a.category.name || "_",
-              href: `/categories/${a.category.slug || ""}`,
-            },
-            { label: a.title || "..." },
-          ]}
-        />
+        <Reveal as="div" mode="mount">
+          <Breadcrumb
+            items={[
+              { label: t("breadcrumb.brand"), href: "/" },
+              { label: t("breadcrumb.articles"), href: "/articles" },
+              {
+                label: a.category.name || "_",
+                href: `/categories/${a.category.slug || ""}`,
+              },
+              { label: a.title || "..." },
+            ]}
+          />
+        </Reveal>
       </Reveal>
 
       <div className="grid grid-cols-1 mt-6 lg:grid-cols-12">
@@ -242,11 +271,14 @@ export default async function Page({ params }: { params: { id: string } }) {
               viewCount={a.viewCount}
               category={a.category.name}
               summery={a.summery}
+              lang={lang}
             />
+
             <ArticleBody
               mainText={a.mainText}
               quotes={a.quotes}
               secondryText={a.secondaryText}
+              lang={lang}
             />
 
             <Reveal
@@ -268,13 +300,14 @@ export default async function Page({ params }: { params: { id: string } }) {
                 createdAt={a.createdAt}
                 subject={a.subject}
                 readingPeriod={a.readingPeriod}
+                lang={lang}
               />
             </Reveal>
           </div>
         </Reveal>
 
         <aside className="lg:col-span-3 space-y-9 lg:mr-6 lg:w-[105%]">
-          <SidebarLatest posts={latest as any} />
+          <SidebarLatest posts={latest as any} lang={lang} />
         </aside>
       </div>
 
@@ -283,6 +316,7 @@ export default async function Page({ params }: { params: { id: string } }) {
           initialComments={(commentsRes?.data as any[]) || []}
           articleId={a.id}
           initialTotal={(commentsRes as any)?.total || 0}
+          lang={lang}
         />
       </Reveal>
 
@@ -290,6 +324,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         <RelatedArticles
           post={related as any}
           fallbackCategory={a.category.name}
+          lang={lang}
         />
       </Reveal>
 
@@ -299,7 +334,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             href={`/article/editor/new-article/${encodeURIComponent(a.id)}`}
             className="px-5 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
           >
-            ویرایش این مقاله
+            {t("edit_button")}
           </Link>
         </Reveal>
       ) : null}
