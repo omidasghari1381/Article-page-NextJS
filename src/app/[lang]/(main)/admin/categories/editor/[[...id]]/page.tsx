@@ -23,7 +23,12 @@ type SeoMetaPayload = {
   seoTitle: string | null;
   seoDescription: string | null;
   canonicalUrl: string | null;
-  robots: "index,follow" | "noindex,follow" | "index,nofollow" | "noindex,nofollow" | null;
+  robots:
+    | "index,follow"
+    | "noindex,follow"
+    | "index,nofollow"
+    | "noindex,nofollow"
+    | null;
   ogTitle: string | null;
   ogDescription: string | null;
   ogImageUrl: string | null;
@@ -48,23 +53,25 @@ const getAllCategories = cache(async (): Promise<CategoryDTO[]> => {
   }));
 });
 
-const getCategoryById = cache(async (id: string): Promise<CategoryDTO | null> => {
-  noStore();
-  if (!id) return null;
-  const svc = new CategoryService();
-  const c = await svc.getCategoryById(id);
-  if (!c) return null;
-  return {
-    id: String(c.id),
-    name: String(c.name),
-    slug: String(c.slug),
-    description: c.description ?? null,
-    parent: c.parent ? { id: String(c.parent.id) } : null,
-    depth: Number(c.depth ?? 0),
-  };
-});
+const getCategoryById = cache(
+  async (id: string): Promise<CategoryDTO | null> => {
+    noStore();
+    if (!id) return null;
+    const svc = new CategoryService();
+    const c = await svc.getCategoryById(id);
+    if (!c) return null;
+    return {
+      id: String(c.id),
+      name: String(c.name),
+      slug: String(c.slug),
+      description: c.description ?? null,
+      parent: c.parent ? { id: String(c.parent.id) } : null,
+      depth: Number(c.depth ?? 0),
+    };
+  }
+);
 
-const getSeoForCategory = cache(async (id: string, locale: "fa-IR" | "en-US") => {
+const getSeoForCategory = cache(async (id: string, locale: "fa" | "en") => {
   noStore();
   if (!id) return { exists: false, data: null as SeoMetaPayload | null };
   const seoSvc = new SeoMetaService();
@@ -80,8 +87,12 @@ const getSeoForCategory = cache(async (id: string, locale: "fa-IR" | "en-US") =>
     ogDescription: rec.ogDescription ?? null,
     ogImageUrl: rec.ogImageUrl ?? null,
     twitterCard: rec.twitterCard ?? null,
-    publishedTime: rec.publishedTime ? new Date(rec.publishedTime).toISOString() : null,
-    modifiedTime: rec.modifiedTime ? new Date(rec.modifiedTime).toISOString() : null,
+    publishedTime: rec.publishedTime
+      ? new Date(rec.publishedTime).toISOString()
+      : null,
+    modifiedTime: rec.modifiedTime
+      ? new Date(rec.modifiedTime).toISOString()
+      : null,
     authorName: rec.authorName ?? null,
     tags: Array.isArray(rec.tags) ? rec.tags : null,
   };
@@ -105,16 +116,20 @@ export default async function Page({
   const sp = await searchParams;
   const initialTab = sp?.tab === "seo" ? "seo" : "category";
 
-  const locale = lang === "en" ? "en-US" : "fa-IR";
+  const locale = lang === "en" ? "en" : "fa";
 
   const [allCategories, category, seo] = await Promise.all([
     getAllCategories(),
     id ? getCategoryById(id) : Promise.resolve(null),
-    id ? getSeoForCategory(id, locale) : Promise.resolve({ exists: false, data: null }),
+    id
+      ? getSeoForCategory(id, locale)
+      : Promise.resolve({ exists: false, data: null }),
   ]);
 
   const isNew = !id || !category;
-  const title = isNew ? t("categories.editor.newTitle") : t("categories.editor.editTitle");
+  const title = isNew
+    ? t("categories.editor.newTitle")
+    : t("categories.editor.editTitle");
 
   return (
     <main className="pb-32 pt-4 sm:pt-6 text-skin-base">
@@ -122,13 +137,18 @@ export default async function Page({
         <Breadcrumb
           items={[
             { label: t("breadcrumb.brand"), href: withLangPath(lang, "/") },
-            { label: t("nav.categories"), href: withLangPath(lang, "/admin/categories") },
-            { label: title, href: "" }
+            {
+              label: t("nav.categories"),
+              href: withLangPath(lang, "/admin/categories"),
+            },
+            { label: title, href: "" },
           ]}
         />
 
         <div className="mt-4 sm:mt-6">
+
           <CategoryEditWithTabs
+            lang={lang}
             initialTab={initialTab as "category" | "seo"}
             categoryId={category?.id ?? null}
             allCategories={allCategories}

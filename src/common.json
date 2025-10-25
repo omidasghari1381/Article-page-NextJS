@@ -1,175 +1,260 @@
 {
   "actions": {
-    "addNew": "افزودن مورد جدید",
-    "apply": "اعمال فیلتر",
-    "cancel": "انصراف",
-    "clear": "پاکسازی",
-    "clearPassword": "پاک‌سازی پسورد",
-    "delete": "حذف",
-    "edit": "ویرایش",
-    "pending": "در حال انجام…",
-    "save": "ذخیره تغییرات",
-    "saveChanges": "ذخیره تغییرات"
+    "addNew": "Add new",
+    "apply": "Apply filters",
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "clearPassword": "Clear password",
+    "delete": "Delete",
+    "edit": "Edit",
+    "pending": "Working…",
+    "save": "Save changes",
+    "saveChanges": "Save changes",
+    "saving": "Saving…",
+    "deleting": "Deleting…"
   },
   "breadcrumb": {
-    "admin": "پنل ادمین",
-    "brand": "مای پراپ",
-    "users": "کاربران"
+    "admin": "Admin Panel",
+    "brand": "MyProp",
+    "users": "Users"
   },
   "cards": {
-    "articleViews": {
-      "title": "تعداد بازدید مقالات"
+    "articleViews": { "title": "Article views" },
+    "orders": { "title": "New orders" },
+    "revenue": { "title": "Total revenue" },
+    "users": { "title": "Users count" }
+  },
+  "menu": {
+    "open": "Open admin menu",
+    "sidebar": "Admin sidebar",
+    "title": "Menu"
+  },
+  "messages": {
+    "error": "An error occurred",
+    "loading": "Loading...",
+    "noData": "No data to display"
+  },
+  "nav": {
+    "articles": "Articles",
+    "categories": "Categories",
+    "dashboard": "Dashboard",
+    "faq": "FAQ",
+    "languages": "Languages",
+    "logout": "Logout",
+    "media": "Media",
+    "redirects": "Redirects",
+    "settings": "Settings",
+    "tags": "Tags",
+    "users": "Users"
+  },
+  "roles": {
+    "ADMIN": "Admin",
+    "CLIENT": "Client",
+    "EDITOR": "Editor"
+  },
+  "status": {
+    "active": "Active",
+    "deleted": "Deleted",
+    "inactive": "Inactive"
+  },
+  "table": {
+    "actions": "Actions",
+    "createdAt": "Created at",
+    "email": "Email",
+    "id": "ID",
+    "name": "Name",
+    "status": "Status"
+  },
+  "users": {
+    "alreadyDeleted": "This user is already deleted",
+    "created": "Created:",
+    "updated": "Updated:",
+    "phone": "Phone",
+    "role": "Role:",
+    "list": {
+      "nameAndRole": "Name & Role",
+      "summary": "{{total}} users • page {{page}} of {{pages}}",
+      "title": "Users list"
     },
-    "orders": {
-      "title": "سفارشات جدید"
+    "filters": {
+      "asc": "Ascending",
+      "desc": "Descending",
+      "direction": "Direction",
+      "fromDate": "From date",
+      "toDate": "To date",
+      "perPage": "Per page",
+      "role": "Role",
+      "search": "Search",
+      "searchPlaceholder": "First/Last name or phone",
+      "sortBy": "Sort by",
+      "sort": {
+        "createdAt": "Created at",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "phone": "Phone",
+        "role": "Role",
+        "updatedAt": "Updated at"
+      }
     },
-    "revenue": {
-      "title": "درآمد کل"
+    "form": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "role": "Role",
+      "rolePlaceholder": "Select a role…",
+      "phone": "Phone number",
+      "password": "Password (optional)",
+      "passwordPlaceholder": "Type here to change password",
+      "required": {
+        "firstName": "First name is required.",
+        "lastName": "Last name is required.",
+        "role": "Please select a role.",
+        "phone": "Phone number is required."
+      }
     },
-    "users": {
-      "title": "تعداد کاربران"
+    "edit": {
+      "title": "Edit User",
+      "invalidId": "Invalid user ID.",
+      "deleteUser": "Delete user",
+      "restoreUser": "Restore user",
+      "notDeleted": "This user is not deleted"
     }
   },
   "categories": {
     "editor": {
-      "newTitle": "ایجاد دسته",
-      "editTitle": "ویرایش دسته"
+      "editTitle": "Edit Category",
+      "newTitle": "Create Category",
+      "tabs": {
+        "category": "Category info",
+        "seo": "SEO"
+      }
     },
     "filters": {
-      "asc": "صعودی",
-      "desc": "نزولی",
-      "direction": "جهت",
-      "fromDate": "از تاریخ",
-      "nodeType": "نوع گره",
-      "nodeTypeAll": "همه",
-      "nodeTypeChild": "فقط زیرشاخه",
-      "nodeTypeRoot": "فقط ریشه",
-      "parentId": "شناسه والد",
-      "parentIdPlaceholder": "UUID والد (اختیاری)",
-      "perPage": "در صفحه",
-      "search": "جستجو",
-      "searchPlaceholder": "نام / اسلاگ / توضیحات",
+      "asc": "Ascending",
+      "desc": "Descending",
+      "direction": "Direction",
+      "fromDate": "From date",
+      "toDate": "To date",
+      "nodeType": "Node type",
+      "nodeTypeAll": "All",
+      "nodeTypeChild": "Child only",
+      "nodeTypeRoot": "Root only",
+      "parentId": "Parent ID",
+      "parentIdPlaceholder": "Parent UUID (optional)",
+      "perPage": "Per page",
+      "search": "Search",
+      "searchPlaceholder": "Name / slug / description",
+      "sortBy": "Sort by",
       "sort": {
-        "createdAt": "تاریخ ایجاد",
-        "name": "نام",
-        "slug": "اسلاگ",
-        "updatedAt": "تاریخ بروزرسانی"
-      },
-      "sortBy": "مرتب‌سازی",
-      "toDate": "تا تاریخ"
+        "createdAt": "Created at",
+        "name": "Name",
+        "slug": "Slug",
+        "updatedAt": "Updated at"
+      }
     },
     "list": {
-      "count": "تعداد دسته‌ها ({{count}})",
-      "title": "لیست دسته‌ها"
+      "count": "{{count}} categories",
+      "title": "Category list"
     },
     "row": {
-      "childrenCount": "تعداد فرزند",
-      "childrenOf": "فرزندان این دسته",
-      "childrenTag": "{{count}} زیرمجموعه",
-      "copied": "کپی شد",
-      "created": "ایجاد:",
-      "description": "توضیحات",
-      "name": "نام",
-      "noParent": "بدون والد",
-      "parent": "والد",
-      "slug": "اسلاگ",
-      "structure": "ساختار",
-      "updated": "ویرایش:"
-    }
-  },
-  "menu": {
-    "open": "باز کردن منوی ادمین",
-    "sidebar": "نوار کناری مدیریت",
-    "title": "منو"
-  },
-  "messages": {
-    "error": "خطایی رخ داده است",
-    "loading": "در حال بارگذاری...",
-    "noData": "داده‌ای برای نمایش وجود ندارد"
-  },
-  "nav": {
-    "articles": "مقالات",
-    "categories": "دسته‌بندی‌ها",
-    "dashboard": "داشبورد",
-    "faq": "سوالات متداول",
-    "languages": "زبان‌ها",
-    "logout": "خروج",
-    "media": "رسانه",
-    "redirects": "ریدایرکت‌ها",
-    "settings": "تنظیمات",
-    "tags": "تگ‌ها",
-    "users": "کاربران"
-  },
-  "roles": {
-    "ADMIN": "ادمین",
-    "CLIENT": "کاربر",
-    "EDITOR": "ویرایشگر"
-  },
-  "status": {
-    "active": "فعال",
-    "deleted": "حذف‌شده",
-    "inactive": "غیرفعال"
-  },
-  "table": {
-    "actions": "عملیات",
-    "createdAt": "تاریخ ایجاد",
-    "email": "ایمیل",
-    "id": "شناسه",
-    "name": "نام",
-    "status": "وضعیت"
-  },
-  "users": {
-    "alreadyDeleted": "این کاربر قبلاً حذف شده است",
-    "created": "ایجاد:",
-    "edit": {
-      "deleteUser": "حذف کاربر",
-      "invalidId": "شناسه کاربر نامعتبر است.",
-      "notDeleted": "این کاربر حذف نشده است",
-      "restoreUser": "بازیابی کاربر",
-      "title": "ویرایش کاربر"
-    },
-    "filters": {
-      "asc": "صعودی",
-      "desc": "نزولی",
-      "direction": "جهت",
-      "fromDate": "از تاریخ",
-      "perPage": "در صفحه",
-      "role": "نقش",
-      "search": "جستجو",
-      "searchPlaceholder": "نام / نام‌خانوادگی / تلفن",
-      "sort": {
-        "createdAt": "تاریخ ایجاد",
-        "firstName": "نام",
-        "lastName": "نام‌خانوادگی",
-        "phone": "تلفن",
-        "role": "نقش",
-        "updatedAt": "تاریخ بروزرسانی"
-      },
-      "sortBy": "مرتب‌سازی",
-      "toDate": "تا تاریخ"
+      "childrenCount": "Children count",
+      "childrenOf": "Children of this category",
+      "childrenTag": "{{count}} children",
+      "copied": "Copied",
+      "created": "Created:",
+      "updated": "Updated:",
+      "description": "Description",
+      "name": "Name",
+      "noParent": "No parent",
+      "parent": "Parent",
+      "slug": "Slug",
+      "structure": "Structure"
     },
     "form": {
-      "firstName": "نام",
-      "lastName": "نام‌خانوادگی",
-      "password": "پسورد (اختیاری)",
-      "passwordPlaceholder": "برای تغییر پسورد، اینجا بنویس",
-      "phone": "شماره تلفن",
-      "required": {
-        "firstName": "نام الزامی است.",
-        "lastName": "نام‌خانوادگی الزامی است.",
-        "phone": "شماره تلفن الزامی است.",
-        "role": "نقش کاربر را انتخاب کنید."
+      "name": "Category name",
+      "slug": "Slug",
+      "description": "Description",
+      "parent": "Parent category (optional)",
+      "noParent": "— No parent —",
+      "placeholders": {
+        "name": "e.g. Market analysis",
+        "description": "Short description..."
       },
-      "role": "نقش",
-      "rolePlaceholder": "انتخاب نقش…"
+      "hints": {
+        "slugAuto": "If left empty, it will be generated from the name.",
+        "parent": "Parent builds a tree structure."
+      },
+      "buttons": {
+        "create": "Create category",
+        "update": "Save changes",
+        "delete": "Delete category"
+      },
+      "validations": {
+        "name": "Name is required.",
+        "slug": "Slug is required.",
+        "parentSelf": "You cannot set the category itself as its parent."
+      },
+      "saveError": "Error saving category",
+      "createSuccess": "Category created successfully ✅",
+      "updateSuccess": "Changes saved ✅",
+      "confirmDelete": "Are you sure you want to delete this category?",
+      "deleteSuccess": "Category deleted successfully.",
+      "deleteFailed": "Failed to delete category."
     },
-    "list": {
-      "nameAndRole": "نام و نقش",
-      "summary": "{{total}} کاربر • صفحه {{page}} از {{pages}}",
-      "title": "لیست کاربران"
-    },
-    "phone": "تلفن",
-    "role": "نقش:",
-    "updated": "ویرایش:"
+    "seo": {
+      "auto": "Use automatic values",
+      "basics": {
+        "title": "SEO Basics",
+        "seoTitle": "SEO Title",
+        "metaDescription": "Meta Description",
+        "canonicalUrl": "Canonical URL",
+        "robots": "Robots"
+      },
+      "twitter": {
+        "card": "Twitter Card"
+      },
+      "meta": {
+        "title": "Meta",
+        "author": "Author/Owner Name",
+        "published": "Published Time (ISO)",
+        "modified": "Modified Time (ISO)",
+        "tags": "Tags (comma separated)"
+      },
+      "og": {
+        "title": "OG Title",
+        "description": "OG Description",
+        "imageUrl": "OG Image URL",
+        "previewPlaceholder": "OG image preview"
+      },
+      "serp": {
+        "title": "SERP Preview",
+        "fallbackTitle": "Category title",
+        "fallbackUrl": "https://example.com/category/slug",
+        "fallbackDesc": "Meta description."
+      },
+      "options": { "default": "Default" },
+      "buttons": {
+        "delete": "Delete settings",
+        "deleting": "Deleting…",
+        "save": "Save SEO settings",
+        "saving": "Saving…"
+      },
+      "messages": {
+        "saveSuccess": "Category SEO settings saved ✅",
+        "deleteSuccess": "Category SEO settings deleted ✅"
+      },
+      "errors": {
+        "fetch": "Error loading SEO settings",
+        "save": "Error saving settings",
+        "delete": "Failed to delete settings"
+      },
+      "confirm": { "delete": "Delete SEO settings for this category?" },
+      "notice": { "noId": "Save the category first to get an ID before editing SEO." },
+      "placeholders": {
+        "seoTitle": "If empty, category name will be used",
+        "metaDescription": "If empty, built from category description",
+        "ogTitle": "If empty, falls back to SEO Title",
+        "ogDescription": "If empty, falls back to Meta Description"
+      }
+    }
   }
 }
